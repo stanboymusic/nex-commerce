@@ -14,7 +14,7 @@ export async function POST(req: Request) {
       where: { email },
     })
 
-    if (!user) {
+    if (!user || !user.password) {
       return NextResponse.json({ error: 'Invalid credentials' }, { status: 401 })
     }
 
@@ -27,7 +27,7 @@ export async function POST(req: Request) {
     const token = signToken({
       userId: user.id,
       role: user.role,
-      email: user.email,
+      email: user.email || undefined,
     })
 
     return NextResponse.json({

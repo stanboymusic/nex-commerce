@@ -3,6 +3,8 @@ import DashboardCard from "@/components/admin/DashboardCard";
 import prisma from "@/lib/prisma";
 import { Users, ShoppingBag, Package, DollarSign, TrendingUp, AlertTriangle } from "lucide-react";
 
+export const dynamic = 'force-dynamic'
+
 export default async function DashboardPage() {
   const totalUsers = await prisma.user.count();
   const totalOrders = await prisma.order.count();

@@ -1,13 +1,13 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, Suspense } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import Link from 'next/link'
 import { useAuthStore } from '@/store/auth.store'
 import axios from 'axios'
 import { LogIn, Loader2, Mail, Lock, Phone, MessageSquare } from 'lucide-react'
 
-export default function LoginPage() {
+function LoginContent() {
   const [loginMethod, setLoginMethod] = useState<'email' | 'phone'>('email')
   const [step, setStep] = useState<'request' | 'verify'>('request')
   const [email, setEmail] = useState('')
@@ -227,5 +227,13 @@ export default function LoginPage() {
         </p>
       </div>
     </div>
+  )
+}
+
+export default function LoginPage() {
+  return (
+    <Suspense>
+      <LoginContent />
+    </Suspense>
   )
 }
