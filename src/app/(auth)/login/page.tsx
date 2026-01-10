@@ -30,7 +30,12 @@ function LoginContent() {
     try {
       const response = await axios.post('/api/auth/login', { email, password })
       setAuth(response.data.user, response.data.token)
-      router.push(redirect)
+      
+      if (response.data.user.role === 'ADMIN') {
+        window.location.href = 'https://nex-admin.vercel.app'
+      } else {
+        router.push(redirect || '/catalog')
+      }
     } catch (err: unknown) {
       if (axios.isAxiosError(err)) {
         setError(err.response?.data?.error || 'Error al iniciar sesión')
@@ -69,7 +74,12 @@ function LoginContent() {
     try {
       const response = await axios.post('/api/auth/otp/verify', { phone, code })
       setAuth(response.data.user, response.data.token)
-      router.push(redirect)
+      
+      if (response.data.user.role === 'ADMIN') {
+        window.location.href = 'https://nex-admin.vercel.app'
+      } else {
+        router.push(redirect || '/catalog')
+      }
     } catch (err: unknown) {
       if (axios.isAxiosError(err)) {
         setError(err.response?.data?.error || 'Código inválido o expirado')

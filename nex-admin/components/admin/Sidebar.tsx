@@ -2,12 +2,18 @@ import Link from "next/link";
 import { LayoutDashboard, Package, ShoppingCart, Users, Bell, LogOut } from "lucide-react";
 import { useAdminStore } from "@/store/admin.store";
 import { useRouter } from "next/navigation";
+import { api } from "@/lib/apiClient";
 
 export default function Sidebar() {
   const logout = useAdminStore((state) => state.logout);
   const router = useRouter();
 
-  const handleLogout = () => {
+  const handleLogout = async () => {
+    try {
+      await api.post('/auth/logout');
+    } catch (error) {
+      console.error('Logout error:', error);
+    }
     logout();
     router.push('/login');
   };

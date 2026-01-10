@@ -23,3 +23,69 @@ Module not found: Can't resolve '../styles/globals.css'
 https://nextjs.org/docs/messages/module-not-found
 
 
+[01:02:33.377] Server  LOG     ✓ Compiled in 50ms
+[01:02:34.199] Server  ERROR   ⨯ ./middleware.ts:3:1
+Module not found: Can't resolve '@/lib/auth'
+  1 | import { NextResponse } from 'next/server'
+  2 | import type { NextRequest } from 'next/server'
+> 3 | import { verifyToken } from '@/lib/auth'
+    | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  4 |
+  5 | export function middleware(req: NextRequest) {
+  6 |   const token = req.cookies.get('token')?.value
+
+Import map: aliased to relative './lib/auth' inside of [project]/nex-admin
+
+
+https://nextjs.org/docs/messages/module-not-found
+
+
+[01:02:34.203] Server  ERROR   ⨯ ./middleware.ts:3:1
+Module not found: Can't resolve '@/lib/auth'
+  1 | import { NextResponse } from 'next/server'
+  2 | import type { NextRequest } from 'next/server'
+> 3 | import { verifyToken } from '@/lib/auth'
+    | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  4 |
+  5 | export function middleware(req: NextRequest) {
+  6 |   const token = req.cookies.get('token')?.value
+
+Import map: aliased to relative './lib/auth' inside of [project]/nex-admin
+
+
+https://nextjs.org/docs/messages/module-not-found
+
+
+[01:02:48.511] Server  WARN    ⚠ The "middleware" file convention is deprecated. Please use "proxy" instead. Learn more: https://nextjs.org/docs/messages/middleware-to-proxy
+[01:02:48.681] Server  ERROR   ⨯ ./nex-admin/middleware.ts:3:1
+Module not found: Can't resolve './lib/jwt'
+  1 | import { NextResponse } from 'next/server'
+  2 | import type { NextRequest } from 'next/server'
+> 3 | import { verifyToken } from './lib/jwt'
+    | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  4 |
+  5 | export function middleware(req: NextRequest) {
+  6 |   const token = req.cookies.get('token')?.value
+
+
+
+https://nextjs.org/docs/messages/module-not-found
+
+
+[01:02:48.685] Server  ERROR   ⨯ ./nex-admin/middleware.ts:3:1
+Module not found: Can't resolve './lib/jwt'
+  1 | import { NextResponse } from 'next/server'
+  2 | import type { NextRequest } from 'next/server'
+> 3 | import { verifyToken } from './lib/jwt'
+    | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  4 |
+  5 | export function middleware(req: NextRequest) {
+  6 |   const token = req.cookies.get('token')?.value
+
+
+
+https://nextjs.org/docs/messages/module-not-found
+
+
+[01:02:48.708] Server  LOG     ✓ Compiled in 157ms
+[01:02:52.319] Server  LOG     ✓ Compiled in 482ms

@@ -1,0 +1,7 @@
+{
+  "/(admin)/dashboard/page": "/dashboard",
+  "/(admin)/products/page": "/products",
+  "/_global-error/page": "/_global-error",
+  "/_not-found/page": "/_not-found",
+  "/login/page": "/login"
+}

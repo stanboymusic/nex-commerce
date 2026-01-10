@@ -1,19 +1,13 @@
-import axios from "axios";
+import axios from 'axios'
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL || "https://nex-users.vercel.app/api";
+const API_URL = process.env.NEXT_PUBLIC_API_URL || 'https://nex-users.vercel.app/api'
 
-export const apiClient = axios.create({
+export const api = axios.create({
   baseURL: API_URL,
+  withCredentials: true,
   headers: {
-    "Content-Type": "application/json",
+    'Content-Type': 'application/json',
   },
-});
+})
 
-// Helper to add auth token to requests
-apiClient.interceptors.request.use((config) => {
-  const token = typeof window !== 'undefined' ? localStorage.getItem('admin_token') : null;
-  if (token) {
-    config.headers.Authorization = `Bearer ${token}`;
-  }
-  return config;
-});
+export const apiClient = api

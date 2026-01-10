@@ -3,8 +3,7 @@ import { persist } from 'zustand/middleware';
 
 interface AdminState {
   admin: any | null;
-  token: string | null;
-  setAdmin: (admin: any, token: string) => void;
+  setAdmin: (admin: any) => void;
   logout: () => void;
 }
 
@@ -12,9 +11,8 @@ export const useAdminStore = create<AdminState>()(
   persist(
     (set) => ({
       admin: null,
-      token: null,
-      setAdmin: (admin, token) => set({ admin, token }),
-      logout: () => set({ admin: null, token: null }),
+      setAdmin: (admin) => set({ admin }),
+      logout: () => set({ admin: null }),
     }),
     {
       name: 'nex-admin-storage',

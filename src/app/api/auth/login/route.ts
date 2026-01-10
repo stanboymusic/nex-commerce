@@ -1,6 +1,12 @@
 import { NextResponse } from 'next/server'
+import type { NextRequest } from 'next/server'
 import prisma from '@/lib/prisma'
 import { comparePassword, signToken } from '@/lib/auth'
+import { corsHeaders, handleCORS } from '@/lib/cors'
+
+export async function OPTIONS(request: NextRequest) {
+  return handleCORS(request)
+}
 
 export async function POST(req: Request) {
   try {
@@ -30,7 +36,7 @@ export async function POST(req: Request) {
       email: user.email || undefined,
     })
 
-    return NextResponse.json({
+    const response = NextResponse.json({
       user: {
         id: user.id,
         name: user.name,
@@ -39,8 +45,28 @@ export async function POST(req: Request) {
       },
       token,
     })
+
+    response.cookies.set('token', token, {
+      httpOnly: true,
+      secure: true,
+      sameSite: 'none',
+      path: '/',
+      maxAge: 7 * 24 * 60 * 60,
+    })
+
+    const corsHeadersObj = corsHeaders(req as NextRequest)
+    Object.entries(corsHeadersObj).forEach(([key, value]) => {
+      response.headers.set(key, value)
+    })
+
+    return response
   } catch (error) {
     console.error('Login error:', error)
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
+    const response = NextResponse.json({ error: 'Internal server error' }, { status: 500 })
+    const corsHeadersObj = corsHeaders(req as NextRequest)
+    Object.entries(corsHeadersObj).forEach(([key, value]) => {
+      response.headers.set(key, value)
+    })
+    return response
   }
 }

@@ -7,18 +7,15 @@ import { useAdminStore } from "@/store/admin.store";
 import { useRouter } from "next/navigation";
 
 export default function AdminLayout({ children }: { children: React.ReactNode }) {
-  const { token } = useAdminStore();
+  const { admin } = useAdminStore();
   const router = useRouter();
   const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
     setMounted(true);
-    if (!token) {
-      router.push('/login');
-    }
-  }, [token, router]);
+  }, []);
 
-  if (!mounted || !token) return null;
+  if (!mounted) return null;
 
   return (
     <div className="flex min-h-screen bg-[#F8F9FC] text-oxford antialiased">
