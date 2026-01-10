@@ -7,14 +7,14 @@ import { motion } from 'framer-motion'
 import { useCartStore } from '@/store/cart.store'
 
 interface ProductCardProps {
-  id: string
-  name: string
-  slug: string
-  price: number
-  image?: string
-  stock: number
-  isPreorder: boolean
-  arrivalDate?: string | null
+  id: string;
+  name: string;
+  slug: string; // OBLIGATORIO
+  price: number;
+  stock: number;
+  isPreorder: boolean;
+  arrivalDate?: string;
+  image?: string;
 }
 
 export default function ProductCard({ id, name, slug, price, image, stock, isPreorder, arrivalDate }: ProductCardProps) {

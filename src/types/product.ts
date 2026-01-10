@@ -6,15 +6,15 @@ export interface ProductImage {
 export interface Product {
   id: string;
   name: string;
-  slug: string;
-  description: string;
+  slug: string; // OBLIGATORIO
+  description?: string;
   price: number;
   stock: number;
   isPreorder: boolean;
-  arrivalDate: string | null;
-  estimatedDeliveryDate: string | null;
-  categoryId: string;
-  images: ProductImage[];
-  createdAt: string;
-  updatedAt: string;
+  arrivalDate?: string;
+  estimatedDeliveryDate?: string;
+  images?: any[]; // Flexible para soportar string[] o {url: string}[]
+  categoryId?: string;
+  createdAt?: string;
+  updatedAt?: string;
 }

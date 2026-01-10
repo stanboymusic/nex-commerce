@@ -8,7 +8,7 @@ import Link from "next/link";
 
 export default function ListRow({ product }: { product: Product }) {
   const { addItem } = useCartStore();
-  const image = product.images?.[0]?.url;
+  const image = typeof product.images?.[0] === 'string' ? product.images[0] : product.images?.[0]?.url;
 
   const handleAddToCart = () => {
     addItem({
@@ -78,6 +78,7 @@ export default function ListRow({ product }: { product: Product }) {
           disabled={product.stock === 0 && !product.isPreorder}
           className="bg-oxford text-white p-3 rounded-xl hover:bg-navy disabled:bg-gray-100 disabled:text-gray-400 disabled:cursor-not-allowed transition-all active:scale-95 shadow-sm md:opacity-0 group-hover:opacity-100 focus:opacity-100"
           title={product.isPreorder ? "Reservar" : "Añadir al carrito"}
+          aria-label={product.isPreorder ? "Reservar producto" : "Añadir al carrito"}
         >
           <ShoppingCart className="h-5 h-5" />
         </button>

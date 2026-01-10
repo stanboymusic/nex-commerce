@@ -29,6 +29,7 @@ export default function CatalogClient({ products }: { products: Product[] }) {
         <div className="flex items-center gap-4 bg-muted p-1 rounded-xl border border-gray-100">
           <button 
             onClick={() => setView("grid")}
+            aria-label="Ver en cuadrícula"
             className={`flex items-center gap-2 px-4 py-2 rounded-lg font-medium transition-all ${
               view === "grid" 
                 ? "bg-white text-oxford shadow-sm" 
@@ -40,6 +41,7 @@ export default function CatalogClient({ products }: { products: Product[] }) {
           </button>
           <button 
             onClick={() => setView("list")}
+            aria-label="Ver en lista"
             className={`flex items-center gap-2 px-4 py-2 rounded-lg font-medium transition-all ${
               view === "list" 
                 ? "bg-white text-oxford shadow-sm" 

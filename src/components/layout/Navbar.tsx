@@ -37,7 +37,7 @@ export default function Navbar() {
         </div>
 
         <div className="flex items-center gap-6">
-          <Link href="/cart" className="relative p-2 text-navy hover:text-purple transition-colors">
+          <Link href="/cart" className="relative p-2 text-navy hover:text-purple transition-colors" aria-label="Ir al carrito">
             <ShoppingCart className="h-5 w-5" />
             {cartCount > 0 && (
               <span className="absolute -top-1 -right-1 bg-purple text-white text-[10px] font-bold h-4 w-4 flex items-center justify-center rounded-full">

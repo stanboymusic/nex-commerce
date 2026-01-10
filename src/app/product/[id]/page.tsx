@@ -83,7 +83,7 @@ export default function ProductDetailsPage() {
         <div className="relative aspect-square bg-gray-100 rounded-2xl overflow-hidden shadow-sm">
           {product.images && product.images.length > 0 ? (
             <Image 
-              src={product.images[0].url} 
+              src={typeof product.images[0] === 'string' ? product.images[0] : product.images[0].url} 
               alt={product.name}
               fill
               className="object-cover"

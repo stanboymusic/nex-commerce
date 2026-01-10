@@ -19,7 +19,7 @@ export default function GridView({ products }: { products: Product[] }) {
           name={p.name}
           slug={p.slug}
           price={p.price}
-          image={p.images?.[0]?.url}
+          image={typeof p.images?.[0] === 'string' ? p.images[0] : p.images?.[0]?.url}
           stock={p.stock}
           isPreorder={p.isPreorder}
           arrivalDate={p.arrivalDate}

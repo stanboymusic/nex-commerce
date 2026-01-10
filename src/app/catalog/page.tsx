@@ -56,8 +56,17 @@ export default function CatalogPage() {
       </div>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-        {MOCK_PRODUCTS.map((product) => (
-          <ProductCard key={product.id} {...product} />
+        {MOCK_PRODUCTS.map((p) => (
+          <ProductCard 
+            key={p.id} 
+            id={p.id}
+            name={p.name}
+            slug={p.slug}
+            price={p.price}
+            stock={p.stock}
+            isPreorder={p.isPreorder}
+            arrivalDate={p.arrivalDate}
+          />
         ))}
       </div>
     </div>
