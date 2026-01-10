@@ -1,0 +1,36 @@
+@import "tailwindcss";
+
+:root {
+  --background: #ffffff;
+  --foreground: #0a2540;
+  --oxford: #0B1D3A;
+  --navy: #0A2540;
+  --purple: #5B2D8B;
+  --almond: #EDE1D1;
+  --base: #FFFFFF;
+  --muted: #F5F7FA;
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-oxford: var(--oxford);
+  --color-navy: var(--navy);
+  --color-purple: var(--purple);
+  --color-almond: var(--almond);
+  --color-base: var(--base);
+  --color-muted: var(--muted);
+  --font-sans: var(--font-geist-sans);
+  --font-mono: var(--font-geist-mono);
+  --radius-xl: 1rem;
+}
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+html,
+body {
+  background-color: var(--base);
+  color: var(--navy);
+}
