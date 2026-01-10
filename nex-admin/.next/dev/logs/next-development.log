@@ -1,0 +1,25 @@
+[00:00:01.923] Server  LOG     
+[00:00:01.924] Server  LOG       We detected TypeScript in your project and reconfigured your tsconfig.json file for you.
+[00:00:01.924] Server  LOG       The following suggested values were added to your tsconfig.json. These values can be changed to fit your project's needs:
+
+[00:00:01.925] Server  LOG       	- include was updated to add '.next/dev/types/**/*.ts'
+[00:00:01.925] Server  LOG     
+[00:00:01.926] Server  LOG       The following mandatory changes were made to your tsconfig.json:
+
+[00:00:01.926] Server  LOG       	- jsx was set to react-jsx (next.js uses the React automatic runtime)
+[00:00:01.927] Server  LOG     
+[00:00:02.415] Server  LOG     ✓ Ready in 1614ms
+[00:03:05.351] Server  ERROR   ⨯ ./nex-admin/app/layout.tsx:2:1
+Module not found: Can't resolve '../styles/globals.css'
+  1 | import type { Metadata } from 'next'
+> 2 | import '../styles/globals.css'
+    | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  3 |
+  4 | export const metadata: Metadata = {
+  5 |   title: 'NexCommerce Admin',
+
+
+
+https://nextjs.org/docs/messages/module-not-found
+
+
