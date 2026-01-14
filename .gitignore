@@ -44,3 +44,7 @@ next-env.d.ts
 
 # submodules
 nex-commerce/
+
+# PocketBase
+pocketbase/pb_data/
+pocketbase/pb_migrations/

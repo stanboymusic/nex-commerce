@@ -26,7 +26,7 @@ export default function CartPage() {
       router.push('/login?redirect=/cart')
       return
     }
-    router.push('/checkout')
+    router.push('/user/checkout')
   }
 
   if (!mounted) return null
@@ -39,8 +39,8 @@ export default function CartPage() {
         </div>
         <h2 className="text-2xl font-bold text-oxford mb-2">Tu carrito está vacío</h2>
         <p className="text-gray-500 mb-8">Parece que aún no has añadido ningún producto.</p>
-        <Link 
-          href="/catalog" 
+        <Link
+          href="/catalog"
           className="inline-flex items-center gap-2 bg-oxford text-white px-6 py-3 rounded-md font-bold hover:bg-navy transition-colors"
         >
           Ir al Catálogo <ArrowRight className="h-4 w-4" />
@@ -52,7 +52,7 @@ export default function CartPage() {
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
       <h1 className="text-3xl font-bold text-oxford mb-10">Tu Carrito</h1>
-      
+
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-12">
         {/* Items List */}
         <div className="lg:col-span-2 space-y-6">
@@ -67,7 +67,7 @@ export default function CartPage() {
                   </div>
                 )}
               </div>
-              
+
               <div className="flex-grow">
                 <div className="flex justify-between items-start">
                   <div>
@@ -84,12 +84,12 @@ export default function CartPage() {
                     <Trash2 className="h-5 w-5" />
                   </button>
                 </div>
-                
+
                 <div className="mt-4 flex items-center justify-between">
                   <span className="text-xl font-bold text-oxford">
                     ${(item.price * item.quantity).toLocaleString()}
                   </span>
-                  
+
                   <div className="flex items-center border border-gray-200 rounded-lg overflow-hidden h-10">
                     <button
                       onClick={() => updateQuantity(item.id, item.quantity - 1)}
@@ -114,7 +114,7 @@ export default function CartPage() {
             </div>
           ))}
 
-          <button 
+          <button
             onClick={clearCart}
             className="text-sm text-gray-500 hover:text-red-500 transition-colors flex items-center gap-2"
           >
@@ -126,7 +126,7 @@ export default function CartPage() {
         <div className="lg:col-span-1">
           <div className="bg-oxford text-white p-8 rounded-2xl shadow-xl sticky top-24">
             <h2 className="text-xl font-bold mb-6 pb-6 border-b border-white/10">Resumen del Pedido</h2>
-            
+
             <div className="space-y-4 mb-8">
               <div className="flex justify-between text-gray-300">
                 <span>Subtotal</span>
@@ -148,14 +148,14 @@ export default function CartPage() {
               </div>
             )}
 
-            <button 
+            <button
               onClick={handleGoToCheckout}
               disabled={loading}
               className="w-full bg-almond text-oxford py-4 rounded-xl font-bold text-lg hover:bg-white transition-all active:scale-95 shadow-lg shadow-black/20 flex items-center justify-center gap-2 disabled:opacity-50"
             >
               Continuar al Pago
             </button>
-            
+
             <p className="mt-4 text-center text-xs text-gray-400">
               Al crear la orden, la empresa recibirá tu solicitud para procesar el pedido.
             </p>

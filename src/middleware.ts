@@ -1,22 +1,21 @@
 import { NextResponse } from 'next/server'
 import type { NextRequest } from 'next/server'
-import { verifyToken } from '@/lib/auth'
 
 export function middleware(req: NextRequest) {
-  const token = req.cookies.get('token')?.value
+  // Check for PocketBase auth cookie
+  const token = req.cookies.get('pb_auth')?.value
 
-  const protectedRoutes = ['/checkout', '/profile', '/orders']
+  const protectedRoutes = ['/user/checkout', '/profile', '/orders']
 
+  // If trying to access a protected route
   if (protectedRoutes.some((r) => req.nextUrl.pathname.startsWith(r))) {
+    // If no token exists, redirect to login
     if (!token) {
       return NextResponse.redirect(new URL('/login', req.url))
     }
 
-    try {
-      verifyToken(token)
-    } catch {
-      return NextResponse.redirect(new URL('/login', req.url))
-    }
+    // We trust the existence of the cookie for middleware routing.
+    // Actual validation happens in the Server Components / API via initPocketBase()
   }
 
   return NextResponse.next()

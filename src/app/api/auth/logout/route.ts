@@ -8,12 +8,12 @@ export async function OPTIONS(request: NextRequest) {
 
 export async function POST(req: Request) {
   const res = NextResponse.json({ ok: true })
-  res.cookies.set('token', '', { maxAge: 0, path: '/' })
-  
+  res.cookies.set('pb_auth', '', { maxAge: 0, path: '/' })
+
   const corsHeadersObj = corsHeaders(req as NextRequest)
   Object.entries(corsHeadersObj).forEach(([key, value]) => {
     res.headers.set(key, value)
   })
-  
+
   return res
 }

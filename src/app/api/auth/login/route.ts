@@ -1,7 +1,6 @@
 import { NextResponse } from 'next/server'
 import type { NextRequest } from 'next/server'
-import prisma from '@/lib/prisma'
-import { comparePassword, signToken } from '@/lib/auth'
+import { getPocketBase } from '@/lib/pocketbase'
 import { corsHeaders, handleCORS } from '@/lib/cors'
 
 export async function OPTIONS(request: NextRequest) {
@@ -16,40 +15,27 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: 'Missing fields' }, { status: 400 })
     }
 
-    const user = await prisma.user.findUnique({
-      where: { email },
-    })
+    const pb = getPocketBase();
 
-    if (!user || !user.password) {
-      return NextResponse.json({ error: 'Invalid credentials' }, { status: 401 })
-    }
-
-    const isValid = await comparePassword(password, user.password)
-
-    if (!isValid) {
-      return NextResponse.json({ error: 'Invalid credentials' }, { status: 401 })
-    }
-
-    const token = signToken({
-      userId: user.id,
-      role: user.role,
-      email: user.email || undefined,
-    })
+    // Authenticate with PocketBase
+    const authData = await pb.collection('users').authWithPassword(email, password);
 
     const response = NextResponse.json({
       user: {
-        id: user.id,
-        name: user.name,
-        email: user.email,
-        role: user.role,
+        id: authData.record.id,
+        name: authData.record.name,
+        email: authData.record.email,
+        role: 'USER', // Default to USER, or fetch from record if you added a role field
       },
-      token,
+      token: authData.token,
     })
 
-    response.cookies.set('token', token, {
+    // Set cookie using PocketBase's exportToCookie or manually
+    // Ideally we use the same cookie name as our client side (pb_auth)
+    response.cookies.set('pb_auth', pb.authStore.exportToCookie({ httpOnly: false }).split(';')[0].split('=')[1], {
       httpOnly: true,
-      secure: true,
-      sameSite: 'none',
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: 'lax',
       path: '/',
       maxAge: 7 * 24 * 60 * 60,
     })
@@ -60,9 +46,12 @@ export async function POST(req: Request) {
     })
 
     return response
-  } catch (error) {
+  } catch (error: any) {
     console.error('Login error:', error)
-    const response = NextResponse.json({ error: 'Internal server error' }, { status: 500 })
+    const status = error?.status || 500
+    const message = error?.data?.message || 'Invalid credentials'
+
+    const response = NextResponse.json({ error: message }, { status })
     const corsHeadersObj = corsHeaders(req as NextRequest)
     Object.entries(corsHeadersObj).forEach(([key, value]) => {
       response.headers.set(key, value)
