@@ -1,7 +1,0 @@
-{
-  "/(admin)/dashboard/page": "app/(admin)/dashboard/page.js",
-  "/(admin)/products/page": "app/(admin)/products/page.js",
-  "/_global-error/page": "app/_global-error/page.js",
-  "/_not-found/page": "app/_not-found/page.js",
-  "/login/page": "app/login/page.js"
-}
