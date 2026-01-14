@@ -25,7 +25,7 @@ export async function POST(req: Request) {
         id: authData.record.id,
         name: authData.record.name,
         email: authData.record.email,
-        role: 'USER', // Default to USER, or fetch from record if you added a role field
+        role: authData.record.role || 'USER',
       },
       token: authData.token,
     })
