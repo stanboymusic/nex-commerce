@@ -21,13 +21,17 @@ export default function LoginPage() {
 
     try {
       const response = await api.post('/auth/login', { email, password })
-      
+
       if (response.data.user.role !== 'ADMIN') {
         setError('Solo administradores pueden acceder')
         return
       }
 
       setAdmin(response.data.user)
+
+      // Set the token cookie for middleware access
+      document.cookie = `token=${response.data.token}; path=/; max-age=${7 * 24 * 60 * 60}; SameSite=Lax`
+
       router.push('/dashboard')
       router.refresh()
     } catch (err: unknown) {
