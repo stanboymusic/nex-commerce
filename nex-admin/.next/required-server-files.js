@@ -140,7 +140,7 @@ self.__SERVER_FILES_MANIFEST={
       "isExperimentalCompile": false
     }
   },
-  "appDir": "c:\\Users\\angel\\OneDrive\\Documents\\NexCommerce\\nex-admin",
+  "appDir": "C:\\Users\\angel\\OneDrive\\Documents\\NexCommerce\\nex-admin",
   "relativeAppDir": "nex-admin",
   "files": [
     ".next\\routes-manifest.json",
