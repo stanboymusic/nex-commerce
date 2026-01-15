@@ -133,20 +133,13 @@ export async function GET(req: Request) {
     }
 
     // Determine filter based on role
-    // Assuming role is checked by checking if user is admin
-    // For now, let's assume we just filter by user.id unless we explicitly know they are admin
-    // If you have a role field:
-    // const filter = (user as any).role === 'ADMIN' ? '' : `user = "${user.id}"`;
-
-    // Default to user's orders
-    const filter = `user = "${user.id}"`;
+    const isAdmin = user.role === 'ADMIN';
+    const filter = isAdmin ? '' : `user = "${user.id}"`;
 
     const records = await pb.collection('orders').getFullList({
       sort: '-created',
       filter: filter,
       expand: 'order_items(order).product,user'
-      // Note: reverse relation expansion typically requires the field name of the relation in the other collection
-      // 'order_items(order)' means expand order_items where 'order' field points to this record
     });
 
     return NextResponse.json(records)

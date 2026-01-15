@@ -1,5 +1,6 @@
 import { getAdminPocketBase } from "@/lib/admin";
 import { NextResponse } from "next/server";
+import { type NextRequest } from "next/server";
 
 export async function GET() {
   try {
@@ -10,9 +11,8 @@ export async function GET() {
     });
 
     const products = records.map(record => {
-      // Transform images to match expected structure
       const images = record.images ? record.images.map((filename: string) => ({
-        id: filename, // Use filename as ID since PB doesn't store separate image IDs
+        id: filename,
         url: pb.files.getUrl(record, filename)
       })) : [];
 
@@ -36,11 +36,31 @@ export async function GET() {
     return NextResponse.json(products);
   } catch (error) {
     console.error("Error fetching products:", error);
-    // @ts-ignore
-    if (error?.originalError) {
-      // @ts-ignore
-      console.error("Original PB Error:", error.originalError);
+    return NextResponse.json({ error: "Error fetching products" }, { status: 500 });
+  }
+}
+
+export async function POST(req: NextRequest) {
+  try {
+    const pb = await getAdminPocketBase();
+    const data = await req.json();
+
+    // Basic validation
+    if (!data.name || !data.price) {
+      return NextResponse.json({ error: "Missing required fields" }, { status: 400 });
     }
-    return NextResponse.json({ error: "Error fetching products", details: String(error) }, { status: 500 });
+
+    // Generate slug from name if not provided
+    const slug = data.slug || data.name.toLowerCase().replace(/ /g, '-').replace(/[^\w-]+/g, '');
+
+    const record = await pb.collection('products').create({
+      ...data,
+      slug,
+    });
+
+    return NextResponse.json(record);
+  } catch (error: any) {
+    console.error("Error creating product:", error);
+    return NextResponse.json({ error: error?.message || "Error creating product" }, { status: 500 });
   }
 }

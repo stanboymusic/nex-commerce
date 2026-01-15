@@ -7,6 +7,7 @@ import { Card } from "@/components/ui/Card";
 import { Badge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Input";
+import Link from "next/link";
 
 export default function UsersPage() {
     const [users, setUsers] = useState([]);
@@ -39,9 +40,11 @@ export default function UsersPage() {
                     <h1 className="text-4xl font-black text-oxford tracking-tight">Usuarios</h1>
                     <p className="text-text-medium font-medium mt-1">Administra los roles y el acceso a la plataforma.</p>
                 </div>
-                <Button leftIcon={<UserPlus className="h-5 w-5" />}>
-                    Nuevo Usuario
-                </Button>
+                <Link href="/users/new">
+                    <Button leftIcon={<UserPlus className="h-5 w-5" />}>
+                        Nuevo Usuario
+                    </Button>
+                </Link>
             </div>
 
             <Card className="mb-8">
