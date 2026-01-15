@@ -4,6 +4,7 @@ import { useState, Suspense } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import Link from 'next/link'
 import { useAuthStore } from '@/store/auth.store'
+import { useCartStore } from '@/store/cart.store'
 import axios from 'axios'
 import { LogIn, Loader2, Mail, Lock, Phone, MessageSquare } from 'lucide-react'
 
@@ -16,11 +17,12 @@ function LoginContent() {
   const [code, setCode] = useState('')
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
-  
+
   const router = useRouter()
   const searchParams = useSearchParams()
   const redirect = searchParams.get('redirect') || '/'
   const setAuth = useAuthStore(state => state.setAuth)
+  const loadCart = useCartStore(state => state.loadFromBackend)
 
   const handleEmailLogin = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -30,10 +32,11 @@ function LoginContent() {
     try {
       const response = await axios.post('/api/auth/login', { email, password })
       setAuth(response.data.user, response.data.token)
-      
+
       if (response.data.user.role === 'ADMIN') {
         window.location.href = 'https://nex-admin.vercel.app'
       } else {
+        await loadCart()
         router.push(redirect || '/catalog')
       }
     } catch (err: unknown) {
@@ -74,10 +77,11 @@ function LoginContent() {
     try {
       const response = await axios.post('/api/auth/otp/verify', { phone, code })
       setAuth(response.data.user, response.data.token)
-      
+
       if (response.data.user.role === 'ADMIN') {
         window.location.href = 'https://nex-admin.vercel.app'
       } else {
+        await loadCart()
         router.push(redirect || '/catalog')
       }
     } catch (err: unknown) {
@@ -104,13 +108,13 @@ function LoginContent() {
 
         {/* Method Toggle */}
         <div className="flex bg-muted p-1 rounded-xl mb-8">
-          <button 
+          <button
             onClick={() => { setLoginMethod('email'); setError(null); }}
             className={`flex-1 py-2 rounded-lg font-bold text-sm transition-all ${loginMethod === 'email' ? 'bg-white text-oxford shadow-sm' : 'text-gray-500'}`}
           >
             Email
           </button>
-          <button 
+          <button
             onClick={() => { setLoginMethod('phone'); setError(null); }}
             className={`flex-1 py-2 rounded-lg font-bold text-sm transition-all ${loginMethod === 'phone' ? 'bg-white text-oxford shadow-sm' : 'text-gray-500'}`}
           >
@@ -130,8 +134,8 @@ function LoginContent() {
               <label className="block text-sm font-bold text-oxford mb-2">Email</label>
               <div className="relative">
                 <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400" />
-                <input 
-                  type="email" 
+                <input
+                  type="email"
                   required
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
@@ -145,8 +149,8 @@ function LoginContent() {
               <label className="block text-sm font-bold text-oxford mb-2">Contraseña</label>
               <div className="relative">
                 <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400" />
-                <input 
-                  type="password" 
+                <input
+                  type="password"
                   required
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
@@ -156,8 +160,8 @@ function LoginContent() {
               </div>
             </div>
 
-            <button 
-              type="submit" 
+            <button
+              type="submit"
               disabled={loading}
               className="w-full bg-oxford text-white py-4 rounded-xl font-bold text-lg hover:bg-navy transition-all active:scale-95 flex items-center justify-center gap-2 disabled:opacity-50"
             >
@@ -172,8 +176,8 @@ function LoginContent() {
                   <label className="block text-sm font-bold text-oxford mb-2">Número de Teléfono</label>
                   <div className="relative">
                     <Phone className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400" />
-                    <input 
-                      type="tel" 
+                    <input
+                      type="tel"
                       required
                       value={phone}
                       onChange={(e) => setPhone(e.target.value)}
@@ -183,8 +187,8 @@ function LoginContent() {
                   </div>
                 </div>
 
-                <button 
-                  type="submit" 
+                <button
+                  type="submit"
                   disabled={loading}
                   className="w-full bg-oxford text-white py-4 rounded-xl font-bold text-lg hover:bg-navy transition-all active:scale-95 flex items-center justify-center gap-2 disabled:opacity-50"
                 >
@@ -195,8 +199,8 @@ function LoginContent() {
               <form onSubmit={handleVerifyOTP} className="space-y-6">
                 <div className="text-center mb-4">
                   <p className="text-sm text-gray-500">Hemos enviado un código a {phone}</p>
-                  <button 
-                    type="button" 
+                  <button
+                    type="button"
                     onClick={() => setStep('request')}
                     className="text-xs text-navy font-bold hover:underline mt-1"
                   >
@@ -208,8 +212,8 @@ function LoginContent() {
                   <label className="block text-sm font-bold text-oxford mb-2">Código de Verificación</label>
                   <div className="relative">
                     <MessageSquare className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400" />
-                    <input 
-                      type="text" 
+                    <input
+                      type="text"
                       required
                       value={code}
                       onChange={(e) => setCode(e.target.value)}
@@ -220,8 +224,8 @@ function LoginContent() {
                   </div>
                 </div>
 
-                <button 
-                  type="submit" 
+                <button
+                  type="submit"
                   disabled={loading}
                   className="w-full bg-oxford text-white py-4 rounded-xl font-bold text-lg hover:bg-navy transition-all active:scale-95 flex items-center justify-center gap-2 disabled:opacity-50"
                 >

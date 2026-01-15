@@ -36,6 +36,11 @@ export async function GET() {
     return NextResponse.json(products);
   } catch (error) {
     console.error("Error fetching products:", error);
-    return NextResponse.json({ error: "Error fetching products" }, { status: 500 });
+    // @ts-ignore
+    if (error?.originalError) {
+      // @ts-ignore
+      console.error("Original PB Error:", error.originalError);
+    }
+    return NextResponse.json({ error: "Error fetching products", details: String(error) }, { status: 500 });
   }
 }
