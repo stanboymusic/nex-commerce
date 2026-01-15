@@ -1,3 +1,5 @@
+'use client'
+
 import { useState, useEffect } from "react";
 import { apiClient } from "@/lib/apiClient";
 import { Bell, AlertTriangle, Package, CheckCircle, Info } from "lucide-react";
