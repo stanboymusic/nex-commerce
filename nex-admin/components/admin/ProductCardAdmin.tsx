@@ -1,5 +1,7 @@
 import { Edit, Trash2, Package } from "lucide-react";
 import Image from "next/image";
+import { Badge } from "@/components/ui/Badge";
+import { Button } from "@/components/ui/Button";
 
 interface ProductCardAdminProps {
   product: {
@@ -14,46 +16,44 @@ interface ProductCardAdminProps {
 
 export default function ProductCardAdmin({ product }: ProductCardAdminProps) {
   return (
-    <div className="bg-white rounded-3xl p-5 shadow-sm border border-gray-100 flex flex-col gap-4 group hover:shadow-md transition-all">
-      <div className="relative aspect-video bg-gray-50 rounded-2xl overflow-hidden">
+    <div className="bg-white rounded-2xl p-5 shadow-sm border border-border flex flex-col gap-4 group hover:shadow-lg transition-all">
+      <div className="relative aspect-video bg-muted rounded-xl overflow-hidden">
         {product.images && product.images.length > 0 ? (
-          <Image 
-            src={product.images[0].url} 
+          <Image
+            src={product.images[0].url}
             alt={product.name}
             fill
             className="object-cover group-hover:scale-105 transition-transform"
           />
         ) : (
-          <div className="w-full h-full flex items-center justify-center text-gray-200">
+          <div className="w-full h-full flex items-center justify-center text-text-light">
             <Package className="h-12 w-12" />
           </div>
         )}
         {product.isPreorder && (
-          <span className="absolute top-3 left-3 bg-purple text-white text-[10px] font-black uppercase tracking-widest px-3 py-1 rounded-full shadow-lg shadow-purple/20">
+          <Badge variant="warning" className="absolute top-3 left-3 shadow-lg">
             Preventa
-          </span>
+          </Badge>
         )}
       </div>
 
       <div className="flex-1">
-        <h3 className="font-bold text-oxford line-clamp-1 mb-1">{product.name}</h3>
+        <h3 className="font-bold text-oxford text-lg line-clamp-1 mb-1">{product.name}</h3>
         <div className="flex items-center justify-between">
-          <p className="text-lg font-black text-purple">${product.price.toLocaleString()}</p>
-          <span className={`text-xs font-bold px-2 py-1 rounded-lg ${product.stock > 0 ? 'bg-green-50 text-green-600' : 'bg-red-50 text-red-600'}`}>
-            Stock: {product.stock}
-          </span>
+          <p className="text-xl font-black text-purple">${product.price.toLocaleString()}</p>
+          <Badge variant={product.stock > 0 ? 'success' : 'error'}>
+            {product.stock > 0 ? `Stock: ${product.stock}` : 'Sin Stock'}
+          </Badge>
         </div>
       </div>
 
       <div className="flex gap-2 pt-2">
-        <button className="flex-1 flex items-center justify-center gap-2 bg-gray-50 text-oxford hover:bg-gray-100 py-2.5 rounded-xl text-xs font-bold transition-colors">
-          <Edit className="h-3.5 w-3.5" />
+        <Button variant="outline" size="sm" className="flex-1" leftIcon={<Edit className="h-4 w-4" />}>
           Editar
-        </button>
-        <button className="flex-1 flex items-center justify-center gap-2 bg-red-50 text-red-600 hover:bg-red-100 py-2.5 rounded-xl text-xs font-bold transition-colors">
-          <Trash2 className="h-3.5 w-3.5" />
+        </Button>
+        <Button variant="ghost" size="sm" className="flex-1 text-error hover:bg-error/10 hover:text-error" leftIcon={<Trash2 className="h-4 w-4" />}>
           Borrar
-        </button>
+        </Button>
       </div>
     </div>
   );

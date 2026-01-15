@@ -1,27 +1,49 @@
 @import "tailwindcss";
 
 :root {
-  --background: #ffffff;
-  --foreground: #0a2540;
+  --background: #FFFFFF;
+  --foreground: #0A2540;
+
+  /* Primary Colors */
   --oxford: #0B1D3A;
   --navy: #0A2540;
   --purple: #5B2D8B;
+
+  /* Neutrals */
   --almond: #EDE1D1;
-  --base: #FFFFFF;
   --muted: #F5F7FA;
+  --border: #E2E8F0;
+
+  /* Text */
+  --text-dark: #0A2540;
+  --text-medium: #4A5568;
+  --text-light: #A0AEC0;
+
+  /* Indicators */
+  --success: #38A169;
+  --warning: #DD6B20;
+  --error: #E53E3E;
+  --info: #3182CE;
 }
 
 @theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
   --color-oxford: var(--oxford);
   --color-navy: var(--navy);
   --color-purple: var(--purple);
   --color-almond: var(--almond);
-  --color-base: var(--base);
   --color-muted: var(--muted);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+  --color-border: var(--border);
+
+  --color-text-dark: var(--text-dark);
+  --color-text-medium: var(--text-medium);
+  --color-text-light: var(--text-light);
+
+  --color-success: var(--success);
+  --color-warning: var(--warning);
+  --color-error: var(--error);
+  --color-info: var(--info);
+
+  --font-sans: "Inter", sans-serif;
   --radius-xl: 1rem;
 }
 

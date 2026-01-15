@@ -4,7 +4,10 @@ import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { api } from '@/lib/apiClient'
 import { useAdminStore } from '@/store/admin.store'
-import { LogIn, Loader2, Mail, Lock } from 'lucide-react'
+import { LogIn, Mail, Lock } from 'lucide-react'
+import { Button } from '@/components/ui/Button'
+import { Input } from '@/components/ui/Input'
+import { Card } from '@/components/ui/Card'
 
 export default function LoginPage() {
   const [email, setEmail] = useState('')
@@ -47,85 +50,60 @@ export default function LoginPage() {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center px-4 bg-gray-100">
-      <div className="max-w-md w-full bg-white rounded-2xl shadow-xl p-8 border border-gray-200">
+    <div className="min-h-screen flex items-center justify-center px-4 bg-muted">
+      <Card className="max-w-md w-full p-8 shadow-2xl" footer={
+        <p className="text-center text-sm text-text-medium">
+          ¿No eres administrador?{' '}
+          <a href="https://nex-users.vercel.app" className="text-purple hover:underline font-bold">
+            Ir a tienda
+          </a>
+        </p>
+      }>
         <div className="text-center mb-8">
-          <div className="bg-blue-50 w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4">
-            <LogIn className="h-8 w-8 text-blue-600" />
+          <div className="bg-purple/10 w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4">
+            <LogIn className="h-8 w-8 text-purple" />
           </div>
-          <h1 className="text-2xl font-bold text-gray-900">NexCommerce Admin</h1>
-          <p className="text-gray-500 text-sm mt-2">Acceso exclusivo para administradores</p>
+          <h1 className="text-3xl font-bold text-oxford tracking-tight">NexAdmin</h1>
+          <p className="text-text-medium text-sm mt-2 font-medium">Acceso exclusivo para administradores</p>
         </div>
 
         {error && (
-          <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-lg">
-            <p className="text-red-700 text-sm">{error}</p>
+          <div className="mb-6 p-4 bg-error/10 border border-error/20 rounded-lg text-error text-sm font-medium">
+            {error}
           </div>
         )}
 
-        <form onSubmit={handleSubmit} className="space-y-4">
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              Email
-            </label>
-            <div className="relative">
-              <Mail className="absolute left-3 top-3 h-5 w-5 text-gray-400" />
-              <input
-                type="email"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                placeholder="tu@email.com"
-                className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                required
-              />
-            </div>
-          </div>
+        <form onSubmit={handleSubmit} className="space-y-6">
+          <Input
+            label="Correo Electrónico"
+            type="email"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+            placeholder="admin@nexcommerce.com"
+            leftIcon={<Mail className="h-5 w-5" />}
+            required
+          />
 
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              Contraseña
-            </label>
-            <div className="relative">
-              <Lock className="absolute left-3 top-3 h-5 w-5 text-gray-400" />
-              <input
-                type="password"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                placeholder="Contraseña"
-                className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                required
-              />
-            </div>
-          </div>
+          <Input
+            label="Contraseña"
+            type="password"
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+            placeholder="••••••••"
+            leftIcon={<Lock className="h-5 w-5" />}
+            required
+          />
 
-          <button
+          <Button
             type="submit"
-            disabled={loading}
-            className="w-full bg-blue-600 hover:bg-blue-700 disabled:opacity-50 text-white font-bold py-2 rounded-lg transition-colors flex items-center justify-center gap-2"
+            isLoading={loading}
+            className="w-full text-lg py-6"
+            leftIcon={!loading && <LogIn className="h-5 w-5" />}
           >
-            {loading ? (
-              <>
-                <Loader2 className="h-4 w-4 animate-spin" />
-                Iniciando sesión...
-              </>
-            ) : (
-              <>
-                <LogIn className="h-4 w-4" />
-                Iniciar Sesión
-              </>
-            )}
-          </button>
+            Iniciar Sesión
+          </Button>
         </form>
-
-        <div className="mt-6 pt-6 border-t border-gray-200">
-          <p className="text-center text-sm text-gray-500">
-            ¿No eres administrador?{' '}
-            <a href="https://nex-users.vercel.app" className="text-blue-600 hover:underline font-medium">
-              Ir a tienda
-            </a>
-          </p>
-        </div>
-      </div>
+      </Card>
     </div>
   )
 }
