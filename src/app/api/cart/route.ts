@@ -1,13 +1,9 @@
-import { getPocketBase } from "@/lib/pocketbase";
+import { initPocketBase } from "@/lib/pocketbase";
 import { NextResponse } from "next/server";
-import { cookies } from "next/headers";
+import { type NextRequest } from "next/server";
 
-export async function GET() {
-    const pb = getPocketBase();
-    const cookieStore = await cookies();
-    const token = cookieStore.get('pb_auth')?.value || '';
-
-    pb.authStore.save(token);
+export async function GET(request: NextRequest) {
+    const pb = await initPocketBase(request);
 
     if (!pb.authStore.isValid) {
         return NextResponse.json({ items: [] });
@@ -58,11 +54,7 @@ export async function GET() {
 }
 
 export async function POST(request: Request) {
-    const pb = getPocketBase();
-    const cookieStore = await cookies();
-    const token = cookieStore.get('pb_auth')?.value || '';
-
-    pb.authStore.save(token);
+    const pb = await initPocketBase(request);
 
     if (!pb.authStore.isValid) {
         return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
@@ -106,11 +98,7 @@ export async function POST(request: Request) {
 }
 
 export async function PUT(request: Request) {
-    const pb = getPocketBase();
-    const cookieStore = await cookies();
-    const token = cookieStore.get('pb_auth')?.value || '';
-
-    pb.authStore.save(token);
+    const pb = await initPocketBase(request);
 
     if (!pb.authStore.isValid) {
         return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
@@ -142,11 +130,7 @@ export async function PUT(request: Request) {
 }
 
 export async function DELETE(request: Request) {
-    const pb = getPocketBase();
-    const cookieStore = await cookies();
-    const token = cookieStore.get('pb_auth')?.value || '';
-
-    pb.authStore.save(token);
+    const pb = await initPocketBase(request);
 
     if (!pb.authStore.isValid) {
         return NextResponse.json({ error: "Unauthorized" }, { status: 401 });

@@ -18,17 +18,27 @@ export function getPocketBase(): PocketBase {
 // Export a default instance
 export const pocketbase = getPocketBase();
 
-// Server-side helper to load auth from cookies
-export async function initPocketBase() {
+// Server-side helper to load auth from cookies or Authorization header
+export async function initPocketBase(req?: Request) {
     const pb = getPocketBase();
     const cookieStore = await cookies();
-    const token = cookieStore.get('pb_auth')?.value || '';
+    let token = cookieStore.get('pb_auth')?.value || '';
 
-    pb.authStore.save(token);
+    // Fallback to Authorization header if no cookie
+    if (!token && req) {
+        const authHeader = req.headers.get('authorization');
+        if (authHeader?.startsWith('Bearer ')) {
+            token = authHeader.split(' ')[1];
+        }
+    }
+
+    pb.authStore.save(token, null);
 
     try {
         if (pb.authStore.isValid) {
-            await pb.collection('users').authRefresh();
+            // Validate token and get user model
+            const authData = await pb.collection('users').authRefresh();
+            pb.authStore.save(authData.token, authData.record);
         }
     } catch (_) {
         pb.authStore.clear();

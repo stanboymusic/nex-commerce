@@ -14,20 +14,22 @@ export default function DashboardPage() {
     revenue: 0,
     lowStockCount: 0
   });
+  const [notifications, setNotifications] = useState([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const fetchMetrics = async () => {
+    const fetchData = async () => {
       try {
-        const [usersRes, ordersRes, productsRes] = await Promise.all([
+        const [usersRes, ordersRes, productsRes, notificationsRes] = await Promise.all([
           apiClient.get('/users/count').catch(() => ({ data: { count: 0 } })),
           apiClient.get('/orders').catch(() => ({ data: [] })),
-          apiClient.get('/products').catch(() => ({ data: [] }))
+          apiClient.get('/products').catch(() => ({ data: [] })),
+          apiClient.get('/notifications').catch(() => ({ data: [] }))
         ]);
 
         const orders = ordersRes.data || [];
         const products = productsRes.data || [];
-        const revenue = orders.reduce((sum: number, o: any) => sum + (o.status !== 'CANCELLED' ? o.total : 0), 0);
+        const revenue = orders.reduce((sum: number, o: any) => sum + (o.status !== 'CANCELLED' ? (o.total || 0) : 0), 0);
         const lowStock = products.filter((p: any) => p.stock < 10 && !p.isPreorder).length;
 
         setMetrics({
@@ -37,14 +39,16 @@ export default function DashboardPage() {
           revenue,
           lowStockCount: lowStock
         });
+
+        setNotifications(notificationsRes.data.slice(0, 5) || []);
       } catch (error) {
-        console.error("Error fetching metrics:", error);
+        console.error("Error fetching data:", error);
       } finally {
         setLoading(false);
       }
     };
 
-    fetchMetrics();
+    fetchData();
   }, []);
 
   if (loading) {
@@ -72,7 +76,7 @@ export default function DashboardPage() {
               <p className="text-sm font-bold text-text-light uppercase tracking-wider mb-1">Ventas Totales</p>
               <div className="flex items-end gap-3">
                 <h3 className="text-3xl font-black text-oxford tracking-tight">${metrics.revenue.toLocaleString()}</h3>
-                <Badge variant="success">+12%</Badge>
+                <Badge variant="success">Actualizado</Badge>
               </div>
             </div>
           </div>
@@ -87,7 +91,7 @@ export default function DashboardPage() {
               <p className="text-sm font-bold text-text-light uppercase tracking-wider mb-1">Órdenes</p>
               <div className="flex items-end gap-3">
                 <h3 className="text-3xl font-black text-oxford tracking-tight">{metrics.totalOrders}</h3>
-                <Badge variant="info">+8%</Badge>
+                <Badge variant="info">Real</Badge>
               </div>
             </div>
           </div>
@@ -102,7 +106,7 @@ export default function DashboardPage() {
               <p className="text-sm font-bold text-text-light uppercase tracking-wider mb-1">Clientes</p>
               <div className="flex items-end gap-3">
                 <h3 className="text-3xl font-black text-oxford tracking-tight">{metrics.totalUsers}</h3>
-                <Badge variant="warning">+5%</Badge>
+                <Badge variant="warning">PB</Badge>
               </div>
             </div>
           </div>
@@ -129,33 +133,28 @@ export default function DashboardPage() {
           </div>
         </Card>
 
-        <Card title="Actividad Reciente" description="Últimas acciones registradas en el sistema.">
+        <Card title="Actividad Reciente" description="Últimas alertas de stock y requisitos de clientes.">
           <div className="space-y-4">
-            <div className="flex items-center justify-between p-4 rounded-xl border border-border hover:bg-muted transition-colors cursor-pointer group">
-              <div className="flex items-center gap-4">
-                <div className="w-10 h-10 bg-almond rounded-lg flex items-center justify-center text-purple">
-                  <ShoppingBag className="h-5 w-5" />
+            {notifications.length > 0 ? (
+              notifications.map((notif: any) => (
+                <div key={notif.id} className="flex items-center justify-between p-4 rounded-xl border border-border hover:bg-muted transition-colors cursor-pointer group">
+                  <div className="flex items-center gap-4">
+                    <div className={`w-10 h-10 ${notif.type === 'warning' ? 'bg-error/10 text-error' : 'bg-info/10 text-info'} rounded-lg flex items-center justify-center`}>
+                      {notif.type === 'warning' ? <Package className="h-5 w-5" /> : <ShoppingBag className="h-5 w-5" />}
+                    </div>
+                    <div>
+                      <p className="text-sm font-bold text-oxford group-hover:text-purple transition-colors truncate max-w-[200px]">{notif.title}</p>
+                      <p className="text-xs text-text-light truncate max-w-[240px]">{notif.description}</p>
+                    </div>
+                  </div>
+                  <Badge variant={notif.type === 'warning' ? 'error' : 'info'}>{notif.type.toUpperCase()}</Badge>
                 </div>
-                <div>
-                  <p className="text-sm font-bold text-oxford group-hover:text-purple transition-colors">Nueva Sincronización</p>
-                  <p className="text-xs text-text-light">Sistema verificado correctamente</p>
-                </div>
+              ))
+            ) : (
+              <div className="text-center py-6 text-text-light text-sm italic">
+                No hay actividad reciente.
               </div>
-              <Badge>Hace 5m</Badge>
-            </div>
-
-            <div className="flex items-center justify-between p-4 rounded-xl border border-border hover:bg-muted transition-colors cursor-pointer group">
-              <div className="flex items-center gap-4">
-                <div className="w-10 h-10 bg-success/10 rounded-lg flex items-center justify-center text-success">
-                  <Users className="h-5 w-5" />
-                </div>
-                <div>
-                  <p className="text-sm font-bold text-oxford group-hover:text-purple transition-colors">Usuario Registrado</p>
-                  <p className="text-xs text-text-light">Nuevo cliente en la plataforma</p>
-                </div>
-              </div>
-              <Badge variant="success">Hoy</Badge>
-            </div>
+            )}
           </div>
         </Card>
       </div>

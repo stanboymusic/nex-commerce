@@ -4,28 +4,8 @@ import { getAdminPocketBase } from '@/lib/admin'
 
 export async function POST(req: Request) {
   try {
-    const pb = await initPocketBase();
+    const pb = await initPocketBase(req);
     let user = pb.authStore.model;
-
-    // Fallback: Check for Bearer token in Authorization header if cookie auth failed
-    if (!user) {
-      const authHeader = req.headers.get('authorization');
-      if (authHeader && authHeader.startsWith('Bearer ')) {
-        const token = authHeader.split(' ')[1];
-        pb.authStore.save(token, null); // Save token without model initially
-        try {
-          // Refresh to validate token and get user model
-          // Note: We're refreshing against 'users' collection. 
-          // If you have admins creating orders, might need logic adjustment.
-          // For now, assume client-side orders are users.
-          const authData = await pb.collection('users').authRefresh();
-          user = authData.record;
-        } catch (_) {
-          // Token invalid
-          pb.authStore.clear();
-        }
-      }
-    }
 
     if (!user) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
@@ -125,7 +105,7 @@ export async function POST(req: Request) {
 
 export async function GET(req: Request) {
   try {
-    const pb = await initPocketBase();
+    const pb = await initPocketBase(req);
     const user = pb.authStore.model;
 
     if (!user) {

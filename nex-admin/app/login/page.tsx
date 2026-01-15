@@ -30,9 +30,9 @@ export default function LoginPage() {
         return
       }
 
-      setAdmin(response.data.user)
+      setAdmin(response.data.user, response.data.token)
 
-      // Set the token cookie for middleware access
+      // Set the token cookie for middleware access (still useful for local requests)
       document.cookie = `token=${response.data.token}; path=/; max-age=${7 * 24 * 60 * 60}; SameSite=Lax`
 
       router.push('/dashboard')
