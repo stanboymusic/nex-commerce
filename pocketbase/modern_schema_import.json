@@ -1,0 +1,898 @@
+[
+    {
+        "id": "_pb_users_auth_",
+        "name": "users",
+        "type": "auth",
+        "system": false,
+        "fields": [
+            {
+                "id": "text3208210256",
+                "name": "id",
+                "type": "text",
+                "system": true,
+                "required": true,
+                "presentable": false,
+                "unique": true,
+                "primaryKey": true,
+                "autogeneratePattern": "[a-z0-9]{15}"
+            },
+            {
+                "id": "users_name",
+                "name": "name",
+                "type": "text",
+                "system": false,
+                "required": false,
+                "presentable": false,
+                "unique": false
+            },
+            {
+                "id": "users_avatar",
+                "name": "avatar",
+                "type": "file",
+                "system": false,
+                "required": false,
+                "presentable": false,
+                "unique": false,
+                "maxSelect": 1,
+                "maxSize": 5242880,
+                "mimeTypes": [
+                    "image/jpeg",
+                    "image/png",
+                    "image/svg+xml",
+                    "image/gif",
+                    "image/webp"
+                ]
+            },
+            {
+                "id": "role_field_123",
+                "name": "role",
+                "type": "select",
+                "system": false,
+                "required": false,
+                "presentable": false,
+                "unique": false,
+                "maxSelect": 1,
+                "values": [
+                    "USER",
+                    "ADMIN"
+                ]
+            },
+            {
+                "id": "autodate2990389176",
+                "name": "created",
+                "type": "autodate",
+                "system": true,
+                "onCreate": true,
+                "onUpdate": false
+            },
+            {
+                "id": "autodate3332085495",
+                "name": "updated",
+                "type": "autodate",
+                "system": true,
+                "onCreate": true,
+                "onUpdate": true
+            }
+        ],
+        "indexes": [],
+        "listRule": "id = @request.auth.id",
+        "viewRule": "id = @request.auth.id",
+        "createRule": "",
+        "updateRule": "id = @request.auth.id",
+        "deleteRule": "id = @request.auth.id",
+        "options": {
+            "allowEmailAuth": true,
+            "allowOAuth2Auth": true,
+            "allowUsernameAuth": true,
+            "minPasswordLength": 8,
+            "requireEmail": false
+        }
+    },
+    {
+        "id": "pbc_3292755704",
+        "name": "categories",
+        "type": "base",
+        "system": false,
+        "fields": [
+            {
+                "id": "text3208210256",
+                "name": "id",
+                "type": "text",
+                "system": true,
+                "required": true,
+                "presentable": false,
+                "unique": true,
+                "primaryKey": true,
+                "autogeneratePattern": "[a-z0-9]{15}"
+            },
+            {
+                "id": "text1579384326",
+                "name": "name",
+                "type": "text",
+                "system": false,
+                "required": true,
+                "presentable": false,
+                "unique": false
+            },
+            {
+                "id": "relation_user_cat",
+                "name": "user",
+                "type": "relation",
+                "system": false,
+                "required": true,
+                "presentable": false,
+                "unique": false,
+                "collectionId": "_pb_users_auth_",
+                "maxSelect": 1,
+                "cascadeDelete": true
+            },
+            {
+                "id": "autodate2990389176",
+                "name": "created",
+                "type": "autodate",
+                "system": true,
+                "onCreate": true,
+                "onUpdate": false
+            },
+            {
+                "id": "autodate3332085495",
+                "name": "updated",
+                "type": "autodate",
+                "system": true,
+                "onCreate": true,
+                "onUpdate": true
+            }
+        ],
+        "indexes": [
+            "CREATE UNIQUE INDEX `idx_fxO756FzMN` ON `categories` (`name`, `user`)"
+        ],
+        "listRule": "@request.auth.id != '' && user = @request.auth.id",
+        "viewRule": "@request.auth.id != '' && user = @request.auth.id",
+        "createRule": "@request.auth.id != ''",
+        "updateRule": "@request.auth.id != '' && user = @request.auth.id",
+        "deleteRule": "@request.auth.id != '' && user = @request.auth.id",
+        "options": {}
+    },
+    {
+        "id": "pbc_4092854851",
+        "name": "products",
+        "type": "base",
+        "system": false,
+        "fields": [
+            {
+                "id": "text3208210256",
+                "name": "id",
+                "type": "text",
+                "system": true,
+                "required": true,
+                "presentable": false,
+                "unique": true,
+                "primaryKey": true,
+                "autogeneratePattern": "[a-z0-9]{15}"
+            },
+            {
+                "id": "text1579384326",
+                "name": "name",
+                "type": "text",
+                "system": false,
+                "required": true,
+                "presentable": false,
+                "unique": false
+            },
+            {
+                "id": "text2560465762",
+                "name": "slug",
+                "type": "text",
+                "system": false,
+                "required": true,
+                "presentable": false,
+                "unique": false
+            },
+            {
+                "id": "text1843675174",
+                "name": "description",
+                "type": "text",
+                "system": false,
+                "required": false,
+                "presentable": false,
+                "unique": false
+            },
+            {
+                "id": "number3402113753",
+                "name": "price",
+                "type": "number",
+                "system": false,
+                "required": false,
+                "presentable": false,
+                "unique": false
+            },
+            {
+                "id": "number3309616256",
+                "name": "priceUSD",
+                "type": "number",
+                "system": false,
+                "required": false,
+                "presentable": false,
+                "unique": false
+            },
+            {
+                "id": "bool1119187060",
+                "name": "isPreorder",
+                "type": "bool",
+                "system": false,
+                "required": false,
+                "presentable": false,
+                "unique": false
+            },
+            {
+                "id": "number1261852256",
+                "name": "stock",
+                "type": "number",
+                "system": false,
+                "required": false,
+                "presentable": false,
+                "unique": false
+            },
+            {
+                "id": "date581573000",
+                "name": "arrivalDate",
+                "type": "date",
+                "system": false,
+                "required": false,
+                "presentable": false,
+                "unique": false
+            },
+            {
+                "id": "date4276203992",
+                "name": "estimatedDeliveryDate",
+                "type": "date",
+                "system": false,
+                "required": false,
+                "presentable": false,
+                "unique": false
+            },
+            {
+                "id": "relation105650625",
+                "name": "category",
+                "type": "relation",
+                "system": false,
+                "required": true,
+                "presentable": false,
+                "unique": false,
+                "collectionId": "pbc_3292755704",
+                "maxSelect": 1,
+                "cascadeDelete": false
+            },
+            {
+                "id": "file3760176746",
+                "name": "images",
+                "type": "file",
+                "system": false,
+                "required": false,
+                "presentable": false,
+                "unique": false,
+                "maxSelect": 99,
+                "maxSize": 5242880,
+                "mimeTypes": [
+                    "image/jpeg",
+                    "image/png",
+                    "image/svg+xml",
+                    "image/gif",
+                    "image/webp"
+                ]
+            },
+            {
+                "id": "rel_user_prod",
+                "name": "user",
+                "type": "relation",
+                "system": false,
+                "required": true,
+                "presentable": false,
+                "unique": false,
+                "collectionId": "_pb_users_auth_",
+                "maxSelect": 1,
+                "cascadeDelete": true
+            },
+            {
+                "id": "autodate2990389176",
+                "name": "created",
+                "type": "autodate",
+                "system": true,
+                "onCreate": true,
+                "onUpdate": false
+            },
+            {
+                "id": "autodate3332085495",
+                "name": "updated",
+                "type": "autodate",
+                "system": true,
+                "onCreate": true,
+                "onUpdate": true
+            }
+        ],
+        "indexes": [
+            "CREATE UNIQUE INDEX `idx_xiRZKW8MNq` ON `products` (`slug`, `user`)"
+        ],
+        "listRule": "",
+        "viewRule": "",
+        "createRule": "@request.auth.id != ''",
+        "updateRule": "@request.auth.id != '' && user = @request.auth.id",
+        "deleteRule": "@request.auth.id != '' && user = @request.auth.id",
+        "options": {}
+    },
+    {
+        "id": "pbc_3527180448",
+        "name": "orders",
+        "type": "base",
+        "system": false,
+        "fields": [
+            {
+                "id": "text3208210256",
+                "name": "id",
+                "type": "text",
+                "system": true,
+                "required": true,
+                "presentable": false,
+                "unique": true,
+                "primaryKey": true,
+                "autogeneratePattern": "[a-z0-9]{15}"
+            },
+            {
+                "id": "relation2375276105",
+                "name": "user",
+                "type": "relation",
+                "system": false,
+                "required": true,
+                "presentable": false,
+                "unique": false,
+                "collectionId": "_pb_users_auth_",
+                "maxSelect": 1,
+                "cascadeDelete": false
+            },
+            {
+                "id": "select2063623452",
+                "name": "status",
+                "type": "select",
+                "system": false,
+                "required": false,
+                "presentable": false,
+                "unique": false,
+                "maxSelect": 1,
+                "values": [
+                    "PENDING_PAYMENT",
+                    "PAYMENT_REPORTED",
+                    "CONFIRMED",
+                    "PREPARING",
+                    "SHIPPED",
+                    "DELIVERED",
+                    "CANCELLED"
+                ]
+            },
+            {
+                "id": "select2223302008",
+                "name": "paymentMethod",
+                "type": "select",
+                "system": false,
+                "required": false,
+                "presentable": false,
+                "unique": false,
+                "maxSelect": 1,
+                "values": [
+                    "KONTIGO",
+                    "CASH_COP",
+                    "CASH_USD",
+                    "CASH_ON_DELIVERY"
+                ]
+            },
+            {
+                "id": "select1767278655",
+                "name": "currency",
+                "type": "select",
+                "system": false,
+                "required": false,
+                "presentable": false,
+                "unique": false,
+                "maxSelect": 1,
+                "values": [
+                    "COP",
+                    "USD"
+                ]
+            },
+            {
+                "id": "number3257917790",
+                "name": "total",
+                "type": "number",
+                "system": false,
+                "required": false,
+                "presentable": false,
+                "unique": false
+            },
+            {
+                "id": "bool1119187060",
+                "name": "isPreorder",
+                "type": "bool",
+                "system": false,
+                "required": false,
+                "presentable": false,
+                "unique": false
+            },
+            {
+                "id": "text223244161",
+                "name": "address",
+                "type": "text",
+                "system": false,
+                "required": true,
+                "presentable": false,
+                "unique": false
+            },
+            {
+                "id": "text18589324",
+                "name": "notes",
+                "type": "text",
+                "system": false,
+                "required": false,
+                "presentable": false,
+                "unique": false
+            },
+            {
+                "id": "text1112853688",
+                "name": "paymentReference",
+                "type": "text",
+                "system": false,
+                "required": false,
+                "presentable": false,
+                "unique": false
+            },
+            {
+                "id": "date537959464",
+                "name": "paymentReportedAt",
+                "type": "date",
+                "system": false,
+                "required": false,
+                "presentable": false,
+                "unique": false
+            },
+            {
+                "id": "autodate2990389176",
+                "name": "created",
+                "type": "autodate",
+                "system": true,
+                "onCreate": true,
+                "onUpdate": false
+            },
+            {
+                "id": "autodate3332085495",
+                "name": "updated",
+                "type": "autodate",
+                "system": true,
+                "onCreate": true,
+                "onUpdate": true
+            }
+        ],
+        "indexes": [],
+        "listRule": "@request.auth.id != '' && (user = @request.auth.id || @request.auth.role = 'ADMIN')",
+        "viewRule": "@request.auth.id != '' && (user = @request.auth.id || @request.auth.role = 'ADMIN')",
+        "createRule": null,
+        "updateRule": null,
+        "deleteRule": null,
+        "options": {}
+    },
+    {
+        "id": "pbc_2456927940",
+        "name": "order_items",
+        "type": "base",
+        "system": false,
+        "fields": [
+            {
+                "id": "text3208210256",
+                "name": "id",
+                "type": "text",
+                "system": true,
+                "required": true,
+                "presentable": false,
+                "unique": true,
+                "primaryKey": true,
+                "autogeneratePattern": "[a-z0-9]{15}"
+            },
+            {
+                "id": "relation4113142680",
+                "name": "order",
+                "type": "relation",
+                "system": false,
+                "required": true,
+                "presentable": false,
+                "unique": false,
+                "collectionId": "pbc_3527180448",
+                "maxSelect": 1,
+                "cascadeDelete": true
+            },
+            {
+                "id": "relation3544843437",
+                "name": "product",
+                "type": "relation",
+                "system": false,
+                "required": true,
+                "presentable": false,
+                "unique": false,
+                "collectionId": "pbc_4092854851",
+                "maxSelect": 1,
+                "cascadeDelete": false
+            },
+            {
+                "id": "text1579384326",
+                "name": "name",
+                "type": "text",
+                "system": false,
+                "required": true,
+                "presentable": false,
+                "unique": false
+            },
+            {
+                "id": "number2683508278",
+                "name": "quantity",
+                "type": "number",
+                "system": false,
+                "required": false,
+                "presentable": false,
+                "unique": false
+            },
+            {
+                "id": "number3402113753",
+                "name": "price",
+                "type": "number",
+                "system": false,
+                "required": false,
+                "presentable": false,
+                "unique": false
+            },
+            {
+                "id": "autodate2990389176",
+                "name": "created",
+                "type": "autodate",
+                "system": true,
+                "onCreate": true,
+                "onUpdate": false
+            },
+            {
+                "id": "autodate3332085495",
+                "name": "updated",
+                "type": "autodate",
+                "system": true,
+                "onCreate": true,
+                "onUpdate": true
+            }
+        ],
+        "indexes": [],
+        "listRule": "@request.auth.id != '' && (order.user = @request.auth.id || @request.auth.role = 'ADMIN')",
+        "viewRule": "@request.auth.id != '' && (order.user = @request.auth.id || @request.auth.role = 'ADMIN')",
+        "createRule": null,
+        "updateRule": null,
+        "deleteRule": null,
+        "options": {}
+    },
+    {
+        "id": "pbc_5123456789",
+        "name": "cart",
+        "type": "base",
+        "system": false,
+        "fields": [
+            {
+                "id": "text3208210256",
+                "name": "id",
+                "type": "text",
+                "system": true,
+                "required": true,
+                "presentable": false,
+                "unique": true,
+                "primaryKey": true,
+                "autogeneratePattern": "[a-z0-9]{15}"
+            },
+            {
+                "id": "relation1234567890",
+                "name": "user",
+                "type": "relation",
+                "system": false,
+                "required": true,
+                "presentable": false,
+                "unique": false,
+                "collectionId": "_pb_users_auth_",
+                "maxSelect": 1,
+                "cascadeDelete": false
+            },
+            {
+                "id": "relation2345678901",
+                "name": "product",
+                "type": "relation",
+                "system": false,
+                "required": true,
+                "presentable": false,
+                "unique": false,
+                "collectionId": "pbc_4092854851",
+                "maxSelect": 1,
+                "cascadeDelete": false
+            },
+            {
+                "id": "number3456789012",
+                "name": "quantity",
+                "type": "number",
+                "system": false,
+                "required": true,
+                "presentable": false,
+                "unique": false,
+                "min": 1,
+                "onlyInt": true
+            },
+            {
+                "id": "autodate2990389176",
+                "name": "created",
+                "type": "autodate",
+                "system": true,
+                "onCreate": true,
+                "onUpdate": false
+            },
+            {
+                "id": "autodate3332085495",
+                "name": "updated",
+                "type": "autodate",
+                "system": true,
+                "onCreate": true,
+                "onUpdate": true
+            }
+        ],
+        "indexes": [],
+        "listRule": null,
+        "viewRule": null,
+        "createRule": null,
+        "updateRule": null,
+        "deleteRule": null,
+        "options": {}
+    },
+    {
+        "id": "pbc_6234567890",
+        "name": "reviews",
+        "type": "base",
+        "system": false,
+        "fields": [
+            {
+                "id": "text3208210256",
+                "name": "id",
+                "type": "text",
+                "system": true,
+                "required": true,
+                "presentable": false,
+                "unique": true,
+                "primaryKey": true,
+                "autogeneratePattern": "[a-z0-9]{15}"
+            },
+            {
+                "id": "relation3456789012",
+                "name": "product",
+                "type": "relation",
+                "system": false,
+                "required": true,
+                "presentable": false,
+                "unique": false,
+                "collectionId": "pbc_4092854851",
+                "maxSelect": 1,
+                "cascadeDelete": false
+            },
+            {
+                "id": "relation4567890123",
+                "name": "user",
+                "type": "relation",
+                "system": false,
+                "required": true,
+                "presentable": false,
+                "unique": false,
+                "collectionId": "_pb_users_auth_",
+                "maxSelect": 1,
+                "cascadeDelete": false
+            },
+            {
+                "id": "number5678901234",
+                "name": "rating",
+                "type": "number",
+                "system": false,
+                "required": true,
+                "presentable": false,
+                "unique": false,
+                "min": 1,
+                "max": 5,
+                "onlyInt": true
+            },
+            {
+                "id": "text6789012345",
+                "name": "comment",
+                "type": "text",
+                "system": false,
+                "required": false,
+                "presentable": false,
+                "unique": false
+            },
+            {
+                "id": "autodate2990389176",
+                "name": "created",
+                "type": "autodate",
+                "system": true,
+                "onCreate": true,
+                "onUpdate": false
+            },
+            {
+                "id": "autodate3332085495",
+                "name": "updated",
+                "type": "autodate",
+                "system": true,
+                "onCreate": true,
+                "onUpdate": true
+            }
+        ],
+        "indexes": [],
+        "listRule": "",
+        "viewRule": "",
+        "createRule": "@request.auth.id != ''",
+        "updateRule": "@request.auth.id = user",
+        "deleteRule": "@request.auth.id = user",
+        "options": {}
+    },
+    {
+        "id": "pbc_7345678901",
+        "name": "stock_alerts",
+        "type": "base",
+        "system": false,
+        "fields": [
+            {
+                "id": "text3208210256",
+                "name": "id",
+                "type": "text",
+                "system": true,
+                "required": true,
+                "presentable": false,
+                "unique": true,
+                "primaryKey": true,
+                "autogeneratePattern": "[a-z0-9]{15}"
+            },
+            {
+                "id": "relation5678901234",
+                "name": "product",
+                "type": "relation",
+                "system": false,
+                "required": true,
+                "presentable": false,
+                "unique": false,
+                "collectionId": "pbc_4092854851",
+                "maxSelect": 1,
+                "cascadeDelete": false
+            },
+            {
+                "id": "email6789012345",
+                "name": "email",
+                "type": "email",
+                "system": false,
+                "required": false,
+                "presentable": false,
+                "unique": false
+            },
+            {
+                "id": "text7890123456",
+                "name": "phone",
+                "type": "text",
+                "system": false,
+                "required": false,
+                "presentable": false,
+                "unique": false
+            },
+            {
+                "id": "autodate2990389176",
+                "name": "created",
+                "type": "autodate",
+                "system": true,
+                "onCreate": true,
+                "onUpdate": false
+            },
+            {
+                "id": "autodate3332085495",
+                "name": "updated",
+                "type": "autodate",
+                "system": true,
+                "onCreate": true,
+                "onUpdate": true
+            }
+        ],
+        "indexes": [],
+        "listRule": null,
+        "viewRule": null,
+        "createRule": "",
+        "updateRule": null,
+        "deleteRule": null,
+        "options": {}
+    },
+    {
+        "id": "pbc_8456789012",
+        "name": "stock_requests",
+        "type": "base",
+        "system": false,
+        "fields": [
+            {
+                "id": "text3208210256",
+                "name": "id",
+                "type": "text",
+                "system": true,
+                "required": true,
+                "presentable": false,
+                "unique": true,
+                "primaryKey": true,
+                "autogeneratePattern": "[a-z0-9]{15}"
+            },
+            {
+                "id": "relation6789012345",
+                "name": "product",
+                "type": "relation",
+                "system": false,
+                "required": true,
+                "presentable": false,
+                "unique": false,
+                "collectionId": "pbc_4092854851",
+                "maxSelect": 1,
+                "cascadeDelete": false
+            },
+            {
+                "id": "relation7890123456",
+                "name": "user",
+                "type": "relation",
+                "system": false,
+                "required": true,
+                "presentable": false,
+                "unique": false,
+                "collectionId": "_pb_users_auth_",
+                "maxSelect": 1,
+                "cascadeDelete": false
+            },
+            {
+                "id": "text8901234567",
+                "name": "message",
+                "type": "text",
+                "system": false,
+                "required": false,
+                "presentable": false,
+                "unique": false
+            },
+            {
+                "id": "select9012345678",
+                "name": "status",
+                "type": "select",
+                "system": false,
+                "required": false,
+                "presentable": false,
+                "unique": false,
+                "maxSelect": 1,
+                "values": [
+                    "PENDING",
+                    "FULFILLED"
+                ]
+            },
+            {
+                "id": "autodate2990389176",
+                "name": "created",
+                "type": "autodate",
+                "system": true,
+                "onCreate": true,
+                "onUpdate": false
+            },
+            {
+                "id": "autodate3332085495",
+                "name": "updated",
+                "type": "autodate",
+                "system": true,
+                "onCreate": true,
+                "onUpdate": true
+            }
+        ],
+        "indexes": [],
+        "listRule": null,
+        "viewRule": null,
+        "createRule": null,
+        "updateRule": null,
+        "deleteRule": null,
+        "options": {}
+    }
+]

@@ -26,7 +26,7 @@ export function middleware(req: NextRequest) {
   }
 
   // Auth Protection Logic
-  const token = req.cookies.get('pb_auth')?.value
+  const token = req.cookies.get('nex_session')?.value
   const protectedRoutes = ['/user/checkout', '/profile', '/orders']
 
   if (protectedRoutes.some((r) => req.nextUrl.pathname.startsWith(r))) {

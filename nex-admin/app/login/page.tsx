@@ -32,8 +32,12 @@ export default function LoginPage() {
 
       setAdmin(response.data.user, response.data.token)
 
-      // Set the token cookie for middleware access (still useful for local requests)
-      document.cookie = `token=${response.data.token}; path=/; max-age=${7 * 24 * 60 * 60}; SameSite=Lax`
+      // Clear legacy cookies to avoid conflicts
+      document.cookie = "token=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT";
+      document.cookie = "pb_auth=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT";
+
+      // Set the new standardized isolated cookie
+      document.cookie = `nex_session=${response.data.token}; path=/; max-age=${7 * 24 * 60 * 60}; SameSite=Lax`
 
       router.push('/dashboard')
       router.refresh()

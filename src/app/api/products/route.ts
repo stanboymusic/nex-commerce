@@ -1,10 +1,10 @@
-import { getAdminPocketBase } from "@/lib/admin";
+import { initPocketBase } from "@/lib/pocketbase";
 import { NextResponse } from "next/server";
 import { type NextRequest } from "next/server";
 
-export async function GET() {
+export async function GET(req: NextRequest) {
   try {
-    const pb = await getAdminPocketBase();
+    const pb = await initPocketBase(req);
     const records = await pb.collection('products').getFullList({
       sort: '-created',
       requestKey: null
@@ -36,31 +36,34 @@ export async function GET() {
     return NextResponse.json(products);
   } catch (error) {
     console.error("Error fetching products:", error);
-    return NextResponse.json({ error: "Error fetching products" }, { status: 500 });
+    return NextResponse.json({ error: "Error al obtener productos" }, { status: 500 });
   }
 }
 
 export async function POST(req: NextRequest) {
   try {
-    const pb = await getAdminPocketBase();
+    const pb = await initPocketBase(req);
+    const userId = pb.authStore.model?.id;
+
+    if (!userId) {
+      return NextResponse.json({ error: "No autorizado" }, { status: 401 });
+    }
+
     const data = await req.json();
 
     // Basic validation
-    if (!data.name || !data.price) {
-      return NextResponse.json({ error: "Missing required fields" }, { status: 400 });
+    if (!data.name || !data.price || !data.category) {
+      return NextResponse.json({ error: "Faltan campos obligatorios (nombre, precio, categoría)" }, { status: 400 });
     }
 
     // Generate slug from name if not provided
     const slug = data.slug || data.name.toLowerCase().replace(/ /g, '-').replace(/[^\w-]+/g, '');
 
-    const record = await pb.collection('products').create({
-      ...data,
-      slug,
-    });
+    const record = await pb.collection('products').create({ ...data, slug, user: userId });
 
     return NextResponse.json(record);
   } catch (error: any) {
     console.error("Error creating product:", error);
-    return NextResponse.json({ error: error?.message || "Error creating product" }, { status: 500 });
+    return NextResponse.json({ error: error?.message || "Error al crear el producto" }, { status: 500 });
   }
 }

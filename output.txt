@@ -1,0 +1,15 @@
+Using URL: http://127.0.0.1:8090
+Admin Email: nexcommerce9@gmail.com
+Admin Auth Success!
+Collections found: [
+  '_mfas',          '_otps',
+  '_externalAuths', '_authOrigins',
+  '_superusers',    'users',
+  'categories',     'products',
+  'orders',         'order_items',
+  'cart',           'reviews',
+  'stock_alerts',   'stock_requests'
+]
+Users in collection 'users': 2
+- User: adrcproducciones@gmail.com, Role: , ID: rz0lla0v7atohid
+- User: admin@nexcommerce.com, Role: ADMIN, ID: yt0q9gm8hejszf2

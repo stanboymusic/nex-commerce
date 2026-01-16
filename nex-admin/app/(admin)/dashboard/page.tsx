@@ -6,7 +6,10 @@ import { Users, ShoppingBag, Package, DollarSign, TrendingUp } from "lucide-reac
 import { Card } from "@/components/ui/Card";
 import { Badge } from "@/components/ui/Badge";
 
+import { useAdminStore } from "@/store/admin.store";
+
 export default function DashboardPage() {
+  const { setAdmin, token: storeToken } = useAdminStore();
   const [metrics, setMetrics] = useState({
     totalUsers: 0,
     totalOrders: 0,
@@ -16,6 +19,17 @@ export default function DashboardPage() {
   });
   const [notifications, setNotifications] = useState([]);
   const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    // If we have a cookie but no token in store, sync them
+    if (!storeToken) {
+      const match = document.cookie.match(new RegExp('(^| )nex_session=([^;]+)'));
+      if (match && match[2]) {
+        // We set a placeholder admin object, the next API call will fail if token is truly invalid
+        setAdmin({ role: 'ADMIN' }, match[2]);
+      }
+    }
+  }, [storeToken, setAdmin]);
 
   useEffect(() => {
     const fetchData = async () => {

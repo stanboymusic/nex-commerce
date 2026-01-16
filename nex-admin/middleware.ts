@@ -2,25 +2,25 @@ import { NextResponse } from 'next/server'
 import type { NextRequest } from 'next/server'
 
 export function middleware(req: NextRequest) {
-  const token = req.cookies.get('token')?.value
+  const token = req.cookies.get('nex_session')?.value
+  const isLoginPage = req.nextUrl.pathname === '/login'
+  const isRootPath = req.nextUrl.pathname === '/'
 
-  const loginPath = '/login'
-  const isLoginPage = req.nextUrl.pathname === loginPath
-
-  if (isLoginPage) {
-    if (token) {
-      return NextResponse.redirect(new URL('/dashboard', req.url))
-    }
-    return NextResponse.next()
+  if (!isLoginPage && !token) {
+    return NextResponse.redirect(new URL('/login', req.url))
   }
 
-  if (!token) {
-    return NextResponse.redirect(new URL('/login', req.url))
+  if (isLoginPage && token) {
+    return NextResponse.redirect(new URL('/dashboard', req.url))
+  }
+
+  if (isRootPath && token) {
+    return NextResponse.redirect(new URL('/dashboard', req.url))
   }
 
   return NextResponse.next()
 }
 
 export const config = {
-  matcher: ['/((?!_next|static|favicon).*)'],
+  matcher: ['/((?!_next|api|static|favicon).*)'],
 }

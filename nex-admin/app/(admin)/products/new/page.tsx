@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { apiClient } from "@/lib/apiClient";
 import { ArrowLeft, Save, Plus, X, Upload } from "lucide-react";
@@ -21,9 +21,50 @@ export default function NewProductPage() {
         isPreorder: false
     });
 
+    const [categories, setCategories] = useState<{ id: string, name: string }[]>([]);
+    const [error, setError] = useState<string | null>(null);
+    const [showNewCategory, setShowNewCategory] = useState(false);
+    const [newCategoryName, setNewCategoryName] = useState("");
+    const [creatingCategory, setCreatingCategory] = useState(false);
+
+    useEffect(() => {
+        const fetchCategories = async () => {
+            try {
+                const response = await apiClient.get('/categories');
+                setCategories(response.data);
+                if (response.data.length > 0 && !formData.category) {
+                    setFormData(prev => ({ ...prev, category: response.data[0].id }));
+                }
+            } catch (error) {
+                console.error("Error fetching categories:", error);
+            }
+        };
+        fetchCategories();
+    }, [formData.category]);
+
+    const handleCreateCategory = async (e: React.MouseEvent) => {
+        e.preventDefault();
+        if (!newCategoryName.trim()) return;
+        setCreatingCategory(true);
+        try {
+            const response = await apiClient.post('/categories', { name: newCategoryName.trim() });
+            const newCat = response.data;
+            setCategories([...categories, newCat]);
+            setFormData({ ...formData, category: newCat.id });
+            setNewCategoryName("");
+            setShowNewCategory(false);
+        } catch (error: any) {
+            console.error("Error creating category:", error);
+            setError(error.response?.data?.error || "Error al crear la categoría.");
+        } finally {
+            setCreatingCategory(false);
+        }
+    };
+
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         setLoading(true);
+        setError(null);
         try {
             await apiClient.post('/products', {
                 ...formData,
@@ -31,8 +72,9 @@ export default function NewProductPage() {
                 stock: parseInt(formData.stock)
             });
             router.push('/products');
-        } catch (error) {
-            console.error("Error creating product:", error);
+        } catch (err: any) {
+            console.error("Error creating product:", err);
+            setError(err.response?.data?.error || "Error al crear el producto. Verifica los campos.");
         } finally {
             setLoading(false);
         }
@@ -49,6 +91,12 @@ export default function NewProductPage() {
                     <p className="text-text-medium font-medium">Agrega un nuevo artículo a tu catálogo.</p>
                 </div>
             </div>
+
+            {error && (
+                <div className="mb-6 p-4 bg-error/10 border border-error/20 rounded-lg text-error text-sm font-medium">
+                    {error}
+                </div>
+            )}
 
             <form onSubmit={handleSubmit} className="grid grid-cols-1 lg:grid-cols-3 gap-8 text-oxford">
                 <div className="lg:col-span-2 space-y-8">
@@ -70,6 +118,54 @@ export default function NewProductPage() {
                                     onChange={(e) => setFormData({ ...formData, description: e.target.value })}
                                     required
                                 />
+                            </div>
+                            <div>
+                                <div className="flex items-end gap-2">
+                                    <div className="flex-1">
+                                        <label className="block text-sm font-medium text-text-dark mb-1">Categoría</label>
+                                        <select
+                                            className="w-full rounded-lg border border-border bg-white px-4 py-2 text-text-dark focus:outline-none focus:ring-2 focus:ring-purple/20 focus:border-purple"
+                                            value={formData.category}
+                                            onChange={(e) => setFormData({ ...formData, category: e.target.value })}
+                                            required
+                                        >
+                                            <option value="" disabled>Selecciona una categoría</option>
+                                            {categories.map(cat => (
+                                                <option key={cat.id} value={cat.id}>{cat.name}</option>
+                                            ))}
+                                        </select>
+                                    </div>
+                                    <button
+                                        type="button"
+                                        onClick={() => setShowNewCategory(!showNewCategory)}
+                                        className="p-2.5 rounded-lg border border-border text-text-medium hover:bg-gray-50 transition-colors"
+                                        title="Nueva Categoría"
+                                    >
+                                        <Plus className="h-5 w-5" />
+                                    </button>
+                                </div>
+
+                                {showNewCategory && (
+                                    <div className="mt-4 p-4 bg-muted/30 rounded-lg border border-border space-y-3 animate-in fade-in slide-in-from-top-2">
+                                        <p className="text-xs font-bold text-text-medium uppercase tracking-wider">Nueva Categoría</p>
+                                        <div className="flex gap-2">
+                                            <Input
+                                                placeholder="Nombre de la categoría..."
+                                                value={newCategoryName}
+                                                onChange={(e) => setNewCategoryName(e.target.value)}
+                                                className="bg-white"
+                                            />
+                                            <Button
+                                                type="button"
+                                                onClick={handleCreateCategory}
+                                                isLoading={creatingCategory}
+                                                disabled={!newCategoryName.trim()}
+                                            >
+                                                Agregar
+                                            </Button>
+                                        </div>
+                                    </div>
+                                )}
                             </div>
                         </div>
                     </Card>

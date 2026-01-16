@@ -1,44 +1,34 @@
 import { NextResponse } from 'next/server'
-import { getPocketBase } from '@/lib/pocketbase'
+import PocketBase from 'pocketbase'
 
 export async function POST(req: Request) {
   try {
     const { email, password } = await req.json()
+    const pb = new PocketBase(process.env.POCKETBASE_URL || 'http://127.0.0.1:8090')
 
-    if (!email || !password) {
-      return NextResponse.json({ error: 'Missing fields' }, { status: 400 })
-    }
-
-    const pb = getPocketBase();
-
-    // Authenticate with PocketBase
-    const authData = await pb.collection('users').authWithPassword(email, password);
+    // Standard auth
+    const authData = await pb.collection('users').authWithPassword(email, password)
 
     const response = NextResponse.json({
-      user: {
-        id: authData.record.id,
-        name: authData.record.name,
-        email: authData.record.email,
-        role: authData.record.role || 'USER',
-      },
+      user: authData.record,
       token: authData.token,
     })
 
-    // Set cookie using PocketBase's exportToCookie or manually
-    response.cookies.set('pb_auth', pb.authStore.exportToCookie({ httpOnly: false }).split(';')[0].split('=')[1], {
-      httpOnly: true,
+    // Set standard PB cookie
+    response.cookies.set('pb_auth', pb.authStore.exportToCookie().split('=')[1].split(';')[0], {
+      path: '/',
+      httpOnly: false, // Accessible by client and server
       secure: process.env.NODE_ENV === 'production',
       sameSite: 'lax',
-      path: '/',
-      maxAge: 7 * 24 * 60 * 60, // 7 days
+      maxAge: 7 * 24 * 60 * 60
     })
 
     return response
   } catch (error: any) {
     console.error('Login error:', error)
-    const status = error?.status || 500
-    const message = error?.data?.message || 'Invalid credentials'
-
-    return NextResponse.json({ error: message }, { status })
+    return NextResponse.json(
+      { error: error?.data?.message || 'Credenciales inválidas' },
+      { status: error?.status || 401 }
+    )
   }
 }
