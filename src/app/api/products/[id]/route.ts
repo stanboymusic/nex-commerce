@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server'
-import { getPocketBase } from '@/lib/pocketbase'
+import { initPocketBase } from '@/lib/pocketbase'
 
 export async function GET(
   req: Request,
@@ -7,7 +7,7 @@ export async function GET(
 ) {
   try {
     const { id } = await params
-    const pb = getPocketBase();
+    const pb = await initPocketBase(req);
 
     // Attempt to fetch, getOne throws 404 if not found
     try {

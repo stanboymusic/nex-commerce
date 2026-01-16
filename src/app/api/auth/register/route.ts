@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server'
-import { getPocketBase } from '@/lib/pocketbase'
+import { initPocketBase } from '@/lib/pocketbase'
 
 export async function POST(req: Request) {
   try {
@@ -9,7 +9,7 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: 'Name, Password and at least Email or Phone are required' }, { status: 400 })
     }
 
-    const pb = getPocketBase();
+    const pb = await initPocketBase(req);
 
     const data = {
       email,

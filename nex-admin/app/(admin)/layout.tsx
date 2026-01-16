@@ -1,15 +1,16 @@
 import { DashboardLayout } from '@/components/layout/DashboardLayout';
-import { initPocketBase } from '@root/lib/pocketbase';
 import { redirect } from 'next/navigation';
+import { cookies } from 'next/headers';
 
 export default async function AdminLayout({
     children,
 }: {
     children: React.ReactNode;
 }) {
-    const pb = await initPocketBase();
+    const cookieStore = await cookies();
+    const token = cookieStore.get('nex_session')?.value;
 
-    if (!pb.authStore.isValid || (pb.authStore.model?.role !== 'ADMIN' && (pb.authStore as any).collectionName !== '_superusers')) {
+    if (!token) {
         redirect('/login');
     }
 
