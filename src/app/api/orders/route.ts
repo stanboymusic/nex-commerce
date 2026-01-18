@@ -34,6 +34,8 @@ export async function POST(req: NextRequest) {
 
     // 2. Create Order Items and Update Stock
     try {
+      const adminPb = await import('@/lib/admin').then(m => m.getAdminPocketBase());
+
       await Promise.all(items.map(async (item: { id: string; name: string; quantity: number; price: number; isPreorder?: boolean }) => {
         // Create order item
         await pb.collection('order_items').create({
@@ -47,13 +49,13 @@ export async function POST(req: NextRequest) {
         // Update stock if not preorder
         if (!item.isPreorder) {
           try {
-            const product = await pb.collection('products').getOne(item.id);
-            await pb.collection('products').update(item.id, {
+            const product = await adminPb.collection('products').getOne(item.id);
+            await adminPb.collection('products').update(item.id, {
               stock: Math.max(0, (product.stock || 0) - item.quantity)
             });
+            console.log(`Stock updated for product ${item.id}: ${product.stock} -> ${Math.max(0, (product.stock || 0) - item.quantity)}`);
           } catch (stockError) {
             console.warn(`Failed to update stock for product ${item.id}:`, stockError);
-            // We don't throw here to avoid failing the whole order if just stock update fails
           }
         }
       }));
