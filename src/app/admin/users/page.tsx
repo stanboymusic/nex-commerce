@@ -1,10 +1,18 @@
 import AdminLayout from "@/components/admin/AdminLayout";
 import { getAdminPocketBase } from "@/lib/admin";
+import { initPocketBaseServer } from "@/lib/pocketbase";
+import { redirect } from "next/navigation";
 import { User, Mail, Phone, Shield, MoreVertical } from "lucide-react";
 
 export const dynamic = 'force-dynamic'
 
 export default async function AdminUsersPage() {
+  const pbAuth = await initPocketBaseServer();
+  
+  if (!pbAuth.authStore.model || pbAuth.authStore.model.role !== 'ADMIN') {
+    redirect('/');
+  }
+
   const pb = await getAdminPocketBase();
   const users = await pb.collection('users').getFullList({
     sort: '-created'

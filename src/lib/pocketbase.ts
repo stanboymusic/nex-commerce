@@ -1,5 +1,6 @@
 import PocketBase from 'pocketbase';
 import { NextRequest } from 'next/server';
+import { cookies, headers } from 'next/headers';
 
 let pb: PocketBase;
 
@@ -34,6 +35,38 @@ export async function initPocketBase(req: NextRequest): Promise<PocketBase> {
   }
 
   // Si tenemos token pero no modelo, intentamos refrescar para obtener los datos del usuario (incluyendo el rol)
+  if (client.authStore.token && !client.authStore.model) {
+    try {
+      await client.collection('users').authRefresh();
+    } catch (_) {
+      client.authStore.clear();
+    }
+  }
+
+  return client;
+}
+
+export async function initPocketBaseServer(): Promise<PocketBase> {
+  const client = getPocketBase();
+  client.authStore.clear();
+
+  const cookieStore = await cookies();
+  const headerStore = await headers();
+
+  const authValue = cookieStore.get('pb_auth')?.value;
+  const authHeader = headerStore.get('Authorization');
+
+  if (authHeader?.startsWith('Bearer ')) {
+    const token = authHeader.substring(7);
+    client.authStore.save(token, null);
+  } else if (authValue) {
+    try {
+      client.authStore.loadFromCookie('pb_auth=' + authValue);
+    } catch (_) {
+      client.authStore.save(authValue, null);
+    }
+  }
+
   if (client.authStore.token && !client.authStore.model) {
     try {
       await client.collection('users').authRefresh();

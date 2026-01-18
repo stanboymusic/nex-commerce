@@ -1,11 +1,19 @@
 import AdminLayout from "@/components/admin/AdminLayout";
 import DashboardCard from "@/components/admin/DashboardCard";
 import { getAdminPocketBase } from "@/lib/admin";
+import { initPocketBaseServer } from "@/lib/pocketbase";
+import { redirect } from "next/navigation";
 import { Users, ShoppingBag, Package, DollarSign, TrendingUp, AlertTriangle } from "lucide-react";
 
 export const dynamic = 'force-dynamic'
 
 export default async function DashboardPage() {
+  const pbAuth = await initPocketBaseServer();
+  
+  if (!pbAuth.authStore.model || pbAuth.authStore.model.role !== 'ADMIN') {
+    redirect('/');
+  }
+
   const pb = await getAdminPocketBase();
   
   // Fetch stats using PocketBase

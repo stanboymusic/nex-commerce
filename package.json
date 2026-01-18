@@ -4,7 +4,7 @@
   "private": true,
   "scripts": {
     "dev": "next dev",
-    "build": "prisma generate && next build",
+    "build": "next build",
     "start": "next start",
     "lint": "eslint",
     "pocketbase": "cd pocketbase && pocketbase.exe serve",
@@ -12,7 +12,6 @@
     "dev:all": "concurrently \"npm run pocketbase\" \"npm run dev\""
   },
   "dependencies": {
-    "@prisma/client": "^7.2.0",
     "axios": "^1.13.2",
     "bcryptjs": "^3.0.3",
     "clsx": "^2.1.1",
@@ -39,7 +38,6 @@
     "concurrently": "^9.2.1",
     "eslint": "^9",
     "eslint-config-next": "16.1.1",
-    "prisma": "^7.2.0",
     "tailwindcss": "^4",
     "typescript": "^5"
   }

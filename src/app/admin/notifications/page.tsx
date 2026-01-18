@@ -1,23 +1,31 @@
 import AdminLayout from "@/components/admin/AdminLayout";
-import prisma from "@/lib/prisma";
-import { Bell, Package, User, Clock, CheckCircle } from "lucide-react";
+import { getAdminPocketBase } from "@/lib/admin";
+import { initPocketBaseServer } from "@/lib/pocketbase";
+import { redirect } from "next/navigation";
+import { Bell, Package, User, Clock } from "lucide-react";
 
 export const dynamic = 'force-dynamic'
 
 export default async function AdminNotificationsPage() {
-  const stockRequests = await prisma.stockRequest.findMany({
-    include: {
-      user: true,
-      product: true,
-    },
-    orderBy: { createdAt: 'desc' }
+  const pbAuth = await initPocketBaseServer();
+  
+  // Security check: only admins can access this page
+  if (!pbAuth.authStore.model || pbAuth.authStore.model.role !== 'ADMIN') {
+    redirect('/');
+  }
+
+  const pb = await getAdminPocketBase();
+
+  // Fetch stock requests with expanded user and product data
+  const stockRequests = await pb.collection('stock_requests').getFullList({
+    sort: '-created',
+    expand: 'user,product'
   });
 
-  const stockAlerts = await prisma.stockAlert.findMany({
-    include: {
-      product: true,
-    },
-    orderBy: { createdAt: 'desc' }
+  // Fetch stock alerts with expanded product data
+  const stockAlerts = await pb.collection('stock_alerts').getFullList({
+    sort: '-created',
+    expand: 'product'
   });
 
   return (
@@ -45,20 +53,20 @@ export default async function AdminNotificationsPage() {
                 <div key={req.id} className="bg-white rounded-2xl p-6 shadow-sm border border-gray-100 flex flex-col md:flex-row md:items-center justify-between gap-6 hover:shadow-md transition-shadow">
                   <div className="flex items-center gap-4">
                     <div className="w-12 h-12 bg-purple/10 text-purple rounded-xl flex items-center justify-center font-black">
-                      {req.user.name.charAt(0).toUpperCase()}
+                      {(req.expand?.user?.name || 'A').charAt(0).toUpperCase()}
                     </div>
                     <div>
                       <p className="font-bold text-oxford">
-                        {req.user.name} <span className="text-gray-400 font-medium text-xs ml-2">está interesado en:</span>
+                        {req.expand?.user?.name || 'Usuario desconocido'} <span className="text-gray-400 font-medium text-xs ml-2">está interesado en:</span>
                       </p>
-                      <p className="text-lg font-black text-purple">{req.product.name}</p>
+                      <p className="text-lg font-black text-purple">{req.expand?.product?.name || 'Producto desconocido'}</p>
                     </div>
                   </div>
                   
                   <div className="flex flex-col md:items-end gap-1">
                     <div className="flex items-center gap-2 text-gray-400 text-xs font-bold">
                       <Clock className="h-3.5 w-3.5" />
-                      {new Date(req.createdAt).toLocaleString()}
+                      {new Date(req.created).toLocaleString()}
                     </div>
                     <p className="text-xs font-bold text-gray-500 bg-gray-100 px-3 py-1 rounded-full w-fit">
                       Estado: {req.status}
@@ -99,14 +107,14 @@ export default async function AdminNotificationsPage() {
                     <td className="px-8 py-6">
                       <div className="flex items-center gap-3">
                         <Package className="h-5 w-5 text-gray-300" />
-                        <span className="font-bold text-oxford">{alert.product.name}</span>
+                        <span className="font-bold text-oxford">{alert.expand?.product?.name || 'Producto desconocido'}</span>
                       </div>
                     </td>
                     <td className="px-8 py-6 text-sm text-gray-500 font-medium">
                       {alert.email || alert.phone}
                     </td>
                     <td className="px-8 py-6 text-xs text-gray-400 font-bold">
-                      {new Date(alert.createdAt).toLocaleDateString()}
+                      {new Date(alert.created).toLocaleDateString()}
                     </td>
                     <td className="px-8 py-6 text-right">
                       <button className="text-blue-500 hover:text-blue-700 font-bold text-xs uppercase tracking-widest">
