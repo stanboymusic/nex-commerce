@@ -1,12 +1,11 @@
-import { NextResponse } from 'next/server'
-import type { NextRequest } from 'next/server'
+import { NextResponse, NextRequest } from 'next/server'
 import { corsHeaders, handleCORS } from '@/lib/cors'
 
 export async function OPTIONS(request: NextRequest) {
   return handleCORS(request)
 }
 
-export async function POST(req: Request) {
+export async function POST(req: NextRequest) {
   const res = NextResponse.json({ ok: true })
   res.cookies.set('pb_auth', '', { maxAge: 0, path: '/' })
 

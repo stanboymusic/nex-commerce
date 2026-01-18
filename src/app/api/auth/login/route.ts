@@ -1,7 +1,7 @@
-import { NextResponse } from 'next/server'
+import { NextRequest, NextResponse } from 'next/server'
 import PocketBase from 'pocketbase'
 
-export async function POST(req: Request) {
+export async function POST(req: NextRequest) {
   try {
     const { email, password } = await req.json()
     const pb = new PocketBase(process.env.POCKETBASE_URL || 'http://127.0.0.1:8090')

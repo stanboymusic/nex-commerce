@@ -1,8 +1,7 @@
-import { NextResponse } from 'next/server'
-import type { NextRequest } from 'next/server'
+import { NextRequest, NextResponse } from 'next/server'
 import { getAdminPocketBase } from '@/lib/admin'
 
-export async function POST(req: Request) {
+export async function POST(req: NextRequest) {
   try {
     const { phone, code } = await req.json()
 
