@@ -1,7 +1,7 @@
 'use client'
 
 import { useState } from 'react';
-import { Modal } from './Modal';
+import { Modal } from '@/components/ui/Modal';
 import { Badge } from '@/components/ui/Badge';
 import { Button } from '@/components/ui/Button';
 import { apiClient } from '@/lib/apiClient';
@@ -166,7 +166,7 @@ export const OrderDetailModal = ({ order, isOpen, onClose, onUpdate }: OrderDeta
                     {order.status !== 'CONFIRMED' && (
                         <Button
                             onClick={handleConfirmOrder}
-                            loading={loading}
+                            isLoading={loading}
                             className="flex-1 bg-purple hover:bg-purple/90"
                             leftIcon={<CheckCircle className="h-5 w-5" />}
                         >
