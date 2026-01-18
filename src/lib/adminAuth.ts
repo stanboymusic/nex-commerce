@@ -1,15 +1,15 @@
-import { verifyToken } from "@/lib/auth";
+import { initPocketBase } from "@/lib/pocketbase";
 import { NextRequest, NextResponse } from "next/server";
 
 export async function requireAdmin(req: NextRequest) {
-  const token = req.cookies.get("token")?.value;
-  if (!token) return NextResponse.redirect(new URL("/login", req.url));
+  const pb = await initPocketBase(req);
+  const user = pb.authStore.model;
 
-  try {
-    const payload = verifyToken(token);
-    if (!payload || payload.role !== "ADMIN") throw new Error("No autorizado");
-    return payload;
-  } catch {
-    return NextResponse.redirect(new URL("/login", req.url));
+  if (!user || user.role !== "ADMIN") {
+    // Instead of redirecting in an API helper, we should probably throw or return null
+    // But keeping it consistent with the previous implementation's intent
+    return null;
   }
+
+  return user;
 }

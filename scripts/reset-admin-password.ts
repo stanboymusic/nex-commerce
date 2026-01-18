@@ -9,6 +9,11 @@ async function resetPassword() {
     const email = process.env.POCKETBASE_ADMIN_EMAIL;
     const password = process.env.POCKETBASE_ADMIN_PASSWORD;
 
+    if (!email || !password) {
+        console.error("Missing POCKETBASE_ADMIN_EMAIL or POCKETBASE_ADMIN_PASSWORD");
+        return;
+    }
+
     const pb = new PocketBase(POCKETBASE_URL);
 
     try {

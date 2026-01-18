@@ -1,17 +1,12 @@
 import { NextResponse } from 'next/server'
-import prisma from '@/lib/prisma'
-import { verifyToken } from '@/lib/auth'
+import { initPocketBase } from '@/lib/pocketbase'
 
 export async function POST(req: Request) {
   try {
-    const authHeader = req.headers.get('authorization')
-    if (!authHeader || !authHeader.startsWith('Bearer ')) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-    }
+    const pb = await initPocketBase(req);
+    const user = pb.authStore.model;
 
-    const token = authHeader.split(' ')[1]
-    const payload = verifyToken(token)
-    if (!payload) {
+    if (!user) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
@@ -21,16 +16,15 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: 'Product ID is required' }, { status: 400 })
     }
 
-    const request = await prisma.stockRequest.create({
-      data: {
-        productId,
-        userId: payload.userId,
-        message: message || 'Cliente está requiriendo este producto.',
-      },
+    const record = await pb.collection('stock_requests').create({
+      product: productId,
+      user: user.id,
+      message: message || 'Cliente está requiriendo este producto.',
     })
 
-    return NextResponse.json(request)
-  } catch (error) {
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
+    return NextResponse.json(record)
+  } catch (error: any) {
+    console.error('Stock request error:', error)
+    return NextResponse.json({ error: error.message || 'Internal server error' }, { status: 500 })
   }
 }

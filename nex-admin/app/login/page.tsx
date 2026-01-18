@@ -32,12 +32,8 @@ export default function LoginPage() {
 
       setAdmin(response.data.user, response.data.token)
 
-      // Clear legacy cookies to avoid conflicts
-      document.cookie = "token=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT";
-      document.cookie = "pb_auth=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT";
-
-      // Set the new standardized isolated cookie
-      document.cookie = `nex_session=${response.data.token}; path=/; max-age=${7 * 24 * 60 * 60}; SameSite=Lax`
+      // Set the standardized PocketBase cookie for the API
+      document.cookie = `pb_auth=${response.data.token}; path=/; max-age=${7 * 24 * 60 * 60}; SameSite=Lax`
 
       router.push('/dashboard')
       router.refresh()

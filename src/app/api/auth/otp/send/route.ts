@@ -1,6 +1,5 @@
 import { NextResponse } from 'next/server'
-import prisma from '@/lib/prisma'
-import { generateOTP } from '@/lib/auth'
+import { getAdminPocketBase } from '@/lib/admin'
 
 export async function POST(req: Request) {
   try {
@@ -10,35 +9,39 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: 'Phone number is required' }, { status: 400 })
     }
 
-    const otp = generateOTP()
-    const expiry = new Date(Date.now() + 5 * 60 * 1000) // 5 minutes
+    const otp = Math.floor(100000 + Math.random() * 900000).toString()
+    const expiry = new Date(Date.now() + 5 * 60 * 1000).toISOString()
 
-    // Upsert user or just find and update? 
-    // In a private marketplace, maybe we only allow existing users.
-    // But let's assume we can create them if they don't exist for now, 
-    // or at least handle the 'not found' case gracefully.
+    const pbAdmin = await getAdminPocketBase();
     
-    let user = await prisma.user.findUnique({
-      where: { phone }
-    })
+    // Find user by phone
+    let user;
+    try {
+      user = await pbAdmin.collection('users').getFirstListItem(`phone = "${phone}"`);
+    } catch (e) {
+      // User not found
+    }
 
     if (!user) {
-      // For this demo, let's create a placeholder user if they don't exist
-      user = await prisma.user.create({
-        data: {
-          phone,
-          name: `User ${phone}`,
-          otpCode: otp,
-          otpExpiry: expiry,
-        }
-      })
+      // Create user if not exists
+      user = await pbAdmin.collection('users').create({
+        phone,
+        name: `User ${phone}`,
+        otpCode: otp,
+        otpExpiry: expiry,
+        role: 'USER',
+        password: Math.random().toString(36).slice(-10), // Required field in PB usually
+        passwordConfirm: '', // Handled by PB if using admin to create without confirm? No, usually needs it or random
+      });
+      // Update with same password for confirm
+      await pbAdmin.collection('users').update(user.id, {
+        password: user.password,
+        passwordConfirm: user.password
+      });
     } else {
-      await prisma.user.update({
-        where: { id: user.id },
-        data: {
-          otpCode: otp,
-          otpExpiry: expiry,
-        }
+      await pbAdmin.collection('users').update(user.id, {
+        otpCode: otp,
+        otpExpiry: expiry,
       })
     }
 
@@ -46,8 +49,8 @@ export async function POST(req: Request) {
     console.log(`[SMS Simulation] To: ${phone}, Message: Your NexCommerce code is ${otp}`)
 
     return NextResponse.json({ message: 'OTP sent successfully' })
-  } catch (error) {
+  } catch (error: any) {
     console.error('OTP Send error:', error)
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
+    return NextResponse.json({ error: error.message || 'Internal server error' }, { status: 500 })
   }
 }

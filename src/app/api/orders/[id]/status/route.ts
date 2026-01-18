@@ -1,6 +1,5 @@
 import { NextResponse } from 'next/server'
-import prisma from '@/lib/prisma'
-import { verifyToken } from '@/lib/auth'
+import { initPocketBase } from '@/lib/pocketbase'
 
 export async function PATCH(
   req: Request,
@@ -8,15 +7,10 @@ export async function PATCH(
 ) {
   try {
     const { id } = await params
+    const pb = await initPocketBase(req);
+    const user = pb.authStore.model;
 
-    const authHeader = req.headers.get('authorization')
-    if (!authHeader || !authHeader.startsWith('Bearer ')) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-    }
-
-    const token = authHeader.split(' ')[1]
-    const payload = verifyToken(token)
-    if (!payload || payload.role !== 'ADMIN') {
+    if (!user || user.role !== 'ADMIN') {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
@@ -25,24 +19,13 @@ export async function PATCH(
       return NextResponse.json({ error: 'Status is required' }, { status: 400 })
     }
 
-    const updatedOrder = await prisma.order.update({
-      where: { id },
-      data: { status },
-      include: {
-        items: true,
-        user: {
-          select: {
-            name: true,
-            email: true,
-            phone: true
-          }
-        }
-      }
+    const updatedOrder = await pb.collection('orders').update(id, { status }, {
+      expand: 'order_items(order).product,user'
     })
 
     return NextResponse.json(updatedOrder)
-  } catch (error) {
+  } catch (error: any) {
     console.error('Update order status error:', error)
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
+    return NextResponse.json({ error: error.message || 'Internal server error' }, { status: 500 })
   }
 }

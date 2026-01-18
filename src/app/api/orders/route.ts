@@ -1,35 +1,21 @@
-import { NextResponse } from 'next/server'
-import { initPocketBase } from '@/lib/pocketbase'
-import { getAdminPocketBase } from '@/lib/admin'
+import { initPocketBase } from '@/lib/pocketbase';
+import { NextRequest, NextResponse } from 'next/server';
 
-export async function POST(req: Request) {
+export async function POST(req: NextRequest) {
   try {
     const pb = await initPocketBase(req);
-    let user = pb.authStore.model;
+    const user = pb.authStore.model;
 
-    if (!user) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-    }
+    if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
 
-    const { items, total, paymentMethod, currency, address, notes } = await req.json()
+    const { items, total, paymentMethod, currency, address, notes } = await req.json();
+    if (!items?.length) return NextResponse.json({ error: 'Cart is empty' }, { status: 400 });
+    if (!address || !paymentMethod || !currency) return NextResponse.json({ error: 'Missing required fields' }, { status: 400 });
 
-    if (!items || items.length === 0) {
-      return NextResponse.json({ error: 'Cart is empty' }, { status: 400 })
-    }
+    const isPreorder = items.some((i: any) => i.isPreorder);
 
-    if (!address || !paymentMethod || !currency) {
-      return NextResponse.json({ error: 'Missing required fields' }, { status: 400 })
-    }
-
-    // Check if any item is a preorder
-    // We can assume frontend sends isPreorder, or we verify with product fetch
-    // distinct from Prisma 'items.some', we trust input or should refetch products
-    // Trusting input for now to match logic flow, but ideally refetch
-    const isPreorder = items.some((item: any) => item.isPreorder)
-
-    // 1. Create the order
-    // 1. Create the order using Admin privileges
-    const orderData = {
+    const pbAdmin = pb; // solo usamos PocketBase, admin privileges controlados por rol
+    const order = await pbAdmin.collection('orders').create({
       user: user.id,
       total,
       isPreorder,
@@ -38,93 +24,45 @@ export async function POST(req: Request) {
       address,
       notes,
       status: 'PENDING_PAYMENT',
-      // paymentReportedAt: '', // Removed to avoid Date validation errors with empty strings
-    };
-
-    console.log('Attempting to create order with data:', orderData);
-
-    // Initialize Admin Client
-    const pbAdmin = await getAdminPocketBase();
-
-    const order = await pbAdmin.collection('orders').create(orderData);
-    console.log('Order created successfully:', order.id);
-    console.log('Processing items:', JSON.stringify(items, null, 2));
-
-    // 2. Create order items and update stock
-    // PocketBase doesn't have ACID transactions over API like Prisma, so we proceed sequentially
-    // Use Promise.all for speed, but handle errors carefully
-
-    const itemPromises = items.map(async (item: any) => {
-      // Create order item
-      try {
-        await pbAdmin.collection('order_items').create({
-          order: order.id,
-          product: item.id,
-          name: item.name,
-          quantity: item.quantity,
-          price: item.price
-        });
-      } catch (err: any) {
-        console.error(`Failed to create order item for product ${item.id}:`, JSON.stringify(err?.data || err, null, 2));
-        throw err;
-      }
-
-      // Update stock if not preorder
-      if (!item.isPreorder) {
-        try {
-          // Fetch current stock to decrement safely (Read-Modify-Write)
-          // Note: potential race condition here without locking, acceptable for MVP
-          const product = await pbAdmin.collection('products').getOne(item.id);
-          const newStock = Math.max(0, product.stock - item.quantity);
-
-          await pbAdmin.collection('products').update(item.id, {
-            stock: newStock
-          });
-        } catch (err) {
-          console.error(`Failed to update stock for product ${item.id}`, err);
-          // Continue execution, don't fail the order just for stock update failure in MVP
-        }
-      }
     });
 
-    await Promise.all(itemPromises);
+    await Promise.all(items.map(async (item: any) => {
+      await pbAdmin.collection('order_items').create({
+        order: order.id,
+        product: item.id,
+        name: item.name,
+        quantity: item.quantity,
+        price: item.price,
+      });
 
-    return NextResponse.json(order)
+      if (!item.isPreorder) {
+        const product = await pbAdmin.collection('products').getOne(item.id);
+        await pbAdmin.collection('products').update(item.id, { stock: Math.max(0, product.stock - item.quantity) });
+      }
+    }));
+
+    return NextResponse.json(order);
   } catch (error: any) {
-    console.error('Order creation error details:', JSON.stringify({
-      message: error?.message,
-      data: error?.data,
-      status: error?.status,
-    }, null, 2));
-
-    // Return the actual error message from PocketBase if available
-    const errorMessage = error?.data?.message || error?.message || 'Internal server error';
-    return NextResponse.json({ error: errorMessage, details: error?.data }, { status: error?.status || 500 })
+    console.error('Order creation error:', error);
+    return NextResponse.json({ error: error.message || 'Internal server error' }, { status: 500 });
   }
 }
 
-export async function GET(req: Request) {
+export async function GET(req: NextRequest) {
   try {
     const pb = await initPocketBase(req);
     const user = pb.authStore.model;
 
-    if (!user) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-    }
+    if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
 
-    // Determine filter based on role
     const isAdmin = user.role === 'ADMIN';
     const filter = isAdmin ? '' : `user = "${user.id}"`;
 
-    const records = await pb.collection('orders').getFullList({
-      sort: '-created',
-      filter: filter,
-      expand: 'order_items(order).product,user'
-    });
+    const records = await pb.collection('orders').getFullList({ sort: '-created', filter, expand: 'order_items(product),user' });
 
-    return NextResponse.json(records)
-  } catch (error) {
+    return NextResponse.json(records);
+  } catch (error: any) {
     console.error('Fetch orders error:', error);
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
+    return NextResponse.json({ error: error.message || 'Internal server error' }, { status: 500 });
   }
 }

@@ -2,7 +2,7 @@ import { NextResponse } from 'next/server'
 import type { NextRequest } from 'next/server'
 
 export function middleware(req: NextRequest) {
-  const token = req.cookies.get('nex_session')?.value
+  const token = req.cookies.get('pb_auth')?.value
   const isLoginPage = req.nextUrl.pathname === '/login'
   const isRootPath = req.nextUrl.pathname === '/'
 

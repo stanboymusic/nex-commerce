@@ -1,6 +1,5 @@
 import { NextResponse } from 'next/server'
-import prisma from '@/lib/prisma'
-import { verifyToken } from '@/lib/auth'
+import { initPocketBase } from '@/lib/pocketbase'
 
 export async function POST(
   req: Request,
@@ -8,14 +7,10 @@ export async function POST(
 ) {
   try {
     const { id } = await params
-    const authHeader = req.headers.get('authorization')
-    if (!authHeader || !authHeader.startsWith('Bearer ')) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-    }
+    const pb = await initPocketBase(req);
+    const user = pb.authStore.model;
 
-    const token = authHeader.split(' ')[1]
-    const payload = verifyToken(token)
-    if (!payload) {
+    if (!user) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
@@ -24,22 +19,23 @@ export async function POST(
       return NextResponse.json({ error: 'Reference is required' }, { status: 400 })
     }
 
+    // Fetch the order first to check ownership if not admin
+    const order = await pb.collection('orders').getOne(id);
+    
+    if (order.user !== user.id && user.role !== 'ADMIN') {
+      return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
+    }
+
     // Update order status and set reference
-    const order = await prisma.order.update({
-      where: { 
-        id,
-        userId: payload.userId // Security: ensure user owns the order
-      },
-      data: {
-        status: 'PAYMENT_REPORTED',
-        paymentReference: reference,
-        paymentReportedAt: new Date(),
-      },
+    const updatedOrder = await pb.collection('orders').update(id, {
+      status: 'PAYMENT_REPORTED',
+      paymentReference: reference,
+      paymentReportedAt: new Date(),
     })
 
-    return NextResponse.json(order)
-  } catch (error) {
+    return NextResponse.json(updatedOrder)
+  } catch (error: any) {
     console.error('Report payment error:', error)
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
+    return NextResponse.json({ error: error.message || 'Internal server error' }, { status: 500 })
   }
 }

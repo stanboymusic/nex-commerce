@@ -1,69 +1,60 @@
-import { initPocketBase } from "@/lib/pocketbase";
-import { NextResponse } from "next/server";
-import { type NextRequest } from "next/server";
+import { initPocketBase } from '@/lib/pocketbase';
+import { NextRequest, NextResponse } from 'next/server';
 
 export async function GET(req: NextRequest) {
   try {
     const pb = await initPocketBase(req);
-    const records = await pb.collection('products').getFullList({
-      sort: '-created',
-      requestKey: null
-    });
+    const user = pb.authStore.model;
 
-    const products = records.map(record => {
-      const images = record.images ? record.images.map((filename: string) => ({
-        id: filename,
-        url: pb.files.getUrl(record, filename)
-      })) : [];
+    if (!user) return NextResponse.json({ error: 'No autorizado' }, { status: 401 });
 
-      return {
-        id: record.id,
-        name: record.name,
-        slug: record.slug,
-        description: record.description,
-        price: record.price,
-        stock: record.stock,
-        isPreorder: record.isPreorder,
-        arrivalDate: record.arrivalDate,
-        estimatedDeliveryDate: record.estimatedDeliveryDate,
-        images: images,
-        categoryId: record.category,
-        createdAt: record.created,
-        updatedAt: record.updated,
-      };
-    });
+    const isAdmin = user.role === 'ADMIN';
+    const filter = isAdmin ? '' : `user = "${user.id}"`;
+
+    const records = await pb.collection('products').getFullList({ sort: '-created', filter });
+
+    const products = records.map(r => ({
+      id: r.id,
+      name: r.name,
+      slug: r.slug,
+      description: r.description,
+      price: r.price,
+      stock: r.stock,
+      isPreorder: r.isPreorder,
+      arrivalDate: r.arrivalDate,
+      estimatedDeliveryDate: r.estimatedDeliveryDate,
+      images: r.images?.map((img: string) => ({ id: img, url: pb.files.getUrl(r, img) })) || [],
+      categoryId: r.category,
+      userId: r.user,
+      createdAt: r.created,
+      updatedAt: r.updated,
+    }));
 
     return NextResponse.json(products);
-  } catch (error) {
-    console.error("Error fetching products:", error);
-    return NextResponse.json({ error: "Error al obtener productos" }, { status: 500 });
+  } catch (error: any) {
+    console.error('Error fetching products:', error);
+    return NextResponse.json({ error: 'Error al obtener productos' }, { status: 500 });
   }
 }
 
 export async function POST(req: NextRequest) {
   try {
     const pb = await initPocketBase(req);
-    const userId = pb.authStore.model?.id;
+    const user = pb.authStore.model;
 
-    if (!userId) {
-      return NextResponse.json({ error: "No autorizado" }, { status: 401 });
-    }
+    if (!user) return NextResponse.json({ error: 'No autorizado' }, { status: 401 });
 
     const data = await req.json();
+    if (!data.name || !data.price || !data.category)
+      return NextResponse.json({ error: 'Faltan campos obligatorios (nombre, precio, categoría)' }, { status: 400 });
 
-    // Basic validation
-    if (!data.name || !data.price || !data.category) {
-      return NextResponse.json({ error: "Faltan campos obligatorios (nombre, precio, categoría)" }, { status: 400 });
-    }
-
-    // Generate slug from name if not provided
     const slug = data.slug || data.name.toLowerCase().replace(/ /g, '-').replace(/[^\w-]+/g, '');
 
-    const record = await pb.collection('products').create({ ...data, slug, user: userId });
+    const record = await pb.collection('products').create({ ...data, slug, user: user.id });
 
     return NextResponse.json(record);
   } catch (error: any) {
-    console.error("Error creating product:", error);
-    return NextResponse.json({ error: error?.message || "Error al crear el producto" }, { status: 500 });
+    console.error('Error creating product:', error);
+    return NextResponse.json({ error: error.message || 'Error al crear el producto' }, { status: 500 });
   }
 }
