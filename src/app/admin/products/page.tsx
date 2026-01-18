@@ -1,20 +1,12 @@
 import AdminLayout from "@/components/admin/AdminLayout";
 import ProductCardAdmin from "@/components/admin/ProductCardAdmin";
 import { getAdminPocketBase } from "@/lib/admin";
-import { initPocketBaseServer } from "@/lib/pocketbase";
-import { redirect } from "next/navigation";
 import { Plus, Search } from "lucide-react";
 import Link from "next/link";
 
 export const dynamic = 'force-dynamic'
 
 export default async function AdminProductsPage() {
-  const pbAuth = await initPocketBaseServer();
-  
-  if (!pbAuth.authStore.model || pbAuth.authStore.model.role !== 'ADMIN') {
-    redirect('/');
-  }
-
   const pb = await getAdminPocketBase();
   const records = await pb.collection('products').getFullList({
     sort: '-created',

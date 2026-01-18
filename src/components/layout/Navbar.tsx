@@ -5,31 +5,18 @@ import { useAuthStore } from "@/store/auth.store";
 import { useCartStore } from "@/store/cart.store";
 import { useState, useEffect } from "react";
 import { ShoppingCart, LogOut, Menu } from "lucide-react";
-import { useRouter } from "next/navigation";
-import axios from "axios";
 
 export default function Navbar() {
   const { user, logout } = useAuthStore()
   const { getItemCount } = useCartStore()
   const [isMenuOpen, setIsMenuOpen] = useState(false)
   const [mounted, setMounted] = useState(false)
-  const router = useRouter()
 
   useEffect(() => {
     setMounted(true)
   }, [])
 
   const cartCount = mounted ? getItemCount() : 0
-
-  const handleLogout = async () => {
-    try {
-      await axios.post('/api/auth/logout');
-    } catch (e) {
-      console.error('Logout error:', e);
-    }
-    logout();
-    router.push('/login');
-  };
 
   return (
     <nav className="w-full border-b border-gray-200 bg-white sticky top-0 z-50">
@@ -63,7 +50,7 @@ export default function Navbar() {
             <div className="flex items-center gap-4">
               <span className="text-sm font-semibold hidden sm:inline text-navy">{user.name}</span>
               <button 
-                onClick={handleLogout}
+                onClick={logout}
                 className="text-navy hover:text-purple transition-colors"
                 title="Cerrar sesión"
               >
@@ -100,15 +87,6 @@ export default function Navbar() {
           <Link href="/cart" className="block text-navy font-medium hover:text-purple transition-colors">
             Carrito ({cartCount})
           </Link>
-          {user && (
-            <button 
-              onClick={handleLogout}
-              className="flex items-center gap-2 text-navy font-medium hover:text-purple transition-colors w-full text-left"
-            >
-              <LogOut className="h-4 w-4" />
-              Cerrar Sesión
-            </button>
-          )}
         </div>
       )}
     </nav>
