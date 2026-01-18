@@ -1,10 +1,7 @@
 import axios from 'axios';
-import PocketBase from 'pocketbase';
+import { useAdminStore } from '@/store/admin.store';
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'https://nex-users.vercel.app/api';
-
-// Inicializamos PocketBase para obtener la sesión del admin
-export const pb = new PocketBase('https://nexcommerce.fly.dev');
 
 export const apiClient = axios.create({
   baseURL: API_URL,
@@ -14,9 +11,9 @@ export const apiClient = axios.create({
   },
 });
 
-// Interceptor para agregar token automáticamente desde PocketBase
+// Interceptor to automatically add token from store
 apiClient.interceptors.request.use((config) => {
-  const token = pb.authStore.token; // token activo de PocketBase
+  const token = useAdminStore.getState().token;
   if (token) {
     config.headers.Authorization = `Bearer ${token}`;
   }

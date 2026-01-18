@@ -8,7 +8,7 @@ export default async function AdminLayout({
     children: React.ReactNode;
 }) {
     const cookieStore = await cookies();
-    const token = cookieStore.get('nex_session')?.value;
+    const token = cookieStore.get('pb_auth')?.value;
 
     if (!token) {
         redirect('/login');

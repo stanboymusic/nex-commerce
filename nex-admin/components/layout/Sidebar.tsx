@@ -29,7 +29,10 @@ export const Sidebar = () => {
 
     const handleLogout = () => {
         logout();
+        // Clear all possible session cookies
+        document.cookie = 'pb_auth=; path=/; expires=Thu, 01 Jan 1970 00:00:01 GMT';
         document.cookie = 'token=; path=/; expires=Thu, 01 Jan 1970 00:00:01 GMT';
+        document.cookie = 'nex_session=; path=/; expires=Thu, 01 Jan 1970 00:00:01 GMT';
         router.push('/login');
     };
 

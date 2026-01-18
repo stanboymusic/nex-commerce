@@ -23,9 +23,8 @@ export default function DashboardPage() {
   useEffect(() => {
     // If we have a cookie but no token in store, sync them
     if (!storeToken) {
-      const match = document.cookie.match(new RegExp('(^| )nex_session=([^;]+)'));
+      const match = document.cookie.match(new RegExp('(^| )pb_auth=([^;]+)'));
       if (match && match[2]) {
-        // We set a placeholder admin object, the next API call will fail if token is truly invalid
         setAdmin({ role: 'ADMIN' }, match[2]);
       }
     }

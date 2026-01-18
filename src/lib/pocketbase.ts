@@ -14,9 +14,10 @@ export function getPocketBase(): PocketBase {
 export async function initPocketBase(req: NextRequest): Promise<PocketBase> {
   const client = getPocketBase();
 
-  // Reset the auth store for each request to avoid state leakage between requests in the singleton
+  // Reset the auth store for each request to avoid state leakage
   client.authStore.clear();
 
+  // We primarily use 'pb_auth' cookie for both user and admin apps
   const authValue = req.cookies.get('pb_auth')?.value;
   const authHeader = req.headers.get('Authorization');
 
@@ -25,15 +26,18 @@ export async function initPocketBase(req: NextRequest): Promise<PocketBase> {
     client.authStore.save(token, null);
   } else if (authValue) {
     try {
-      // Intentamos cargar como cookie serializada (token + model)
-      client.authStore.loadFromCookie('pb_auth=' + authValue);
+      // Try to load as a serialized cookie (token + model) or just the token
+      if (authValue.includes('%7B')) { // Simple check for JSON-like content
+        client.authStore.loadFromCookie('pb_auth=' + authValue);
+      } else {
+        client.authStore.save(authValue, null);
+      }
     } catch (_) {
-      // Si falla, lo tratamos como token plano
       client.authStore.save(authValue, null);
     }
   }
 
-  // Si tenemos token pero no modelo, intentamos refrescar para obtener los datos del usuario (incluyendo el rol)
+  // If we have a token but no model, try to refresh to get user data
   if (client.authStore.token && !client.authStore.model) {
     try {
       await client.collection('users').authRefresh();
