@@ -179,21 +179,50 @@ export const OrderDetailModal = ({ order, isOpen, onClose, onUpdate }: OrderDeta
             {/* Print styles */}
             <style jsx global>{`
                 @media print {
-                    body * {
-                        visibility: hidden;
-                    }
-                    .print-area, .print-area * {
-                        visibility: visible;
-                    }
-                    .print-area {
-                        position: absolute;
-                        left: 0;
-                        top: 0;
-                        width: 100%;
-                        background: white;
-                    }
-                    .print-hidden {
+                    /* Hide everything by default */
+                    body > * {
                         display: none !important;
+                    }
+                    /* Show only our printable container and its parents */
+                    body > div:has(.print-area),
+                    .print-area {
+                        display: block !important;
+                        position: absolute !important;
+                        left: 0 !important;
+                        top: 0 !important;
+                        width: 100% !important;
+                        margin: 0 !important;
+                        padding: 0 !important;
+                        visibility: visible !important;
+                    }
+
+                    /* Reset modal styling for print */
+                    .relative.bg-white.rounded-3xl {
+                        box-shadow: none !important;
+                        border: none !important;
+                        max-height: none !important;
+                        overflow: visible !important;
+                        width: 100% !important;
+                        position: static !important;
+                    }
+
+                    /* Hide specific elements */
+                    .print-hidden, 
+                    button,
+                    .modal-header,
+                    .backdrop-blur-sm {
+                        display: none !important;
+                    }
+
+                    /* Ensure text colors are kept */
+                    * {
+                        -webkit-print-color-adjust: exact !important;
+                        print-color-adjust: exact !important;
+                    }
+
+                    @page {
+                        size: A4;
+                        margin: 20mm;
                     }
                 }
             `}</style>
