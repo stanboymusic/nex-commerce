@@ -1,20 +1,13 @@
-import { initPocketBase } from '@/lib/pocketbase';
+import { getAdminPocketBase, initPocketBase } from '@/lib/pocketbase';
 import { NextRequest, NextResponse } from 'next/server';
 
 export async function GET(req: NextRequest) {
   try {
-    const pb = await initPocketBase(req);
-    const user = pb.authStore.model;
+    const pb = await getAdminPocketBase();
 
-    if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-
-    const isAdmin = user.role === 'ADMIN';
-    const filter = isAdmin ? '' : `user = "${user.id}"`;
-
-    const records = await pb.collection('products').getFullList({ 
-        sort: '-created', 
-        filter,
-        expand: 'category' 
+    const records = await pb.collection('products').getFullList({
+      sort: '-created',
+      expand: 'category'
     });
 
     const products = records.map(r => ({
