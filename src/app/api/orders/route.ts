@@ -14,35 +14,58 @@ export async function POST(req: NextRequest) {
 
     const isPreorder = items.some((i: { isPreorder?: boolean }) => i.isPreorder);
 
-    const order = await pb.collection('orders').create({
-      user: user.id,
-      total,
-      isPreorder,
-      paymentMethod,
-      currency,
-      address,
-      notes,
-      status: 'PENDING_PAYMENT',
-    });
-
-    await Promise.all(items.map(async (item: { id: string; name: string; quantity: number; price: number; isPreorder?: boolean }) => {
-      await pb.collection('order_items').create({
-        order: order.id,
-        product: item.id,
-        name: item.name,
-        quantity: item.quantity,
-        price: item.price,
+    // 1. Create Order
+    let order;
+    try {
+      order = await pb.collection('orders').create({
+        user: user.id,
+        total,
+        isPreorder,
+        paymentMethod,
+        currency,
+        address,
+        notes,
+        status: 'PENDING_PAYMENT',
       });
+    } catch (orderError: any) {
+      console.error('PB Order Creation Error:', orderError.data || orderError.message);
+      throw new Error(`Failed to create order: ${orderError.message}`);
+    }
 
-      if (!item.isPreorder) {
-        const product = await pb.collection('products').getOne(item.id);
-        await pb.collection('products').update(item.id, { stock: Math.max(0, product.stock - item.quantity) });
-      }
-    }));
+    // 2. Create Order Items and Update Stock
+    try {
+      await Promise.all(items.map(async (item: { id: string; name: string; quantity: number; price: number; isPreorder?: boolean }) => {
+        // Create order item
+        await pb.collection('order_items').create({
+          order: order.id,
+          product: item.id,
+          name: item.name,
+          quantity: item.quantity,
+          price: item.price,
+        });
+
+        // Update stock if not preorder
+        if (!item.isPreorder) {
+          try {
+            const product = await pb.collection('products').getOne(item.id);
+            await pb.collection('products').update(item.id, {
+              stock: Math.max(0, (product.stock || 0) - item.quantity)
+            });
+          } catch (stockError) {
+            console.warn(`Failed to update stock for product ${item.id}:`, stockError);
+            // We don't throw here to avoid failing the whole order if just stock update fails
+          }
+        }
+      }));
+    } catch (itemsError: any) {
+      console.error('PB Order Items Creation Error:', itemsError.data || itemsError.message);
+      // Even if items fail, the order exists. But usually we want both.
+      throw new Error(`Failed to create order items: ${itemsError.message}`);
+    }
 
     return NextResponse.json(order);
   } catch (error: any) {
-    console.error('Order creation error:', error);
+    console.error('Order processing error:', error);
     return NextResponse.json({ error: error.message || 'Internal server error' }, { status: 500 });
   }
 }
@@ -57,13 +80,12 @@ export async function GET(req: NextRequest) {
     const isAdmin = user.role === 'ADMIN';
     const filter = isAdmin ? '' : `user = "${user.id}"`;
 
-    const records = await pb.collection('orders').getFullList({ 
-        sort: '-created', 
-        filter, 
-        expand: 'order_items(order).product,user' 
+    const records = await pb.collection('orders').getFullList({
+      sort: '-created',
+      filter,
+      expand: 'order_items(order).product,user'
     });
 
-    // Map to stable interface
     const orders = records.map(r => ({
       id: r.id,
       total: r.total,
@@ -73,8 +95,10 @@ export async function GET(req: NextRequest) {
       address: r.address,
       notes: r.notes,
       isPreorder: r.isPreorder,
+      created: r.created, // For nex-admin compatibility
       createdAt: r.created,
       updatedAt: r.updated,
+      customerName: r.expand?.user?.name || 'N/A', // For nex-admin compatibility
       user: r.expand?.user ? {
         id: r.expand.user.id,
         name: r.expand.user.name,

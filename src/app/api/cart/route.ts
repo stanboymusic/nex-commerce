@@ -65,6 +65,10 @@ export async function POST(request: NextRequest) {
         const { productId, quantity } = body;
         const userId = pb.authStore.model?.id;
 
+        if (!productId || !userId) {
+            return NextResponse.json({ error: "Product ID and valid session required" }, { status: 400 });
+        }
+
         // Check if item already exists in cart
         try {
             const existingItems = await pb.collection('cart').getList(1, 1, {
@@ -74,26 +78,30 @@ export async function POST(request: NextRequest) {
             if (existingItems.items.length > 0) {
                 // Update quantity
                 const item = existingItems.items[0];
-                const newQuantity = item.quantity + quantity;
+                const newQuantity = (item.quantity || 0) + quantity;
                 await pb.collection('cart').update(item.id, { quantity: newQuantity });
                 return NextResponse.json({ success: true, action: 'updated', id: item.id });
             }
-        } catch (_) {
-            // Continue to create
+        } catch (existingError: any) {
+            console.warn("Cart check failed (will try creating):", existingError.message);
         }
 
         // Create new item
-        const newItem = await pb.collection('cart').create({
-            user: userId,
-            product: productId,
-            quantity: quantity
-        });
+        try {
+            const newItem = await pb.collection('cart').create({
+                user: userId,
+                product: productId,
+                quantity: quantity
+            });
+            return NextResponse.json({ success: true, action: 'created', id: newItem.id });
+        } catch (createError: any) {
+            console.error("PB Cart Creation Error:", createError.data || createError.message);
+            return NextResponse.json({ error: `Failed to create cart item: ${createError.message}` }, { status: 500 });
+        }
 
-        return NextResponse.json({ success: true, action: 'created', id: newItem.id });
-
-    } catch (error) {
-        console.error("Error creating cart item:", error);
-        return NextResponse.json({ error: "Error creating cart item" }, { status: 500 });
+    } catch (error: any) {
+        console.error("Cart sync POST error:", error);
+        return NextResponse.json({ error: error.message || "Internal server error" }, { status: 500 });
     }
 }
 
@@ -106,8 +114,12 @@ export async function PUT(request: NextRequest) {
 
     try {
         const body = await request.json();
-        const { productId, quantity } = body; // We receive productId from store, need to find cart item
+        const { productId, quantity } = body;
         const userId = pb.authStore.model?.id;
+
+        if (!productId || !userId) {
+            return NextResponse.json({ error: "Product ID and valid session required" }, { status: 400 });
+        }
 
         // Find cart item by product and user
         const existingItems = await pb.collection('cart').getList(1, 1, {
@@ -123,9 +135,9 @@ export async function PUT(request: NextRequest) {
 
         return NextResponse.json({ success: true });
 
-    } catch (error) {
-        console.error("Error updating cart item:", error);
-        return NextResponse.json({ error: "Error updating cart item" }, { status: 500 });
+    } catch (error: any) {
+        console.error("Cart sync PUT error:", error);
+        return NextResponse.json({ error: error.message || "Internal server error" }, { status: 500 });
     }
 }
 
@@ -141,7 +153,7 @@ export async function DELETE(request: NextRequest) {
         const productId = url.searchParams.get('productId');
         const userId = pb.authStore.model?.id;
 
-        if (!productId) {
+        if (!productId || !userId) {
             return NextResponse.json({ error: "Product ID required" }, { status: 400 });
         }
 
@@ -157,8 +169,8 @@ export async function DELETE(request: NextRequest) {
 
         return NextResponse.json({ success: true });
 
-    } catch (error) {
-        console.error("Error deleting cart item:", error);
-        return NextResponse.json({ error: "Error deleting cart item" }, { status: 500 });
+    } catch (error: any) {
+        console.error("Cart sync DELETE error:", error);
+        return NextResponse.json({ error: error.message || "Internal server error" }, { status: 500 });
     }
 }
