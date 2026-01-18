@@ -48,3 +48,24 @@ export async function initPocketBase(req: NextRequest): Promise<PocketBase> {
 
   return client;
 }
+export async function getAdminPocketBase(): Promise<PocketBase> {
+  const adminPb = getPocketBase();
+
+  if (!adminPb.authStore.isValid || adminPb.authStore.model === null) {
+    try {
+      const email = process.env.POCKETBASE_ADMIN_EMAIL || process.env.ADMIN_EMAIL;
+      const password = process.env.POCKETBASE_ADMIN_PASSWORD || process.env.ADMIN_PASSWORD;
+
+      if (!email || !password) {
+        throw new Error("Missing admin credentials in environment variables.");
+      }
+
+      await adminPb.admins.authWithPassword(email, password);
+    } catch (error: any) {
+      console.error("ADMIN_AUTH_ERROR:", error?.message || error);
+      throw error;
+    }
+  }
+
+  return adminPb;
+}
