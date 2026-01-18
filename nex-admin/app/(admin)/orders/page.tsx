@@ -7,23 +7,28 @@ import { Card } from "@/components/ui/Card";
 import { Badge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Input";
+import { OrderDetailModal } from "@/components/admin/OrderDetailModal";
 
 export default function OrdersPage() {
     const [orders, setOrders] = useState([]);
     const [loading, setLoading] = useState(true);
     const [searchTerm, setSearchTerm] = useState("");
+    const [selectedOrder, setSelectedOrder] = useState<any>(null);
+    const [isModalOpen, setIsModalOpen] = useState(false);
+
+    const fetchOrders = async () => {
+        setLoading(true);
+        try {
+            const response = await apiClient.get('/orders');
+            setOrders(response.data || []);
+        } catch (error) {
+            console.error("Error fetching orders:", error);
+        } finally {
+            setLoading(false);
+        }
+    };
 
     useEffect(() => {
-        const fetchOrders = async () => {
-            try {
-                const response = await apiClient.get('/orders');
-                setOrders(response.data || []);
-            } catch (error) {
-                console.error("Error fetching orders:", error);
-            } finally {
-                setLoading(false);
-            }
-        };
         fetchOrders();
     }, []);
 
@@ -103,7 +108,15 @@ export default function OrdersPage() {
                                                 </Badge>
                                             </td>
                                             <td className="px-6 py-4">
-                                                <Button variant="ghost" size="sm" leftIcon={<Eye className="h-4 w-4" />}>
+                                                <Button
+                                                    variant="ghost"
+                                                    size="sm"
+                                                    leftIcon={<Eye className="h-4 w-4" />}
+                                                    onClick={() => {
+                                                        setSelectedOrder(order);
+                                                        setIsModalOpen(true);
+                                                    }}
+                                                >
                                                     Ver detalle
                                                 </Button>
                                             </td>
@@ -121,6 +134,13 @@ export default function OrdersPage() {
                     </div>
                 </Card>
             )}
+
+            <OrderDetailModal
+                order={selectedOrder}
+                isOpen={isModalOpen}
+                onClose={() => setIsModalOpen(false)}
+                onUpdate={fetchOrders}
+            />
         </>
     );
 }
