@@ -38,15 +38,73 @@ export async function GET(
       };
 
       return NextResponse.json(product)
-    } catch (err: any) {
+    } catch (error) {
+      const err = error as { status?: number };
       if (err.status === 404) {
         return NextResponse.json({ error: 'Product not found' }, { status: 404 })
       }
-      throw err;
+      throw error;
     }
 
   } catch (error) {
     console.error("Error fetching product:", error);
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
+  }
+}
+
+export async function PATCH(
+  req: NextRequest,
+  { params }: { params: Promise<{ id: string }> }
+) {
+  try {
+    const { id } = await params
+    const pb = await initPocketBase(req);
+    const user = pb.authStore.model;
+
+    if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+
+    const existing = await pb.collection('products').getOne(id);
+    const isAdmin = user.role === 'ADMIN';
+
+    if (!isAdmin && existing.user !== user.id) {
+      return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
+    }
+
+    const data = await req.json();
+    const updated = await pb.collection('products').update(id, data);
+
+    return NextResponse.json(updated);
+  } catch (error) {
+    const err = error as { message?: string };
+    console.error("Error updating product:", err);
+    return NextResponse.json({ error: err.message || 'Error al actualizar el producto' }, { status: 500 })
+  }
+}
+
+export async function DELETE(
+  req: NextRequest,
+  { params }: { params: Promise<{ id: string }> }
+) {
+  try {
+    const { id } = await params
+    const pb = await initPocketBase(req);
+    const user = pb.authStore.model;
+
+    if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+
+    const existing = await pb.collection('products').getOne(id);
+    const isAdmin = user.role === 'ADMIN';
+
+    if (!isAdmin && existing.user !== user.id) {
+      return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
+    }
+
+    await pb.collection('products').delete(id);
+
+    return new NextResponse(null, { status: 204 });
+  } catch (error) {
+    const err = error as { message?: string };
+    console.error("Error deleting product:", err);
+    return NextResponse.json({ error: err.message || 'Error al eliminar el producto' }, { status: 500 })
   }
 }

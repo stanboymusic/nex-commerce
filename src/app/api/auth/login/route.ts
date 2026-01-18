@@ -24,11 +24,12 @@ export async function POST(req: NextRequest) {
     })
 
     return response
-  } catch (error: any) {
-    console.error('Login error:', error)
+  } catch (error) {
+    const err = error as { status?: number; data?: { message?: string } };
+    console.error('Login error:', err)
     return NextResponse.json(
-      { error: error?.data?.message || 'Credenciales inválidas' },
-      { status: error?.status || 401 }
+      { error: err.data?.message || 'Credenciales inválidas' },
+      { status: err.status || 401 }
     )
   }
 }

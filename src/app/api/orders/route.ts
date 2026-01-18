@@ -12,7 +12,7 @@ export async function POST(req: NextRequest) {
     if (!items?.length) return NextResponse.json({ error: 'Cart is empty' }, { status: 400 });
     if (!address || !paymentMethod || !currency) return NextResponse.json({ error: 'Missing required fields' }, { status: 400 });
 
-    const isPreorder = items.some((i: any) => i.isPreorder);
+    const isPreorder = items.some((i: { isPreorder?: boolean }) => i.isPreorder);
 
     const pbAdmin = pb; // solo usamos PocketBase, admin privileges controlados por rol
     const order = await pbAdmin.collection('orders').create({
@@ -26,7 +26,7 @@ export async function POST(req: NextRequest) {
       status: 'PENDING_PAYMENT',
     });
 
-    await Promise.all(items.map(async (item: any) => {
+    await Promise.all(items.map(async (item: { id: string; name: string; quantity: number; price: number; isPreorder?: boolean }) => {
       await pbAdmin.collection('order_items').create({
         order: order.id,
         product: item.id,
@@ -42,9 +42,10 @@ export async function POST(req: NextRequest) {
     }));
 
     return NextResponse.json(order);
-  } catch (error: any) {
-    console.error('Order creation error:', error);
-    return NextResponse.json({ error: error.message || 'Internal server error' }, { status: 500 });
+  } catch (error) {
+    const err = error as { message?: string };
+    console.error('Order creation error:', err);
+    return NextResponse.json({ error: err.message || 'Internal server error' }, { status: 500 });
   }
 }
 
@@ -61,8 +62,9 @@ export async function GET(req: NextRequest) {
     const records = await pb.collection('orders').getFullList({ sort: '-created', filter, expand: 'order_items(product),user' });
 
     return NextResponse.json(records);
-  } catch (error: any) {
-    console.error('Fetch orders error:', error);
-    return NextResponse.json({ error: error.message || 'Internal server error' }, { status: 500 });
+  } catch (error) {
+    const err = error as { message?: string };
+    console.error('Fetch orders error:', err);
+    return NextResponse.json({ error: err.message || 'Internal server error' }, { status: 500 });
   }
 }

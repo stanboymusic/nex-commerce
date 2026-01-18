@@ -53,7 +53,7 @@ export async function GET(request: NextRequest) {
     }
 }
 
-export async function POST(request: Request) {
+export async function POST(request: NextRequest) {
     const pb = await initPocketBase(request);
 
     if (!pb.authStore.isValid) {
@@ -97,7 +97,7 @@ export async function POST(request: Request) {
     }
 }
 
-export async function PUT(request: Request) {
+export async function PUT(request: NextRequest) {
     const pb = await initPocketBase(request);
 
     if (!pb.authStore.isValid) {
@@ -129,7 +129,7 @@ export async function PUT(request: Request) {
     }
 }
 
-export async function DELETE(request: Request) {
+export async function DELETE(request: NextRequest) {
     const pb = await initPocketBase(request);
 
     if (!pb.authStore.isValid) {

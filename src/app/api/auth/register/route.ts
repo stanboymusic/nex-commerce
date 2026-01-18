@@ -25,7 +25,7 @@ export async function POST(req: NextRequest) {
     // Auto login after registration
     const authData = await pb.collection('users').authWithPassword(email, password);
 
-    return NextResponse.json({
+    const response = NextResponse.json({
       user: {
         id: record.id,
         name: record.name,
@@ -34,12 +34,24 @@ export async function POST(req: NextRequest) {
       },
       token: authData.token,
     })
-  } catch (error: any) {
-    console.error('Registration error:', error)
-    const status = error?.status || 500
-    const message = error?.data?.message || 'Error creating user'
+
+    // Set standard PB cookie
+    response.cookies.set('pb_auth', pb.authStore.exportToCookie().split('=')[1].split(';')[0], {
+      path: '/',
+      httpOnly: false,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: 'lax',
+      maxAge: 7 * 24 * 60 * 60
+    })
+
+    return response
+  } catch (error) {
+    const err = error as { status?: number; data?: { message?: string; data?: any } };
+    console.error('Registration error:', err)
+    const status = err.status || 500
+    const message = err.data?.message || 'Error creating user'
     // Extract formatted error from PocketBase if available
-    const pbError = error?.data?.data ? JSON.stringify(error.data.data) : message;
+    const pbError = err.data?.data ? JSON.stringify(err.data.data) : message;
 
     return NextResponse.json({ error: pbError }, { status })
   }
