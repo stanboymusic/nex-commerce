@@ -1,19 +1,20 @@
 import AdminLayout from "@/components/admin/AdminLayout";
-import prisma from "@/lib/prisma";
+import { getAdminPocketBase } from "@/lib/admin";
 import { User, Mail, Phone, Shield, MoreVertical } from "lucide-react";
 
 export const dynamic = 'force-dynamic'
 
 export default async function AdminUsersPage() {
-  const users = await prisma.user.findMany({
-    orderBy: { createdAt: 'desc' }
+  const pb = await getAdminPocketBase();
+  const users = await pb.collection('users').getFullList({
+    sort: '-created'
   });
 
   return (
     <AdminLayout>
       <div className="mb-10">
-        <h1 className="text-4xl font-black text-oxford tracking-tight">Usuarios</h1>
-        <p className="text-gray-400 font-medium mt-1">Gestiona los permisos y perfiles de NexCommerce.</p>
+        <h1 className="text-4xl font-black text-oxford tracking-tight">Users</h1>
+        <p className="text-gray-400 font-medium mt-1">Manage permissions and profiles in NexCommerce.</p>
       </div>
 
       <div className="bg-white rounded-3xl shadow-sm border border-gray-100 overflow-hidden">
@@ -21,11 +22,11 @@ export default async function AdminUsersPage() {
           <table className="w-full text-left border-collapse">
             <thead>
               <tr className="bg-gray-50/50 border-b border-gray-100">
-                <th className="px-8 py-5 text-[10px] font-black text-gray-400 uppercase tracking-widest">Usuario</th>
-                <th className="px-8 py-5 text-[10px] font-black text-gray-400 uppercase tracking-widest">Contacto</th>
-                <th className="px-8 py-5 text-[10px] font-black text-gray-400 uppercase tracking-widest">Rol</th>
-                <th className="px-8 py-5 text-[10px] font-black text-gray-400 uppercase tracking-widest">Registro</th>
-                <th className="px-8 py-5 text-[10px] font-black text-gray-400 uppercase tracking-widest text-right">Acciones</th>
+                <th className="px-8 py-5 text-[10px] font-black text-gray-400 uppercase tracking-widest">User</th>
+                <th className="px-8 py-5 text-[10px] font-black text-gray-400 uppercase tracking-widest">Contact</th>
+                <th className="px-8 py-5 text-[10px] font-black text-gray-400 uppercase tracking-widest">Role</th>
+                <th className="px-8 py-5 text-[10px] font-black text-gray-400 uppercase tracking-widest">Registration</th>
+                <th className="px-8 py-5 text-[10px] font-black text-gray-400 uppercase tracking-widest text-right">Actions</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-50">
@@ -34,7 +35,7 @@ export default async function AdminUsersPage() {
                   <td className="px-8 py-6">
                     <div className="flex items-center gap-4">
                       <div className="w-10 h-10 bg-almond rounded-xl flex items-center justify-center text-purple font-black shadow-sm">
-                        {user.name.charAt(0).toUpperCase()}
+                        {user.name?.charAt(0).toUpperCase() || '?'}
                       </div>
                       <div>
                         <p className="font-bold text-oxford">{user.name}</p>
@@ -67,10 +68,10 @@ export default async function AdminUsersPage() {
                     </span>
                   </td>
                   <td className="px-8 py-6 text-sm text-gray-400 font-medium">
-                    {new Date(user.createdAt).toLocaleDateString()}
+                    {new Date(user.created).toLocaleDateString()}
                   </td>
                   <td className="px-8 py-6 text-right">
-                    <button aria-label="Más opciones" className="p-2 hover:bg-gray-100 rounded-lg transition-colors text-gray-400">
+                    <button aria-label="More options" className="p-2 hover:bg-gray-100 rounded-lg transition-colors text-gray-400">
                       <MoreVertical className="h-5 w-5" />
                     </button>
                   </td>

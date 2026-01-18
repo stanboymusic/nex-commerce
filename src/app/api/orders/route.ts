@@ -14,8 +14,7 @@ export async function POST(req: NextRequest) {
 
     const isPreorder = items.some((i: { isPreorder?: boolean }) => i.isPreorder);
 
-    const pbAdmin = pb; // solo usamos PocketBase, admin privileges controlados por rol
-    const order = await pbAdmin.collection('orders').create({
+    const order = await pb.collection('orders').create({
       user: user.id,
       total,
       isPreorder,
@@ -27,7 +26,7 @@ export async function POST(req: NextRequest) {
     });
 
     await Promise.all(items.map(async (item: { id: string; name: string; quantity: number; price: number; isPreorder?: boolean }) => {
-      await pbAdmin.collection('order_items').create({
+      await pb.collection('order_items').create({
         order: order.id,
         product: item.id,
         name: item.name,
@@ -36,16 +35,15 @@ export async function POST(req: NextRequest) {
       });
 
       if (!item.isPreorder) {
-        const product = await pbAdmin.collection('products').getOne(item.id);
-        await pbAdmin.collection('products').update(item.id, { stock: Math.max(0, product.stock - item.quantity) });
+        const product = await pb.collection('products').getOne(item.id);
+        await pb.collection('products').update(item.id, { stock: Math.max(0, product.stock - item.quantity) });
       }
     }));
 
     return NextResponse.json(order);
-  } catch (error) {
-    const err = error as { message?: string };
-    console.error('Order creation error:', err);
-    return NextResponse.json({ error: err.message || 'Internal server error' }, { status: 500 });
+  } catch (error: any) {
+    console.error('Order creation error:', error);
+    return NextResponse.json({ error: error.message || 'Internal server error' }, { status: 500 });
   }
 }
 
@@ -59,12 +57,43 @@ export async function GET(req: NextRequest) {
     const isAdmin = user.role === 'ADMIN';
     const filter = isAdmin ? '' : `user = "${user.id}"`;
 
-    const records = await pb.collection('orders').getFullList({ sort: '-created', filter, expand: 'order_items(product),user' });
+    const records = await pb.collection('orders').getFullList({ 
+        sort: '-created', 
+        filter, 
+        expand: 'order_items(order).product,user' 
+    });
 
-    return NextResponse.json(records);
-  } catch (error) {
-    const err = error as { message?: string };
-    console.error('Fetch orders error:', err);
-    return NextResponse.json({ error: err.message || 'Internal server error' }, { status: 500 });
+    // Map to stable interface
+    const orders = records.map(r => ({
+      id: r.id,
+      total: r.total,
+      status: r.status,
+      paymentMethod: r.paymentMethod,
+      currency: r.currency,
+      address: r.address,
+      notes: r.notes,
+      isPreorder: r.isPreorder,
+      createdAt: r.created,
+      updatedAt: r.updated,
+      user: r.expand?.user ? {
+        id: r.expand.user.id,
+        name: r.expand.user.name,
+        email: r.expand.user.email,
+        phone: r.expand.user.phone
+      } : null,
+      items: r.expand?.['order_items(order)']?.map((oi: any) => ({
+        id: oi.id,
+        productId: oi.product,
+        name: oi.name,
+        quantity: oi.quantity,
+        price: oi.price,
+        product: oi.expand?.product
+      })) || []
+    }));
+
+    return NextResponse.json(orders);
+  } catch (error: any) {
+    console.error('Fetch orders error:', error);
+    return NextResponse.json({ error: error.message || 'Internal server error' }, { status: 500 });
   }
 }

@@ -24,19 +24,15 @@ export async function POST(req: NextRequest) {
 
     if (!user) {
       // Create user if not exists
+      const randomPass = Math.random().toString(36).slice(-10);
       user = await pbAdmin.collection('users').create({
         phone,
         name: `User ${phone}`,
         otpCode: otp,
         otpExpiry: expiry,
         role: 'USER',
-        password: Math.random().toString(36).slice(-10), // Required field in PB usually
-        passwordConfirm: '', // Handled by PB if using admin to create without confirm? No, usually needs it or random
-      });
-      // Update with same password for confirm
-      await pbAdmin.collection('users').update(user.id, {
-        password: user.password,
-        passwordConfirm: user.password
+        password: randomPass,
+        passwordConfirm: randomPass,
       });
     } else {
       await pbAdmin.collection('users').update(user.id, {

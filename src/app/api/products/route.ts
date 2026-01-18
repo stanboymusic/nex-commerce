@@ -6,12 +6,16 @@ export async function GET(req: NextRequest) {
     const pb = await initPocketBase(req);
     const user = pb.authStore.model;
 
-    if (!user) return NextResponse.json({ error: 'No autorizado' }, { status: 401 });
+    if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
 
     const isAdmin = user.role === 'ADMIN';
     const filter = isAdmin ? '' : `user = "${user.id}"`;
 
-    const records = await pb.collection('products').getFullList({ sort: '-created', filter });
+    const records = await pb.collection('products').getFullList({ 
+        sort: '-created', 
+        filter,
+        expand: 'category' 
+    });
 
     const products = records.map(r => ({
       id: r.id,
@@ -25,6 +29,7 @@ export async function GET(req: NextRequest) {
       estimatedDeliveryDate: r.estimatedDeliveryDate,
       images: r.images?.map((img: string) => ({ id: img, url: pb.files.getUrl(r, img) })) || [],
       categoryId: r.category,
+      category: r.expand?.category,
       userId: r.user,
       createdAt: r.created,
       updatedAt: r.updated,
@@ -33,7 +38,7 @@ export async function GET(req: NextRequest) {
     return NextResponse.json(products);
   } catch (error: any) {
     console.error('Error fetching products:', error);
-    return NextResponse.json({ error: 'Error al obtener productos' }, { status: 500 });
+    return NextResponse.json({ error: error.message || 'Error fetching products' }, { status: 500 });
   }
 }
 
@@ -42,11 +47,11 @@ export async function POST(req: NextRequest) {
     const pb = await initPocketBase(req);
     const user = pb.authStore.model;
 
-    if (!user) return NextResponse.json({ error: 'No autorizado' }, { status: 401 });
+    if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
 
     const data = await req.json();
     if (!data.name || !data.price || !data.category)
-      return NextResponse.json({ error: 'Faltan campos obligatorios (nombre, precio, categoría)' }, { status: 400 });
+      return NextResponse.json({ error: 'Missing required fields (name, price, category)' }, { status: 400 });
 
     const slug = data.slug || data.name.toLowerCase().replace(/ /g, '-').replace(/[^\w-]+/g, '');
 
@@ -55,6 +60,6 @@ export async function POST(req: NextRequest) {
     return NextResponse.json(record);
   } catch (error: any) {
     console.error('Error creating product:', error);
-    return NextResponse.json({ error: error.message || 'Error al crear el producto' }, { status: 500 });
+    return NextResponse.json({ error: error.message || 'Error creating product' }, { status: 500 });
   }
 }

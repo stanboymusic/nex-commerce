@@ -4,7 +4,7 @@ import PocketBase from 'pocketbase'
 export async function POST(req: NextRequest) {
   try {
     const { email, password } = await req.json()
-    const pb = new PocketBase(process.env.POCKETBASE_URL || 'http://127.0.0.1:8090')
+    const pb = new PocketBase(process.env.NEXT_PUBLIC_POCKETBASE_URL || 'https://nexcommerce.fly.dev')
 
     // Standard auth
     const authData = await pb.collection('users').authWithPassword(email, password)
@@ -28,7 +28,7 @@ export async function POST(req: NextRequest) {
     const err = error as { status?: number; data?: { message?: string } };
     console.error('Login error:', err)
     return NextResponse.json(
-      { error: err.data?.message || 'Credenciales inválidas' },
+      { error: err.data?.message || 'Invalid credentials' },
       { status: err.status || 401 }
     )
   }

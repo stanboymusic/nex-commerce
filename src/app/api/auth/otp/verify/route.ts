@@ -32,23 +32,14 @@ export async function POST(req: NextRequest) {
       otpExpiry: null,
     })
 
-    // To "log in" via PocketBase without a password, we can use the admin to generate a token
-    // Actually, PocketBase doesn't have a direct "impersonate" but we can use the admin
-    // to get a token if we use authWithPassword with a known password.
-    // However, for OTP we just want to return the user and a token.
-    // If we want a valid PB token, we might need a workaround.
-    
-    // For now, let's assume we can use the admin PB to create a token or just return a signed one 
-    // BUT the user wants to "Eliminar JWT manual".
-    
-    // If we want a real PB token, we might need to set a temporary password and use it.
+    // To log in, we set a temporary password and use it to get a valid PB token
     const tempPassword = Math.random().toString(36).slice(-10);
     await pbAdmin.collection('users').update(user.id, {
         password: tempPassword,
         passwordConfirm: tempPassword
     });
 
-    const authData = await pbAdmin.collection('users').authWithPassword(user.email || user.id + '@nex.local', tempPassword);
+    const authData = await pbAdmin.collection('users').authWithPassword(user.email || `${user.id}@nex.local`, tempPassword);
 
     const response = NextResponse.json({
       user: authData.record,

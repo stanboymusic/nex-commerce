@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { initPocketBase } from '@/lib/pocketbase'
+import PocketBase from 'pocketbase'
 
 export async function POST(req: NextRequest) {
   try {
@@ -9,15 +9,16 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Name, Password and at least Email or Phone are required' }, { status: 400 })
     }
 
-    const pb = await initPocketBase(req);
+    const pb = new PocketBase(process.env.NEXT_PUBLIC_POCKETBASE_URL || 'https://nexcommerce.fly.dev');
 
     const data = {
       email,
       emailVisibility: true,
       password,
-      passwordConfirm: passwordConfirm || password, // Handle if frontend doesn't send verify
+      passwordConfirm: passwordConfirm || password,
       name,
-      phone // Assumption: you added 'phone' field to users collection or it's standard
+      phone,
+      role: 'USER' // Ensure default role is USER
     };
 
     const record = await pb.collection('users').create(data);
@@ -30,7 +31,7 @@ export async function POST(req: NextRequest) {
         id: record.id,
         name: record.name,
         email: record.email,
-        role: 'USER',
+        role: record.role || 'USER',
       },
       token: authData.token,
     })
@@ -45,14 +46,20 @@ export async function POST(req: NextRequest) {
     })
 
     return response
-  } catch (error) {
-    const err = error as { status?: number; data?: { message?: string; data?: any } };
-    console.error('Registration error:', err)
-    const status = err.status || 500
-    const message = err.data?.message || 'Error creating user'
-    // Extract formatted error from PocketBase if available
-    const pbError = err.data?.data ? JSON.stringify(err.data.data) : message;
+  } catch (error: any) {
+    console.error('Registration error:', error)
+    const status = error.status || 500
+    const message = error.data?.message || 'Error creating user'
+    
+    // Extract detailed validation errors if available
+    let detailedError = message;
+    if (error.data?.data) {
+        const firstError = Object.values(error.data.data)[0] as { message: string };
+        if (firstError?.message) {
+            detailedError = firstError.message;
+        }
+    }
 
-    return NextResponse.json({ error: pbError }, { status })
+    return NextResponse.json({ error: detailedError }, { status })
   }
 }

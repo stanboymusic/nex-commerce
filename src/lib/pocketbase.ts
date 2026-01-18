@@ -5,7 +5,7 @@ let pb: PocketBase;
 
 export function getPocketBase(): PocketBase {
   if (!pb) {
-    pb = new PocketBase('https://nexcommerce.fly.dev');
+    pb = new PocketBase(process.env.NEXT_PUBLIC_POCKETBASE_URL || 'https://nexcommerce.fly.dev');
     pb.autoCancellation(false);
   }
   return pb;

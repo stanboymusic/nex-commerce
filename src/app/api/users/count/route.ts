@@ -1,12 +1,18 @@
-import { NextResponse } from 'next/server'
+import { NextRequest, NextResponse } from 'next/server'
 import { getAdminPocketBase } from '@/lib/admin'
+import { initPocketBase } from '@/lib/pocketbase'
 
-export async function GET() {
+export async function GET(req: NextRequest) {
     try {
-        const pb = await getAdminPocketBase();
-        // Use authRefresh or just check collection count
-        // Requesting total users count
-        const resultList = await pb.collection('users').getList(1, 1);
+        const pb = await initPocketBase(req);
+        const user = pb.authStore.model;
+
+        if (!user || user.role !== 'ADMIN') {
+            return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+        }
+
+        const adminPb = await getAdminPocketBase();
+        const resultList = await adminPb.collection('users').getList(1, 1);
 
         return NextResponse.json({ count: resultList.totalItems });
     } catch (error: any) {

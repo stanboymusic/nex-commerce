@@ -70,7 +70,7 @@ export default function AdminOrdersPage() {
   const handleUpdateStatus = async (orderId: string, newStatus: OrderStatus) => {
     setUpdatingId(orderId)
     try {
-      await axios.patch(`/api/orders/${orderId}/status`, { status: newStatus }, {
+      await axios.patch(`/api/orders/${orderId}`, { status: newStatus }, {
         headers: { Authorization: `Bearer ${token}` }
       })
       // Refresh local state

@@ -146,11 +146,11 @@
         "indexes": [
             "CREATE UNIQUE INDEX `idx_fxO756FzMN` ON `categories` (`name`, `user`)"
         ],
-        "listRule": "@request.auth.id != '' && user = @request.auth.id",
-        "viewRule": "@request.auth.id != '' && user = @request.auth.id",
+        "listRule": "@request.auth.id != '' && (user = @request.auth.id || @request.auth.role = 'ADMIN')",
+        "viewRule": "@request.auth.id != '' && (user = @request.auth.id || @request.auth.role = 'ADMIN')",
         "createRule": "@request.auth.id != ''",
-        "updateRule": "@request.auth.id != '' && user = @request.auth.id",
-        "deleteRule": "@request.auth.id != '' && user = @request.auth.id",
+        "updateRule": "@request.auth.id != '' && (user = @request.auth.id || @request.auth.role = 'ADMIN')",
+        "deleteRule": "@request.auth.id != '' && (user = @request.auth.id || @request.auth.role = 'ADMIN')",
         "options": {}
     },
     {
@@ -313,11 +313,11 @@
         "indexes": [
             "CREATE UNIQUE INDEX `idx_xiRZKW8MNq` ON `products` (`slug`, `user`)"
         ],
-        "listRule": "",
-        "viewRule": "",
+        "listRule": "@request.auth.id != '' && (user = @request.auth.id || @request.auth.role = 'ADMIN')",
+        "viewRule": "@request.auth.id != '' && (user = @request.auth.id || @request.auth.role = 'ADMIN')",
         "createRule": "@request.auth.id != ''",
-        "updateRule": "@request.auth.id != '' && user = @request.auth.id",
-        "deleteRule": "@request.auth.id != '' && user = @request.auth.id",
+        "updateRule": "@request.auth.id != '' && (user = @request.auth.id || @request.auth.role = 'ADMIN')",
+        "deleteRule": "@request.auth.id != '' && (user = @request.auth.id || @request.auth.role = 'ADMIN')",
         "options": {}
     },
     {
@@ -472,9 +472,9 @@
         "indexes": [],
         "listRule": "@request.auth.id != '' && (user = @request.auth.id || @request.auth.role = 'ADMIN')",
         "viewRule": "@request.auth.id != '' && (user = @request.auth.id || @request.auth.role = 'ADMIN')",
-        "createRule": null,
-        "updateRule": null,
-        "deleteRule": null,
+        "createRule": "@request.auth.id != ''",
+        "updateRule": "@request.auth.id != '' && (user = @request.auth.id || @request.auth.role = 'ADMIN')",
+        "deleteRule": "@request.auth.id != '' && (user = @request.auth.id || @request.auth.role = 'ADMIN')",
         "options": {}
     },
     {
@@ -565,9 +565,9 @@
         "indexes": [],
         "listRule": "@request.auth.id != '' && (order.user = @request.auth.id || @request.auth.role = 'ADMIN')",
         "viewRule": "@request.auth.id != '' && (order.user = @request.auth.id || @request.auth.role = 'ADMIN')",
-        "createRule": null,
-        "updateRule": null,
-        "deleteRule": null,
+        "createRule": "@request.auth.id != ''",
+        "updateRule": "@request.auth.id != '' && (order.user = @request.auth.id || @request.auth.role = 'ADMIN')",
+        "deleteRule": "@request.auth.id != '' && (order.user = @request.auth.id || @request.auth.role = 'ADMIN')",
         "options": {}
     },
     {
@@ -640,11 +640,11 @@
             }
         ],
         "indexes": [],
-        "listRule": null,
-        "viewRule": null,
-        "createRule": null,
-        "updateRule": null,
-        "deleteRule": null,
+        "listRule": "@request.auth.id != '' && user = @request.auth.id",
+        "viewRule": "@request.auth.id != '' && user = @request.auth.id",
+        "createRule": "@request.auth.id != ''",
+        "updateRule": "@request.auth.id != '' && user = @request.auth.id",
+        "deleteRule": "@request.auth.id != '' && user = @request.auth.id",
         "options": {}
     },
     {
@@ -799,11 +799,11 @@
             }
         ],
         "indexes": [],
-        "listRule": null,
-        "viewRule": null,
+        "listRule": "@request.auth.role = 'ADMIN'",
+        "viewRule": "@request.auth.role = 'ADMIN'",
         "createRule": "",
-        "updateRule": null,
-        "deleteRule": null,
+        "updateRule": "@request.auth.role = 'ADMIN'",
+        "deleteRule": "@request.auth.role = 'ADMIN'",
         "options": {}
     },
     {
@@ -888,11 +888,11 @@
             }
         ],
         "indexes": [],
-        "listRule": null,
-        "viewRule": null,
-        "createRule": null,
-        "updateRule": null,
-        "deleteRule": null,
+        "listRule": "@request.auth.id != '' && (user = @request.auth.id || @request.auth.role = 'ADMIN')",
+        "viewRule": "@request.auth.id != '' && (user = @request.auth.id || @request.auth.role = 'ADMIN')",
+        "createRule": "@request.auth.id != ''",
+        "updateRule": "@request.auth.id != '' && (user = @request.auth.id || @request.auth.role = 'ADMIN')",
+        "deleteRule": "@request.auth.id != '' && (user = @request.auth.id || @request.auth.role = 'ADMIN')",
         "options": {}
     }
 ]
