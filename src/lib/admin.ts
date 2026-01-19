@@ -29,7 +29,29 @@ export async function getAdminPocketBase(): Promise<PocketBase> {
         }
 
         console.log(`[AdminAuth] Authenticating as: ${email}`);
-        await adminClient.admins.authWithPassword(email, password);
+        try {
+            await adminClient.admins.authWithPassword(email, password);
+        } catch (sdkError: any) {
+            // FALLBACK for PocketBase < 0.23 (Old routing)
+            if (sdkError?.status === 404) {
+                console.log("[AdminAuth] Standard auth failed with 404, trying legacy fallback...");
+                const legacyResponse = await fetch(`${url}/api/admins/auth-with-password`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ identity: email, password })
+                });
+
+                if (legacyResponse.ok) {
+                    const data = await legacyResponse.json();
+                    adminClient.authStore.save(data.token, data.admin);
+                    console.log("[AdminAuth] Successfully authenticated via legacy path.");
+                } else {
+                    throw sdkError; // If legacy also fails, throw original 404
+                }
+            } else {
+                throw sdkError;
+            }
+        }
         console.log("[AdminAuth] Successfully authenticated.");
     } catch (error: any) {
         console.error("[AdminAuth] Authentication failed:", {
