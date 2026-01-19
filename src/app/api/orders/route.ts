@@ -12,8 +12,10 @@ export async function POST(req: NextRequest) {
     const user = pb.authStore.model;
 
     if (!user) {
+      console.error('[OrdersAPI] Unauthorized access attempt. Model is null.');
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
+    console.log('[OrdersAPI] User authorized:', user.id);
 
     // 2. Obtener datos y validar
     const body = await req.json();

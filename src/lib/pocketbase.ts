@@ -30,6 +30,12 @@ export async function initPocketBase(req: NextRequest): Promise<PocketBase> {
   const authValue = req.cookies.get('pb_auth')?.value;
   const authHeader = req.headers.get('Authorization');
 
+  console.log('[PocketBase] Auth state:', { 
+    hasCookie: !!authValue, 
+    hasHeader: !!authHeader,
+    path: req.nextUrl.pathname 
+  });
+
   if (authHeader?.startsWith('Bearer ')) {
     const token = authHeader.substring(7);
     client.authStore.save(token, null);
@@ -50,7 +56,9 @@ export async function initPocketBase(req: NextRequest): Promise<PocketBase> {
   if (client.authStore.token && !client.authStore.model) {
     try {
       await client.collection('users').authRefresh();
-    } catch (_) {
+      console.log('[PocketBase] Auth refresh successful for:', client.authStore.model?.id);
+    } catch (err: any) {
+      console.error('[PocketBase] Auth refresh failed:', err.message, err.status);
       client.authStore.clear();
     }
   }
