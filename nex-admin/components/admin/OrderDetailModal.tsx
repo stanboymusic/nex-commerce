@@ -179,42 +179,32 @@ export const OrderDetailModal = ({ order, isOpen, onClose, onUpdate }: OrderDeta
             {/* Print styles */}
             <style jsx global>{`
                 @media print {
-                    /* Hide everything by default */
-                    body > * {
-                        display: none !important;
+                    /* Ocultar todo por defecto */
+                    body * {
+                        visibility: hidden;
                     }
-                    /* Show only our printable container and its parents */
-                    body > div:has(.print-area),
+                    /* Mostrar solo el área de impresión y sus contenidos */
+                    .print-area, .print-area * {
+                        visibility: visible;
+                    }
+                    /* Posicionar el área de impresión al inicio de la página */
                     .print-area {
-                        display: block !important;
-                        position: absolute !important;
-                        left: 0 !important;
-                        top: 0 !important;
-                        width: 100% !important;
-                        margin: 0 !important;
-                        padding: 0 !important;
-                        visibility: visible !important;
+                        position: absolute;
+                        left: 0;
+                        top: 0;
+                        width: 100%;
+                        margin: 0;
+                        padding: 0;
                     }
 
-                    /* Reset modal styling for print */
-                    .relative.bg-white.rounded-3xl {
-                        box-shadow: none !important;
-                        border: none !important;
-                        max-height: none !important;
-                        overflow: visible !important;
-                        width: 100% !important;
-                        position: static !important;
-                    }
-
-                    /* Hide specific elements */
+                    /* Ocultar elementos específicos dentro del área de impresión */
                     .print-hidden, 
                     button,
-                    .modal-header,
-                    .backdrop-blur-sm {
+                    [role="button"] {
                         display: none !important;
                     }
 
-                    /* Ensure text colors are kept */
+                    /* Forzar colores en la impresión */
                     * {
                         -webkit-print-color-adjust: exact !important;
                         print-color-adjust: exact !important;
@@ -222,7 +212,13 @@ export const OrderDetailModal = ({ order, isOpen, onClose, onUpdate }: OrderDeta
 
                     @page {
                         size: A4;
-                        margin: 20mm;
+                        margin: 15mm;
+                    }
+
+                    /* Eliminar sombras y bordes innecesarios del modal en la impresión */
+                    .bg-white {
+                        box-shadow: none !important;
+                        border: none !important;
                     }
                 }
             `}</style>

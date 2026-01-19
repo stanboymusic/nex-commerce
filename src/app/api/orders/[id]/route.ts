@@ -18,8 +18,8 @@ export async function GET(
       });
 
       // RBAC check: Only owner or ADMIN can view
-      const isAdmin = user.role === 'ADMIN';
-      if (!isAdmin && record.user !== user.id) {
+      const isAdmin = (user as any).role === 'ADMIN';
+      if (!isAdmin && record.user !== (user as any).id) {
         return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
       }
 
@@ -48,7 +48,7 @@ export async function PATCH(
     if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
 
     // Only ADMIN can update order status or other fields for now
-    if (user.role !== 'ADMIN') {
+    if ((user as any).role !== 'ADMIN') {
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
     }
 
@@ -76,7 +76,7 @@ export async function DELETE(
     if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
 
     // Only ADMIN can delete orders
-    if (user.role !== 'ADMIN') {
+    if ((user as any).role !== 'ADMIN') {
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
     }
 
