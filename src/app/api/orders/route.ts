@@ -2,6 +2,8 @@ import { initPocketBase } from '@/lib/pocketbase';
 import { NextRequest, NextResponse } from 'next/server';
 import { getAdminPocketBase } from '@/lib/admin';
 
+export const runtime = 'nodejs';
+
 export async function POST(req: NextRequest) {
   // Array para almacenar funciones de reversión (rollback)
   const rollbacks: (() => Promise<void>)[] = [];
