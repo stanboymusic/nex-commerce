@@ -65,16 +65,31 @@ export const OrderDetailModal = ({ order, isOpen, onClose, onUpdate }: OrderDeta
 
         setLoading(true);
         try {
-            await apiClient.patch(`/orders/${order.id}`, { 
+            const endpoint = `/orders/${order.id}`;
+            console.log(`[OrderDetail] Attempting PATCH to: ${apiClient.defaults.baseURL}${endpoint}`);
+            
+            await apiClient.patch(endpoint, { 
                 status: 'CONFIRMED',
                 estimatedDeliveryDate: estimatedDate
             });
+            
             onUpdate();
             setIsConfirming(false);
             onClose();
         } catch (error: any) {
             console.error("Error confirming order:", error);
-            const message = error.response?.data?.error || error.message || "Error desconocido";
+            
+            let message = "Error desconocido";
+            if (error.response) {
+                // Server responded with non-2xx
+                message = error.response.data?.error || `Status: ${error.response.status}`;
+            } else if (error.request) {
+                // Request made but no response (Network Error)
+                message = `Error de red: No se pudo conectar con el servidor en ${apiClient.defaults.baseURL}. Verifique su conexión o la URL del API.`;
+            } else {
+                message = error.message;
+            }
+            
             alert(`No se pudo confirmar la orden: ${message}`);
         } finally {
             setLoading(false);
@@ -299,6 +314,19 @@ export const OrderDetailModal = ({ order, isOpen, onClose, onUpdate }: OrderDeta
                         padding: 40px !important;
                         background: white !important;
                         z-index: 9999999 !important;
+                        -webkit-print-color-adjust: exact !important;
+                        print-color-adjust: exact !important;
+                    }
+
+                    /* Asegurar que el grid se vea bien en impresión */
+                    .grid {
+                        display: grid !important;
+                    }
+                    .md\\:grid-cols-2 {
+                        grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+                    }
+                    .space-y-8 > :not([hidden]) ~ :not([hidden]) {
+                        margin-top: 2rem !important;
                     }
 
                     /* Ajustes específicos para tablas en impresión */
