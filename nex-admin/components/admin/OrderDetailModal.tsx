@@ -29,6 +29,15 @@ export const OrderDetailModal = ({ order, isOpen, onClose, onUpdate }: OrderDeta
     const [isConfirming, setIsConfirming] = useState(false);
     const [estimatedDate, setEstimatedDate] = useState('');
 
+    const formatLocalDate = (dateStr: string) => {
+        if (!dateStr) return 'N/A';
+        // If it's a date-only string (YYYY-MM-DD), append T12:00:00 to avoid TZ shift
+        const normalizedDate = dateStr.includes(' ') || dateStr.includes('T') 
+            ? dateStr 
+            : `${dateStr}T12:00:00`;
+        return new Date(normalizedDate).toLocaleDateString();
+    };
+
     useEffect(() => {
         if (isOpen && order) {
             setEstimatedDate(order.estimatedDeliveryDate || '');
@@ -63,9 +72,10 @@ export const OrderDetailModal = ({ order, isOpen, onClose, onUpdate }: OrderDeta
             onUpdate();
             setIsConfirming(false);
             onClose();
-        } catch (error) {
+        } catch (error: any) {
             console.error("Error confirming order:", error);
-            alert("No se pudo confirmar la orden");
+            const message = error.response?.data?.error || error.message || "Error desconocido";
+            alert(`No se pudo confirmar la orden: ${message}`);
         } finally {
             setLoading(false);
         }
@@ -93,13 +103,13 @@ export const OrderDetailModal = ({ order, isOpen, onClose, onUpdate }: OrderDeta
                     <div className="grid grid-cols-2 gap-4 mt-8">
                         <div>
                             <p className="text-xs font-black text-text-medium uppercase tracking-widest">Fecha de Creación</p>
-                            <p className="font-bold">{new Date(order.created).toLocaleString()}</p>
+                            <p className="font-bold">{formatLocalDate(order.created)}</p>
                         </div>
                         {(order.estimatedDeliveryDate || (isConfirming && estimatedDate)) && (
                             <div className="text-right">
                                 <p className="text-xs font-black text-text-medium uppercase tracking-widest">Fecha Estimada de Entrega</p>
                                 <p className="font-bold text-purple">
-                                    {new Date(order.estimatedDeliveryDate || estimatedDate).toLocaleDateString()}
+                                    {formatLocalDate(order.estimatedDeliveryDate || estimatedDate)}
                                 </p>
                             </div>
                         )}
@@ -216,12 +226,12 @@ export const OrderDetailModal = ({ order, isOpen, onClose, onUpdate }: OrderDeta
                                     </div>
                                 ) : (
                                     <p className="font-bold text-oxford">
-                                        {new Date(order.estimatedDeliveryDate).toLocaleDateString()}
+                                        {formatLocalDate(order.estimatedDeliveryDate)}
                                     </p>
                                 )}
                                 {isConfirming && estimatedDate && (
                                     <p className="hidden print:block font-bold text-oxford">
-                                        {new Date(estimatedDate).toLocaleDateString()}
+                                        {formatLocalDate(estimatedDate)}
                                     </p>
                                 )}
                             </div>
@@ -281,7 +291,7 @@ export const OrderDetailModal = ({ order, isOpen, onClose, onUpdate }: OrderDeta
 
                     /* Forzar que el área de impresión ocupe toda la página y esté al frente */
                     #order-print-area {
-                        position: fixed !important;
+                        position: absolute !important;
                         left: 0 !important;
                         top: 0 !important;
                         width: 100% !important;

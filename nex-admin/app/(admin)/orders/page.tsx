@@ -32,6 +32,14 @@ export default function OrdersPage() {
         fetchOrders();
     }, []);
 
+    const formatLocalDate = (dateStr: string) => {
+        if (!dateStr) return 'N/A';
+        const normalizedDate = dateStr.includes(' ') || dateStr.includes('T') 
+            ? dateStr 
+            : `${dateStr}T12:00:00`;
+        return new Date(normalizedDate).toLocaleDateString();
+    };
+
     const filteredOrders = orders.filter((order: any) =>
         order.id?.toLowerCase().includes(searchTerm.toLowerCase()) ||
         order.customerName?.toLowerCase().includes(searchTerm.toLowerCase())
@@ -97,7 +105,7 @@ export default function OrdersPage() {
                                             <td className="px-6 py-4 text-sm font-medium text-oxford">#{order.id.slice(-6)}</td>
                                             <td className="px-6 py-4 text-sm text-text-dark">{order.customerName || 'N/A'}</td>
                                             <td className="px-6 py-4 text-sm text-text-medium">
-                                                {new Date(order.created).toLocaleDateString()}
+                                                {formatLocalDate(order.created)}
                                             </td>
                                             <td className="px-6 py-4 text-sm font-bold text-oxford">
                                                 ${order.total?.toLocaleString() || '0'}
