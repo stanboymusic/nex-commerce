@@ -1,0 +1,150 @@
+REVISIÓN DE CAMBIOS - NexCommerce
+
+A continuación se detallan todas las modificaciones realizadas identificadas por archivo:
+
+=========================================
+ARCHIVO: src/lib/pocketbase.ts
+=========================================
+MODIFICACIÓN: Estandarización de autenticación mediante la cookie 'pb_auth' y manejo robusto de tokens Bearer.
+
+```typescript
+export async function initPocketBase(req: NextRequest): Promise<PocketBase> {
+  const client = getPocketBase();
+  client.authStore.clear();
+
+  const authValue = req.cookies.get('pb_auth')?.value;
+  const authHeader = req.headers.get('Authorization');
+
+  if (authHeader?.startsWith('Bearer ')) {
+    const token = authHeader.substring(7);
+    client.authStore.save(token, null);
+  } else if (authValue) {
+    try {
+      if (authValue.includes('%7B')) {
+        client.authStore.loadFromCookie('pb_auth=' + authValue);
+      } else {
+        client.authStore.save(authValue, null);
+      }
+    } catch (_) {
+      client.authStore.save(authValue, null);
+    }
+  }
+  // ... (refresh logic)
+  return client;
+}
+```
+
+=========================================
+ARCHIVO: nex-admin/lib/apiClient.ts
+=========================================
+MODIFICACIÓN: Actualización del interceptor de Axios para usar el token global del almacén de administración (Zustand).
+
+```typescript
+apiClient.interceptors.request.use((config) => {
+  const token = useAdminStore.getState().token;
+  if (token) {
+    config.headers.Authorization = `Bearer ${token}`;
+  }
+  return config;
+});
+```
+
+=========================================
+ARCHIVO: nex-admin/components/layout/Sidebar.tsx
+=========================================
+MODIFICACIÓN: Limpieza completa de cookies durante el logout (pb_auth, token, nex_session).
+
+```typescript
+const handleLogout = () => {
+    logout();
+    document.cookie = 'pb_auth=; path=/; expires=Thu, 01 Jan 1970 00:00:01 GMT';
+    document.cookie = 'token=; path=/; expires=Thu, 01 Jan 1970 00:00:01 GMT';
+    document.cookie = 'nex_session=; path=/; expires=Thu, 01 Jan 1970 00:00:01 GMT';
+    router.push('/login');
+};
+```
+
+=========================================
+ARCHIVO: nex-admin/app/(admin)/layout.tsx
+=========================================
+MODIFICACIÓN: Cambio de validación de sesión de 'nex_session' a 'pb_auth'.
+
+```typescript
+const cookieStore = await cookies();
+const token = cookieStore.get('pb_auth')?.value;
+if (!token) redirect('/login');
+```
+
+=========================================
+ARCHIVO: src/lib/admin.ts
+=========================================
+CREACIÓN: Función centralizada para obtener un cliente de PocketBase con privilegios de administrador para procesos críticos.
+
+```typescript
+export async function getAdminPocketBase(): Promise<PocketBase> {
+    const adminPb = new PocketBase(POCKETBASE_URL);
+    await adminPb.admins.authWithPassword(email, password);
+    return adminPb;
+}
+```
+
+=========================================
+ARCHIVO: src/app/api/products/route.ts
+=========================================
+MODIFICACIÓN: Acceso público al catálogo de productos usando el cliente administrativo.
+
+```typescript
+export async function GET(req: NextRequest) {
+    const adminPb = await getAdminPocketBase();
+    const records = await adminPb.collection('products').getFullList({ sort: '-created' });
+    return NextResponse.json(records);
+}
+```
+
+=========================================
+ARCHIVO: src/app/api/orders/route.ts
+=========================================
+MODIFICACIÓN: 
+1. Sincronización de stock usando cliente administrativo para evitar errores de permisos.
+2. Inclusión de 'customerName' y fechas legibles en la respuesta GET para el panel admin.
+
+```typescript
+// En POST:
+const adminPb = await getAdminPocketBase();
+// ...
+await adminPb.collection('products').update(item.id, {
+  stock: Math.max(0, (product.stock || 0) - item.quantity)
+});
+
+// En GET:
+customerName: r.expand?.user?.name || 'N/A',
+created: r.created,
+```
+
+=========================================
+ARCHIVO: nex-admin/components/ui/Modal.tsx
+=========================================
+CREACIÓN: Componente base de Modal reutilizable con animaciones de framer-motion.
+
+=========================================
+ARCHIVO: nex-admin/components/admin/OrderDetailModal.tsx
+=========================================
+CREACIÓN: Modal detallado para gestión de órdenes.
+- Visualización de datos de cliente, entrega y productos.
+- Lógica de confirmación de pedido.
+- Exportación a PDF optimizada con CSS @media print.
+
+```typescript
+<style jsx global>{`
+    @media print {
+        body > * { display: none !important; }
+        .print-area { display: block !important; ... }
+        @page { size: A4; margin: 20mm; }
+    }
+`}</style>
+```
+
+=========================================
+ARCHIVO: nex-admin/app/(admin)/orders/page.tsx
+=========================================
+MODIFICACIÓN: Integración del modal de detalles en la tabla de órdenes permitiendo abrir el detalle de cualquier pedido.
