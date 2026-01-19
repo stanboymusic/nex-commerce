@@ -3,9 +3,18 @@ import { NextRequest } from 'next/server';
 
 let pb: PocketBase;
 
+export { getAdminPocketBase } from './admin';
+
 export function getPocketBase(): PocketBase {
   if (!pb) {
-    pb = new PocketBase(process.env.NEXT_PUBLIC_POCKETBASE_URL || 'https://nexcommerce.fly.dev');
+    let url = process.env.PB_URL || process.env.POCKETBASE_URL || process.env.NEXT_PUBLIC_POCKETBASE_URL || 'http://127.0.0.1:8090';
+    
+    // Ensure protocol
+    if (url && !url.startsWith('http')) {
+      url = `https://${url}`;
+    }
+    
+    pb = new PocketBase(url);
     pb.autoCancellation(false);
   }
   return pb;
@@ -47,25 +56,4 @@ export async function initPocketBase(req: NextRequest): Promise<PocketBase> {
   }
 
   return client;
-}
-export async function getAdminPocketBase(): Promise<PocketBase> {
-  const adminPb = getPocketBase();
-
-  if (!adminPb.authStore.isValid || adminPb.authStore.model === null) {
-    try {
-      const email = process.env.POCKETBASE_ADMIN_EMAIL || process.env.ADMIN_EMAIL;
-      const password = process.env.POCKETBASE_ADMIN_PASSWORD || process.env.ADMIN_PASSWORD;
-
-      if (!email || !password) {
-        throw new Error("Missing admin credentials in environment variables.");
-      }
-
-      await adminPb.admins.authWithPassword(email, password);
-    } catch (error: any) {
-      console.error("ADMIN_AUTH_ERROR:", error?.message || error);
-      throw error;
-    }
-  }
-
-  return adminPb;
 }
