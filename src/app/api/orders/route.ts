@@ -15,7 +15,7 @@ export async function POST(req: NextRequest) {
       console.error('[OrdersAPI] Unauthorized access attempt. Model is null.');
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
-    console.log('[OrdersAPI] User authorized:', user.id);
+    console.log('[OrdersAPI] User authorized:', (user as any).id);
 
     // 2. Obtener datos y validar
     const body = await req.json();
@@ -36,7 +36,7 @@ export async function POST(req: NextRequest) {
 
     // 4. Crear la orden (con admin para evitar fallos de permisos)
     const order = await adminPb.collection('orders').create({
-      user: user.id,
+      user: (user as any).id,
       total,
       isPreorder,
       paymentMethod,
@@ -121,8 +121,8 @@ export async function GET(req: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const isAdmin = user.role === 'ADMIN';
-    const filter = isAdmin ? '' : `user = "${user.id}"`;
+    const isAdmin = (user as any).role === 'ADMIN';
+    const filter = isAdmin ? '' : `user = "${(user as any).id}"`;
 
     const records = await pb.collection('orders').getFullList({
       sort: '-created',

@@ -56,7 +56,7 @@ export async function initPocketBase(req: NextRequest): Promise<PocketBase> {
   if (client.authStore.token && !client.authStore.model) {
     try {
       await client.collection('users').authRefresh();
-      console.log('[PocketBase] Auth refresh successful for:', client.authStore.model?.id);
+      console.log('[PocketBase] Auth refresh successful for:', (client.authStore.model as any)?.id);
     } catch (err: any) {
       console.error('[PocketBase] Auth refresh failed:', err.message, err.status);
       client.authStore.clear();
