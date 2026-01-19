@@ -1,6 +1,4 @@
-'use client'
-
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Modal } from '@/components/ui/Modal';
 import { Badge } from '@/components/ui/Badge';
 import { Button } from '@/components/ui/Button';
@@ -30,6 +28,18 @@ export const OrderDetailModal = ({ order, isOpen, onClose, onUpdate }: OrderDeta
     const [loading, setLoading] = useState(false);
     const [isConfirming, setIsConfirming] = useState(false);
     const [estimatedDate, setEstimatedDate] = useState('');
+
+    useEffect(() => {
+        if (isOpen && order) {
+            setEstimatedDate(order.estimatedDeliveryDate || '');
+            // Auto-trigger confirmation mode if it's pending and has no date
+            if (order.status !== 'CONFIRMED' && !order.estimatedDeliveryDate) {
+                setIsConfirming(true);
+            } else {
+                setIsConfirming(false);
+            }
+        }
+    }, [isOpen, order]);
 
     if (!order) return null;
 
@@ -67,7 +77,7 @@ export const OrderDetailModal = ({ order, isOpen, onClose, onUpdate }: OrderDeta
 
     return (
         <Modal isOpen={isOpen} onClose={onClose} title={`Detalles de la Orden #${order.id.slice(-6).toUpperCase()}`} maxWidth="max-w-4xl">
-            <div className="print-area space-y-8">
+            <div id="order-print-area" className="print-area space-y-8">
                 {/* Print Header (Only visible when printing) */}
                 <div className="hidden print:block mb-8 border-b-2 border-oxford pb-6">
                     <div className="flex justify-between items-start">
@@ -85,10 +95,12 @@ export const OrderDetailModal = ({ order, isOpen, onClose, onUpdate }: OrderDeta
                             <p className="text-xs font-black text-text-medium uppercase tracking-widest">Fecha de Creación</p>
                             <p className="font-bold">{new Date(order.created).toLocaleString()}</p>
                         </div>
-                        {order.estimatedDeliveryDate && (
+                        {(order.estimatedDeliveryDate || (isConfirming && estimatedDate)) && (
                             <div className="text-right">
                                 <p className="text-xs font-black text-text-medium uppercase tracking-widest">Fecha Estimada de Entrega</p>
-                                <p className="font-bold text-purple">{new Date(order.estimatedDeliveryDate).toLocaleDateString()}</p>
+                                <p className="font-bold text-purple">
+                                    {new Date(order.estimatedDeliveryDate || estimatedDate).toLocaleDateString()}
+                                </p>
                             </div>
                         )}
                     </div>
@@ -185,7 +197,7 @@ export const OrderDetailModal = ({ order, isOpen, onClose, onUpdate }: OrderDeta
                     </div>
 
                     {/* Estimated Delivery Date (Visible in Modal and Print) */}
-                    {(order.estimatedDeliveryDate || (isConfirming && estimatedDate)) && (
+                    {(order.estimatedDeliveryDate || isConfirming) && (
                         <div className="space-y-4">
                             <h3 className="text-sm font-black text-oxford uppercase tracking-widest flex items-center gap-2">
                                 <Clock className="h-4 w-4 text-purple" /> Entrega Estimada
@@ -256,84 +268,46 @@ export const OrderDetailModal = ({ order, isOpen, onClose, onUpdate }: OrderDeta
             {/* Print styles */}
             <style jsx global>{`
                 @media print {
-                    /* Reset everything */
-                    html, body {
-                        height: auto !important;
-                        overflow: visible !important;
+                    /* Ocultar todo lo que no sea el área de impresión */
+                    body * {
+                        visibility: hidden !important;
                     }
                     
-                    /* Hide everything by default */
-                    body > * {
-                        display: none !important;
+                    /* Asegurar que el área de impresión y todos sus hijos sean visibles */
+                    #order-print-area,
+                    #order-print-area * {
+                        visibility: visible !important;
                     }
 
-                    /* Show only the print area and its containers if needed, but easier to move it to top level */
-                    /* Alternative: position the print-area specifically */
-                    .print-area {
-                        display: block !important;
-                        position: relative !important;
-                        visibility: visible !important;
+                    /* Forzar que el área de impresión ocupe toda la página y esté al frente */
+                    #order-print-area {
+                        position: fixed !important;
+                        left: 0 !important;
+                        top: 0 !important;
                         width: 100% !important;
                         margin: 0 !important;
-                        padding: 0 !important;
+                        padding: 40px !important;
                         background: white !important;
+                        z-index: 9999999 !important;
                     }
 
-                    /* Ensure parent containers of print-area don't hide it */
-                    .print-area,
-                    .print-area * {
-                        visibility: visible !important;
-                        display: block !important;
-                    }
-
-                    /* Specific layout fixes for print */
-                    .print-area .grid {
-                        display: grid !important;
-                        grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
-                    }
-                    
-                    .print-area table {
-                        display: table !important;
+                    /* Ajustes específicos para tablas en impresión */
+                    table {
                         width: 100% !important;
+                        border-collapse: collapse !important;
+                    }
+                    th, td {
+                        border-bottom: 1px solid #eee !important;
                     }
 
-                    .print-area thead { display: table-header-group !important; }
-                    .print-area tbody { display: table-row-group !important; }
-                    .print-area tr { display: table-row !important; }
-                    .print-area td, .print-area th { display: table-cell !important; }
-
-                    /* Hide modal UI elements */
-                    .print-hidden, 
-                    button,
-                    [role="button"],
-                    .X {
+                    /* Ocultar elementos marcados como print:hidden */
+                    .print\\:hidden {
                         display: none !important;
-                    }
-
-                    /* Fix for modal clipping */
-                    div[class*="fixed"], 
-                    div[class*="absolute"],
-                    div[class*="relative"] {
-                        position: static !important;
-                        overflow: visible !important;
-                        max-height: none !important;
-                        height: auto !important;
-                        width: auto !important;
-                        padding: 0 !important;
-                        margin: 0 !important;
-                        background: transparent !important;
-                        box-shadow: none !important;
-                    }
-
-                    /* Force backgrounds */
-                    * {
-                        -webkit-print-color-adjust: exact !important;
-                        print-color-adjust: exact !important;
                     }
 
                     @page {
                         size: A4;
-                        margin: 20mm;
+                        margin: 0;
                     }
                 }
             `}</style>
