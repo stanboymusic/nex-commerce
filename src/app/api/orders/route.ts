@@ -3,7 +3,11 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getAdminPocketBase } from '@/lib/admin';
 
 export async function POST(req: NextRequest) {
+  // Array para almacenar funciones de reversión (rollback)
+  const rollbacks: (() => Promise<void>)[] = [];
+
   try {
+    // 1. Verificar sesión del usuario
     const pb = await initPocketBase(req);
     const user = pb.authStore.model;
 
@@ -11,7 +15,9 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const { items, total, paymentMethod, currency, address, notes } = await req.json();
+    // 2. Obtener datos y validar
+    const body = await req.json();
+    const { items, total, paymentMethod, currency, address, notes } = body;
 
     if (!items?.length) {
       return NextResponse.json({ error: 'Cart is empty' }, { status: 400 });
@@ -23,8 +29,11 @@ export async function POST(req: NextRequest) {
 
     const isPreorder = items.some((i: { isPreorder?: boolean }) => i.isPreorder);
 
-    // 1. Crear orden
-    const order = await pb.collection('orders').create({
+    // 3. Obtener cliente ADMIN
+    const adminPb = await getAdminPocketBase();
+
+    // 4. Crear la orden (con admin para evitar fallos de permisos)
+    const order = await adminPb.collection('orders').create({
       user: user.id,
       total,
       isPreorder,
@@ -35,12 +44,38 @@ export async function POST(req: NextRequest) {
       status: 'PENDING_PAYMENT',
     });
 
-    // 2. Crear items y actualizar stock con ADMIN
-    const adminPb = await getAdminPocketBase();
+    // Registrar rollback para la orden
+    rollbacks.push(async () => {
+      await adminPb.collection('orders').delete(order.id);
+      console.log(`Rollback: Orden ${order.id} eliminada`);
+    });
 
+    // 5. Crear items y actualizar stock de forma "transaccional"
     for (const item of items) {
+      // Validar stock antes de crear nada si no es preorder
+      if (!item.isPreorder) {
+        const product = await adminPb.collection('products').getOne(item.id);
+        if ((product.stock || 0) < item.quantity) {
+          throw new Error(`Stock insuficiente para el producto: ${item.name}`);
+        }
+
+        // Actualizar stock
+        const oldStock = product.stock || 0;
+        await adminPb.collection('products').update(item.id, {
+          stock: oldStock - item.quantity,
+        });
+
+        // Registrar rollback para el stock
+        rollbacks.push(async () => {
+          await adminPb.collection('products').update(item.id, {
+            stock: oldStock,
+          });
+          console.log(`Rollback: Stock de ${item.id} restaurado a ${oldStock}`);
+        });
+      }
+
       // Crear order item
-      await pb.collection('order_items').create({
+      const orderItem = await adminPb.collection('order_items').create({
         order: order.id,
         product: item.id,
         name: item.name,
@@ -48,20 +83,26 @@ export async function POST(req: NextRequest) {
         price: item.price,
       });
 
-      // Descontar stock si no es preorder
-      if (!item.isPreorder) {
-        const product = await adminPb.collection('products').getOne(item.id);
-        const newStock = Math.max(0, (product.stock || 0) - item.quantity);
-
-        await adminPb.collection('products').update(item.id, {
-          stock: newStock,
-        });
-      }
+      // Registrar rollback para el item
+      rollbacks.push(async () => {
+        await adminPb.collection('order_items').delete(orderItem.id);
+        console.log(`Rollback: Item ${orderItem.id} eliminado`);
+      });
     }
 
     return NextResponse.json({ success: true, order });
   } catch (error: any) {
-    console.error('Order POST error:', error);
+    console.error('Order transaction error, starting rollback:', error.message);
+
+    // Ejecutar todos los rollbacks en orden inverso
+    for (let i = rollbacks.length - 1; i >= 0; i--) {
+      try {
+        await rollbacks[i]();
+      } catch (rollbackError) {
+        console.error('Critical: Rollback operation failed:', rollbackError);
+      }
+    }
+
     return NextResponse.json(
       { error: error.message || 'Internal server error' },
       { status: 500 }
@@ -102,11 +143,11 @@ export async function GET(req: NextRequest) {
       customerName: r.expand?.user?.name || 'N/A',
       user: r.expand?.user
         ? {
-            id: r.expand.user.id,
-            name: r.expand.user.name,
-            email: r.expand.user.email,
-            phone: r.expand.user.phone,
-          }
+          id: r.expand.user.id,
+          name: r.expand.user.name,
+          email: r.expand.user.email,
+          phone: r.expand.user.phone,
+        }
         : null,
       items:
         r.expand?.['order_items(order)']?.map((oi: any) => ({

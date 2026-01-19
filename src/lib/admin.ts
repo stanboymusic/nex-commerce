@@ -1,9 +1,16 @@
 import PocketBase from 'pocketbase';
 
+let adminClient: PocketBase | null = null;
+
 export async function getAdminPocketBase(): Promise<PocketBase> {
-    const url = process.env.POCKETBASE_URL || process.env.NEXT_PUBLIC_POCKETBASE_URL || 'http://127.0.0.1:8090';
-    const adminPb = new PocketBase(url);
-    adminPb.autoCancellation(false);
+    // If we have a valid client, return it
+    if (adminClient && adminClient.authStore.isValid) {
+        return adminClient;
+    }
+
+    const url = process.env.PB_URL || process.env.POCKETBASE_URL || process.env.NEXT_PUBLIC_POCKETBASE_URL || 'http://127.0.0.1:8090';
+    adminClient = new PocketBase(url);
+    adminClient.autoCancellation(false);
 
     try {
         const email = process.env.PB_ADMIN_EMAIL || process.env.POCKETBASE_ADMIN_EMAIL;
@@ -14,11 +21,12 @@ export async function getAdminPocketBase(): Promise<PocketBase> {
             throw new Error("Missing admin credentials");
         }
 
-        await adminPb.admins.authWithPassword(email, password);
+        await adminClient.admins.authWithPassword(email, password);
     } catch (error: any) {
         console.error("ADMIN_AUTH_ERROR: Failed to authenticate as admin.", error?.data || error?.message || error);
+        adminClient = null; // Reset so next try can attempt fresh connection
         throw new Error(`Admin authentication failed: ${error.message}`);
     }
 
-    return adminPb;
+    return adminClient;
 }
