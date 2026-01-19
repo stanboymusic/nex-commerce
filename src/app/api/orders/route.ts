@@ -139,6 +139,7 @@ export async function GET(req: NextRequest) {
       address: r.address,
       notes: r.notes,
       isPreorder: r.isPreorder,
+      estimatedDeliveryDate: r.estimatedDeliveryDate,
       created: r.created,
       createdAt: r.created,
       updatedAt: r.updated,

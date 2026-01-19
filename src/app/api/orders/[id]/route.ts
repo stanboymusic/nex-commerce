@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { initPocketBase } from '@/lib/pocketbase';
+import { getAdminPocketBase } from '@/lib/admin';
 
 export async function GET(
   req: NextRequest,
@@ -53,7 +54,8 @@ export async function PATCH(
     }
 
     const data = await req.json();
-    const updated = await pb.collection('orders').update(id, data, {
+    const adminPb = await getAdminPocketBase();
+    const updated = await adminPb.collection('orders').update(id, data, {
         expand: 'order_items(order).product,user'
     });
 

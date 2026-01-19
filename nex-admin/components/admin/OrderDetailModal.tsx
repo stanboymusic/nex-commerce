@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { Modal } from '@/components/ui/Modal';
 import { Badge } from '@/components/ui/Badge';
 import { Button } from '@/components/ui/Button';
+import { Input } from '@/components/ui/Input';
 import { apiClient } from '@/lib/apiClient';
 import {
     FileText,
@@ -14,7 +15,8 @@ import {
     CreditCard,
     Clock,
     AlertCircle,
-    Download
+    Download,
+    Calendar
 } from 'lucide-react';
 
 interface OrderDetailModalProps {
@@ -26,14 +28,30 @@ interface OrderDetailModalProps {
 
 export const OrderDetailModal = ({ order, isOpen, onClose, onUpdate }: OrderDetailModalProps) => {
     const [loading, setLoading] = useState(false);
+    const [isConfirming, setIsConfirming] = useState(false);
+    const [estimatedDate, setEstimatedDate] = useState('');
 
     if (!order) return null;
 
     const handleConfirmOrder = async () => {
+        if (!isConfirming) {
+            setIsConfirming(true);
+            return;
+        }
+
+        if (!estimatedDate) {
+            alert("Por favor ingrese una fecha estimada de entrega");
+            return;
+        }
+
         setLoading(true);
         try {
-            await apiClient.patch(`/orders/${order.id}`, { status: 'CONFIRMED' });
+            await apiClient.patch(`/orders/${order.id}`, { 
+                status: 'CONFIRMED',
+                estimatedDeliveryDate: estimatedDate
+            });
             onUpdate();
+            setIsConfirming(false);
             onClose();
         } catch (error) {
             console.error("Error confirming order:", error);
@@ -51,10 +69,29 @@ export const OrderDetailModal = ({ order, isOpen, onClose, onUpdate }: OrderDeta
         <Modal isOpen={isOpen} onClose={onClose} title={`Detalles de la Orden #${order.id.slice(-6).toUpperCase()}`} maxWidth="max-w-4xl">
             <div className="print-area space-y-8">
                 {/* Print Header (Only visible when printing) */}
-                <div className="hidden print:block mb-8 border-b pb-4">
-                    <h1 className="text-3xl font-black text-oxford">NexCommerce - Factura de Pedido</h1>
-                    <p className="text-text-medium mt-1">ID Orden: {order.id}</p>
-                    <p className="text-text-medium">Fecha: {new Date(order.created).toLocaleString()}</p>
+                <div className="hidden print:block mb-8 border-b-2 border-oxford pb-6">
+                    <div className="flex justify-between items-start">
+                        <div>
+                            <h1 className="text-4xl font-black text-oxford uppercase tracking-tighter">Factura de Pedido</h1>
+                            <p className="text-xl font-bold text-purple mt-1">NexCommerce</p>
+                        </div>
+                        <div className="text-right">
+                            <p className="text-sm font-black text-oxford uppercase tracking-widest">ID Orden</p>
+                            <p className="text-lg font-bold">#{order.id.toUpperCase()}</p>
+                        </div>
+                    </div>
+                    <div className="grid grid-cols-2 gap-4 mt-8">
+                        <div>
+                            <p className="text-xs font-black text-text-medium uppercase tracking-widest">Fecha de Creación</p>
+                            <p className="font-bold">{new Date(order.created).toLocaleString()}</p>
+                        </div>
+                        {order.estimatedDeliveryDate && (
+                            <div className="text-right">
+                                <p className="text-xs font-black text-text-medium uppercase tracking-widest">Fecha Estimada de Entrega</p>
+                                <p className="font-bold text-purple">{new Date(order.estimatedDeliveryDate).toLocaleDateString()}</p>
+                            </div>
+                        )}
+                    </div>
                 </div>
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
@@ -100,19 +137,27 @@ export const OrderDetailModal = ({ order, isOpen, onClose, onUpdate }: OrderDeta
                                 </tr>
                             </thead>
                             <tbody className="divide-y divide-border">
-                                {order.items?.map((item: any) => (
-                                    <tr key={item.id} className="text-sm">
-                                        <td className="px-4 py-3 font-medium text-oxford">
-                                            {item.name}
-                                            {item.product?.isPreorder && (
-                                                <Badge variant="warning" className="ml-2 scale-75 origin-left">PRE-VENTA</Badge>
-                                            )}
+                                {order.items && order.items.length > 0 ? (
+                                    order.items.map((item: any) => (
+                                        <tr key={item.id} className="text-sm">
+                                            <td className="px-4 py-3 font-medium text-oxford">
+                                                {item.name}
+                                                {item.product?.isPreorder && (
+                                                    <Badge variant="warning" className="ml-2 scale-75 origin-left">PRE-VENTA</Badge>
+                                                )}
+                                            </td>
+                                            <td className="px-4 py-3 text-center">{item.quantity}</td>
+                                            <td className="px-4 py-3 text-right">${item.price?.toLocaleString()}</td>
+                                            <td className="px-4 py-3 text-right font-bold text-oxford">${(item.price * item.quantity).toLocaleString()}</td>
+                                        </tr>
+                                    ))
+                                ) : (
+                                    <tr>
+                                        <td colSpan={4} className="px-4 py-8 text-center text-text-medium italic">
+                                            No hay productos registrados en esta orden.
                                         </td>
-                                        <td className="px-4 py-3 text-center">{item.quantity}</td>
-                                        <td className="px-4 py-3 text-right">${item.price?.toLocaleString()}</td>
-                                        <td className="px-4 py-3 text-right font-bold text-oxford">${(item.price * item.quantity).toLocaleString()}</td>
                                     </tr>
-                                ))}
+                                )}
                             </tbody>
                             <tfoot className="bg-muted/30">
                                 <tr>
@@ -138,6 +183,38 @@ export const OrderDetailModal = ({ order, isOpen, onClose, onUpdate }: OrderDeta
                             </Badge>
                         </div>
                     </div>
+
+                    {/* Estimated Delivery Date (Visible in Modal and Print) */}
+                    {(order.estimatedDeliveryDate || (isConfirming && estimatedDate)) && (
+                        <div className="space-y-4">
+                            <h3 className="text-sm font-black text-oxford uppercase tracking-widest flex items-center gap-2">
+                                <Clock className="h-4 w-4 text-purple" /> Entrega Estimada
+                            </h3>
+                            <div className="bg-purple/5 p-4 rounded-2xl border border-purple/20">
+                                {isConfirming ? (
+                                    <div className="space-y-3 print:hidden">
+                                        <p className="text-xs font-bold text-purple uppercase">¿Cuándo sería la fecha estimada de entrega?</p>
+                                        <Input
+                                            type="date"
+                                            value={estimatedDate}
+                                            onChange={(e) => setEstimatedDate(e.target.value)}
+                                            leftIcon={<Calendar className="h-4 w-4" />}
+                                            className="bg-white"
+                                        />
+                                    </div>
+                                ) : (
+                                    <p className="font-bold text-oxford">
+                                        {new Date(order.estimatedDeliveryDate).toLocaleDateString()}
+                                    </p>
+                                )}
+                                {isConfirming && estimatedDate && (
+                                    <p className="hidden print:block font-bold text-oxford">
+                                        {new Date(estimatedDate).toLocaleDateString()}
+                                    </p>
+                                )}
+                            </div>
+                        </div>
+                    )}
 
                     {/* Pre-order warning */}
                     {order.isPreorder && (
@@ -167,10 +244,10 @@ export const OrderDetailModal = ({ order, isOpen, onClose, onUpdate }: OrderDeta
                         <Button
                             onClick={handleConfirmOrder}
                             isLoading={loading}
-                            className="flex-1 bg-purple hover:bg-purple/90"
+                            className={`flex-1 ${isConfirming ? 'bg-green-600 hover:bg-green-700' : 'bg-purple hover:bg-purple/90'}`}
                             leftIcon={<CheckCircle className="h-5 w-5" />}
                         >
-                            Confirmar Orden
+                            {isConfirming ? 'Confirmar Pago y Entrega' : 'Confirmar Orden'}
                         </Button>
                     )}
                 </div>
@@ -179,32 +256,76 @@ export const OrderDetailModal = ({ order, isOpen, onClose, onUpdate }: OrderDeta
             {/* Print styles */}
             <style jsx global>{`
                 @media print {
-                    /* Ocultar todo por defecto */
-                    body * {
-                        visibility: hidden;
+                    /* Reset everything */
+                    html, body {
+                        height: auto !important;
+                        overflow: visible !important;
                     }
-                    /* Mostrar solo el área de impresión y sus contenidos */
-                    .print-area, .print-area * {
-                        visibility: visible;
-                    }
-                    /* Posicionar el área de impresión al inicio de la página */
-                    .print-area {
-                        position: absolute;
-                        left: 0;
-                        top: 0;
-                        width: 100%;
-                        margin: 0;
-                        padding: 0;
-                    }
-
-                    /* Ocultar elementos específicos dentro del área de impresión */
-                    .print-hidden, 
-                    button,
-                    [role="button"] {
+                    
+                    /* Hide everything by default */
+                    body > * {
                         display: none !important;
                     }
 
-                    /* Forzar colores en la impresión */
+                    /* Show only the print area and its containers if needed, but easier to move it to top level */
+                    /* Alternative: position the print-area specifically */
+                    .print-area {
+                        display: block !important;
+                        position: relative !important;
+                        visibility: visible !important;
+                        width: 100% !important;
+                        margin: 0 !important;
+                        padding: 0 !important;
+                        background: white !important;
+                    }
+
+                    /* Ensure parent containers of print-area don't hide it */
+                    .print-area,
+                    .print-area * {
+                        visibility: visible !important;
+                        display: block !important;
+                    }
+
+                    /* Specific layout fixes for print */
+                    .print-area .grid {
+                        display: grid !important;
+                        grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+                    }
+                    
+                    .print-area table {
+                        display: table !important;
+                        width: 100% !important;
+                    }
+
+                    .print-area thead { display: table-header-group !important; }
+                    .print-area tbody { display: table-row-group !important; }
+                    .print-area tr { display: table-row !important; }
+                    .print-area td, .print-area th { display: table-cell !important; }
+
+                    /* Hide modal UI elements */
+                    .print-hidden, 
+                    button,
+                    [role="button"],
+                    .X {
+                        display: none !important;
+                    }
+
+                    /* Fix for modal clipping */
+                    div[class*="fixed"], 
+                    div[class*="absolute"],
+                    div[class*="relative"] {
+                        position: static !important;
+                        overflow: visible !important;
+                        max-height: none !important;
+                        height: auto !important;
+                        width: auto !important;
+                        padding: 0 !important;
+                        margin: 0 !important;
+                        background: transparent !important;
+                        box-shadow: none !important;
+                    }
+
+                    /* Force backgrounds */
                     * {
                         -webkit-print-color-adjust: exact !important;
                         print-color-adjust: exact !important;
@@ -212,13 +333,7 @@ export const OrderDetailModal = ({ order, isOpen, onClose, onUpdate }: OrderDeta
 
                     @page {
                         size: A4;
-                        margin: 15mm;
-                    }
-
-                    /* Eliminar sombras y bordes innecesarios del modal en la impresión */
-                    .bg-white {
-                        box-shadow: none !important;
-                        border: none !important;
+                        margin: 20mm;
                     }
                 }
             `}</style>

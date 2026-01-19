@@ -453,6 +453,15 @@
                 "unique": false
             },
             {
+                "id": "date_delivery",
+                "name": "estimatedDeliveryDate",
+                "type": "date",
+                "system": false,
+                "required": false,
+                "presentable": false,
+                "unique": false
+            },
+            {
                 "id": "autodate2990389176",
                 "name": "created",
                 "type": "autodate",

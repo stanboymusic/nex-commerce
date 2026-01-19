@@ -421,13 +421,26 @@
                     "min": "",
                     "max": ""
                 }
+            },
+            {
+                "system": false,
+                "id": "date_delivery",
+                "name": "estimatedDeliveryDate",
+                "type": "date",
+                "required": false,
+                "presentable": false,
+                "unique": false,
+                "options": {
+                    "min": "",
+                    "max": ""
+                }
             }
         ],
         "indexes": [],
         "listRule": "@request.auth.id != '' && (user = @request.auth.id || @request.auth.role = 'ADMIN')",
         "viewRule": "@request.auth.id != '' && (user = @request.auth.id || @request.auth.role = 'ADMIN')",
         "createRule": null,
-        "updateRule": null,
+        "updateRule": "@request.auth.role = 'ADMIN'",
         "deleteRule": null,
         "options": {}
     },
