@@ -42,6 +42,11 @@ export async function POST(req: NextRequest) {
 
     // 4. Crear la orden (con admin para evitar fallos de permisos)
     console.log('[OrdersAPI] Creating order for user:', (user as any).id);
+    
+    // Calcular fecha estimada de entrega (ej: 7 días a partir de hoy)
+    const estimatedDelivery = new Date();
+    estimatedDelivery.setDate(estimatedDelivery.getDate() + 7);
+
     const order = await adminPb.collection('orders').create({
       user: (user as any).id,
       total,
@@ -51,6 +56,7 @@ export async function POST(req: NextRequest) {
       address,
       notes,
       status: 'PENDING_PAYMENT',
+      estimatedDeliveryDate: estimatedDelivery.toISOString(),
     });
     console.log('[OrdersAPI] Order created successfully:', order.id);
 
