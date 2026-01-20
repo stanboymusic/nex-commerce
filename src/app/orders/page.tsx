@@ -3,8 +3,8 @@
 import { useState, useEffect } from 'react'
 import { useAuthStore } from '@/store/auth.store'
 import axios from 'axios'
-import { Package, Clock, CheckCircle, Truck, XCircle, AlertCircle, ExternalLink, ShoppingBag, Banknote } from 'lucide-react'
-import { useRouter } from 'next/navigation'
+import { Package, Clock, CheckCircle, Truck, XCircle, AlertCircle, ExternalLink, ShoppingBag, Banknote, PartyPopper } from 'lucide-react'
+import { useRouter, useSearchParams } from 'next/navigation'
 
 const STATUS_ICONS: Record<string, any> = {
   PENDING_PAYMENT: Clock,
@@ -44,6 +44,8 @@ export default function OrdersPage() {
   const [submitting, setSubmitting] = useState(false)
   const { user, token } = useAuthStore()
   const router = useRouter()
+  const searchParams = useSearchParams()
+  const [showSuccess, setShowSuccess] = useState(false)
 
   const fetchOrders = async () => {
     try {
@@ -57,6 +59,12 @@ export default function OrdersPage() {
       setLoading(false)
     }
   }
+
+  useEffect(() => {
+    if (searchParams.get('success') === 'true') {
+      setShowSuccess(true)
+    }
+  }, [searchParams])
 
   useEffect(() => {
     if (!user) {
@@ -92,6 +100,23 @@ export default function OrdersPage() {
 
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+      {showSuccess && (
+        <div className="mb-8 p-6 bg-green-50 border border-green-200 rounded-2xl flex items-center gap-4 animate-in fade-in slide-in-from-top-4">
+          <div className="bg-green-100 p-3 rounded-full text-green-600">
+            <PartyPopper className="h-6 w-6" />
+          </div>
+          <div>
+            <h3 className="text-lg font-bold text-green-900">¡Pedido realizado con éxito!</h3>
+            <p className="text-green-700">Tu orden ha sido registrada. Pronto nos pondremos en contacto contigo.</p>
+          </div>
+          <button 
+            onClick={() => setShowSuccess(false)}
+            className="ml-auto text-green-600 hover:text-green-800 font-bold"
+          >
+            Cerrar
+          </button>
+        </div>
+      )}
       <h1 className="text-3xl font-bold text-oxford mb-8">Mis Pedidos</h1>
 
       {orders.length === 0 ? (

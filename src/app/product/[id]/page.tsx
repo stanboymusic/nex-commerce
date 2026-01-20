@@ -4,7 +4,6 @@ import { useState, useEffect } from 'react'
 import Image from 'next/image'
 import { useParams } from 'next/navigation'
 import { ShoppingCart, Plus, Minus, Calendar, Package, AlertCircle, CheckCircle } from 'lucide-react'
-import { motion } from 'framer-motion'
 import { useCartStore } from '@/store/cart.store'
 import { useAuthStore } from '@/store/auth.store'
 import axios from 'axios'
@@ -16,6 +15,7 @@ export default function ProductDetailsPage() {
   const [quantity, setQuantity] = useState(1)
   const [requestingStock, setRequestingStock] = useState(false)
   const [requested, setRequested] = useState(false)
+  const [activeImage, setActiveImage] = useState(0)
   
   const { addItem } = useCartStore()
   const { user, token } = useAuthStore()
@@ -80,22 +80,44 @@ export default function ProductDetailsPage() {
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
       <div className="grid grid-cols-1 md:grid-cols-2 gap-12">
         {/* Image Section */}
-        <div className="relative aspect-square bg-gray-100 rounded-2xl overflow-hidden shadow-sm">
-          {product.images && product.images.length > 0 ? (
-            <Image 
-              src={typeof product.images[0] === 'string' ? product.images[0] : product.images[0].url} 
-              alt={product.name}
-              fill
-              className="object-cover"
-            />
-          ) : (
-            <div className="w-full h-full flex items-center justify-center text-gray-400">
-              <Package className="h-32 w-32 opacity-20" />
-            </div>
-          )}
-          {product.isPreorder && (
-            <div className="absolute top-4 left-4 bg-purple text-white px-4 py-1 rounded-full font-bold uppercase text-sm tracking-wider">
-              Preventa
+        <div className="space-y-4">
+          <div className="relative aspect-square bg-gray-100 rounded-2xl overflow-hidden shadow-sm">
+            {product.images && product.images.length > 0 ? (
+              <Image 
+                src={typeof product.images[activeImage] === 'string' ? product.images[activeImage] : product.images[activeImage].url} 
+                alt={product.name}
+                fill
+                className="object-contain"
+              />
+            ) : (
+              <div className="w-full h-full flex items-center justify-center text-gray-400">
+                <Package className="h-32 w-32 opacity-20" />
+              </div>
+            )}
+            {product.isPreorder && (
+              <div className="absolute top-4 left-4 bg-purple text-white px-4 py-1 rounded-full font-bold uppercase text-sm tracking-wider shadow-lg">
+                Preventa
+              </div>
+            )}
+          </div>
+          
+          {product.images && product.images.length > 1 && (
+            <div className="flex gap-4 overflow-x-auto pb-2">
+              {product.images.map((img: any, idx: number) => (
+                <button 
+                  key={idx}
+                  onClick={() => setActiveImage(idx)}
+                  className={`relative w-20 h-20 rounded-lg overflow-hidden border-2 transition-all ${activeImage === idx ? 'border-purple shadow-md' : 'border-transparent'}`}
+                  title={`Ver imagen ${idx + 1}`}
+                >
+                  <Image 
+                    src={typeof img === 'string' ? img : img.url} 
+                    alt={`${product.name} ${idx + 1}`}
+                    fill
+                    className="object-cover"
+                  />
+                </button>
+              ))}
             </div>
           )}
         </div>
@@ -113,15 +135,23 @@ export default function ProductDetailsPage() {
 
           <div className="space-y-6 mb-10">
             {product.isPreorder ? (
-              <div className="bg-purple/5 border border-purple/20 p-4 rounded-xl">
-                <div className="flex items-center text-purple font-semibold mb-2">
+              <div className="bg-purple/5 border border-purple/20 p-6 rounded-2xl">
+                <div className="flex items-center text-purple font-bold mb-3">
                   <Calendar className="h-5 w-5 mr-2" />
                   Información de Preventa
                 </div>
-                <ul className="text-sm text-purple/80 space-y-1">
-                  <li>Llegada a almacén: {new Date(product.arrivalDate!).toLocaleDateString()}</li>
-                  <li>Entrega estimada: {new Date(product.estimatedDelivery!).toLocaleDateString()}</li>
-                </ul>
+                {product.estimatedArrivalDate ? (
+                  <p className="text-sm text-purple/80 font-medium">
+                    Llegada estimada: {new Date(product.estimatedArrivalDate).toLocaleDateString()}
+                  </p>
+                ) : (
+                  <p className="text-sm text-purple/80 font-medium">
+                    Fecha estimada por confirmar
+                  </p>
+                )}
+                <p className="text-xs text-purple/60 mt-2 italic">
+                  * Los productos en preventa se envían tan pronto como llegan a nuestro almacén.
+                </p>
               </div>
             ) : (
               <div className={`flex items-center ${product.stock > 0 ? 'text-green-600' : 'text-red-500'} font-semibold`}>

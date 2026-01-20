@@ -1,5 +1,5 @@
-import { getAdminPocketBase, initPocketBase } from '@/lib/pocketbase';
-import { NextRequest, NextResponse } from 'next/server';
+import { NextRequest, NextResponse } from "next/server";
+import { initPocketBase, getAdminPocketBase } from "@/lib/pocketbase";
 
 export async function GET(req: NextRequest) {
   try {
@@ -18,8 +18,7 @@ export async function GET(req: NextRequest) {
       price: r.price,
       stock: r.stock,
       isPreorder: r.isPreorder,
-      arrivalDate: r.arrivalDate,
-      estimatedDeliveryDate: r.estimatedDeliveryDate,
+      estimatedArrivalDate: r.estimatedArrivalDate,
       images: r.images?.map((img: string) => ({ id: img, url: pb.files.getUrl(r, img) })) || [],
       categoryId: r.category,
       category: r.expand?.category,
@@ -38,21 +37,58 @@ export async function GET(req: NextRequest) {
 export async function POST(req: NextRequest) {
   try {
     const pb = await initPocketBase(req);
-    const user = pb.authStore.model;
+    if (!pb.authStore.isValid) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
-    if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    const formData = await req.formData();
+    const name = formData.get("name") as string;
 
-    const data = await req.json();
-    if (!data.name || !data.price || !data.category)
-      return NextResponse.json({ error: 'Missing required fields (name, price, category)' }, { status: 400 });
+    if (!name) {
+      return NextResponse.json({ error: "Missing name" }, { status: 400 });
+    }
 
-    const slug = data.slug || data.name.toLowerCase().replace(/ /g, '-').replace(/[^\w-]+/g, '');
+    if (!formData.has("slug")) {
+      const slug = name.toLowerCase().replace(/ /g, "-").replace(/[^\w-]+/g, "");
+      formData.set("slug", slug);
+    }
 
-    const record = await pb.collection('products').create({ ...data, slug, user: user.id });
-
+    const record = await pb.collection("products").create(formData);
     return NextResponse.json(record);
-  } catch (error: any) {
-    console.error('Error creating product:', error);
-    return NextResponse.json({ error: error.message || 'Error creating product' }, { status: 500 });
+  } catch (err: any) {
+    console.error("CREATE_PRODUCT_ERROR:", err);
+    return NextResponse.json({ error: err.message }, { status: 500 });
+  }
+}
+
+export async function PUT(req: NextRequest) {
+  try {
+    const pb = await initPocketBase(req);
+    if (!pb.authStore.isValid) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+
+    const formData = await req.formData();
+    const id = formData.get("id") as string;
+
+    if (!id) return NextResponse.json({ error: "Missing ID" }, { status: 400 });
+
+    const record = await pb.collection("products").update(id, formData);
+    return NextResponse.json(record);
+  } catch (err: any) {
+    console.error("UPDATE_PRODUCT_ERROR:", err);
+    return NextResponse.json({ error: err.message }, { status: 500 });
+  }
+}
+
+export async function DELETE(req: NextRequest) {
+  try {
+    const pb = await initPocketBase(req);
+    if (!pb.authStore.isValid) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+
+    const id = new URL(req.url).searchParams.get("id");
+    if (!id) return NextResponse.json({ error: "Missing ID" }, { status: 400 });
+
+    await pb.collection("products").delete(id);
+    return NextResponse.json({ success: true });
+  } catch (err: any) {
+    console.error("DELETE_PRODUCT_ERROR:", err);
+    return NextResponse.json({ error: err.message }, { status: 500 });
   }
 }

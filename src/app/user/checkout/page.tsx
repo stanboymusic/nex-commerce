@@ -96,10 +96,11 @@ export default function CheckoutPage() {
         {/* Checkout Form */}
         <div className="space-y-10">
           <section>
-            <h2 className="text-2xl font-bold text-oxford mb-6 flex items-center gap-3">
+            <label htmlFor="address" className="text-2xl font-bold text-oxford mb-6 flex items-center gap-3 cursor-pointer">
               <MapPin className="text-purple" /> Dirección de Envío
-            </h2>
+            </label>
             <textarea
+              id="address"
               required
               value={address}
               onChange={(e) => setAddress(e.target.value)}
@@ -163,8 +164,9 @@ export default function CheckoutPage() {
           </section>
 
           <section>
-            <h2 className="text-xl font-bold text-oxford mb-4">Notas adicionales (opcional)</h2>
+            <label htmlFor="notes" className="text-xl font-bold text-oxford mb-4 block cursor-pointer">Notas adicionales (opcional)</label>
             <input
+              id="notes"
               type="text"
               value={notes}
               onChange={(e) => setNotes(e.target.value)}

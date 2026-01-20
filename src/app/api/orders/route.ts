@@ -1,136 +1,93 @@
-import { initPocketBase } from '@/lib/pocketbase';
-import { NextRequest, NextResponse } from 'next/server';
-import { getAdminPocketBase } from '@/lib/admin';
-
-export const runtime = 'nodejs';
+import { NextRequest, NextResponse } from "next/server";
+import { initPocketBase } from "@/lib/pocketbase";
+import { getAdminPocketBase } from "@/lib/admin";
 
 export async function POST(req: NextRequest) {
-  // Array para almacenar funciones de reversión (rollback)
-  const rollbacks: (() => Promise<void>)[] = [];
-
   try {
-    // 1. Verificar sesión del usuario
     const pb = await initPocketBase(req);
+    if (!pb.authStore.isValid) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
     const user = pb.authStore.model;
-
-    if (!user) {
-      console.error('[OrdersAPI] Unauthorized access attempt. Model is null.');
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    }
-    console.log('[OrdersAPI] User authorized:', (user as any).id);
-
-    // 2. Obtener datos y validar
     const body = await req.json();
-    const { items, total, paymentMethod, currency, address, notes } = body;
+    const { items, address, notes, currency = "USD" } = body;
 
-    if (!items?.length) {
-      return NextResponse.json({ error: 'Cart is empty' }, { status: 400 });
+    if (!items || items.length === 0) {
+      return NextResponse.json({ error: "No items" }, { status: 400 });
     }
 
-    if (!address || !paymentMethod || !currency) {
-      return NextResponse.json({ error: 'Missing required fields' }, { status: 400 });
-    }
-
-    if (isNaN(total) || total < 0) {
-      return NextResponse.json({ error: 'Invalid total amount' }, { status: 400 });
-    }
-
-    const isPreorder = items.some((i: { isPreorder?: boolean }) => i.isPreorder);
-
-    // 3. Obtener cliente ADMIN
     const adminPb = await getAdminPocketBase();
 
-    // 4. Crear la orden (con admin para evitar fallos de permisos)
-    console.log('[OrdersAPI] Creating order for user:', (user as any).id);
-    
-    // Calcular fecha estimada de entrega (ej: 7 días a partir de hoy)
-    const estimatedDelivery = new Date();
-    estimatedDelivery.setDate(estimatedDelivery.getDate() + 7);
+    let total = 0;
+    let isPreorder = false;
 
-    const order = await adminPb.collection('orders').create({
-      user: (user as any).id,
+    // 1) Validar productos y calcular total
+    const productsMap: any = {};
+
+    for (const item of items) {
+      const productId = item.productId || item.id;
+      const product = await adminPb.collection("products").getOne(productId);
+
+      if (!product) {
+        return NextResponse.json({ error: "Product not found" }, { status: 404 });
+      }
+
+      if (!product.isPreorder && product.stock < item.quantity) {
+        return NextResponse.json({ error: `Not enough stock for ${product.name}` }, { status: 400 });
+      }
+
+      if (product.isPreorder) isPreorder = true;
+
+      total += product.price * item.quantity;
+      productsMap[productId] = product;
+    }
+
+    // 2) Fecha de entrega
+    const estimatedDelivery = isPreorder
+      ? null
+      : new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString();
+
+    // 3) Crear orden
+    const order = await adminPb.collection("orders").create({
+      user: user.id,
       total,
-      isPreorder,
-      paymentMethod,
       currency,
       address,
       notes,
-      status: 'PENDING_PAYMENT',
-      estimatedDeliveryDate: estimatedDelivery.toISOString(),
-    });
-    console.log('[OrdersAPI] Order created successfully:', order.id);
-
-    // Registrar rollback para la orden
-    rollbacks.push(async () => {
-      await adminPb.collection('orders').delete(order.id);
-      console.log(`Rollback: Orden ${order.id} eliminada`);
+      status: "PENDING_PAYMENT",
+      isPreorder,
+      estimatedDeliveryDate: estimatedDelivery
     });
 
-    // 5. Crear items y actualizar stock de forma "transaccional"
+    // 4) Crear order_items
     for (const item of items) {
-      console.log('[OrdersAPI] Processing item:', item.id, item.name);
-      // Validar stock antes de crear nada si no es preorder
-      if (!item.isPreorder) {
-        const product = await adminPb.collection('products').getOne(item.id);
-        if ((product.stock || 0) < item.quantity) {
-          throw new Error(`Stock insuficiente para el producto: ${item.name}`);
-        }
+      const productId = item.productId || item.id;
+      const product = productsMap[productId];
 
-        // Actualizar stock
-        const oldStock = product.stock || 0;
-        console.log(`[OrdersAPI] Updating stock for ${item.id}: ${oldStock} -> ${oldStock - item.quantity}`);
-        await adminPb.collection('products').update(item.id, {
-          stock: oldStock - item.quantity,
-        });
-
-        // Registrar rollback para el stock
-        rollbacks.push(async () => {
-          await adminPb.collection('products').update(item.id, {
-            stock: oldStock,
-          });
-          console.log(`Rollback: Stock de ${item.id} restaurado a ${oldStock}`);
-        });
-      }
-
-      // Crear order item
-      console.log('[OrdersAPI] Creating order item for product:', item.id);
-      const orderItem = await adminPb.collection('order_items').create({
+      await adminPb.collection("order_items").create({
         order: order.id,
-        product: item.id,
-        name: item.name,
+        product: product.id,
+        name: product.name,
         quantity: item.quantity,
-        price: item.price,
+        price: product.price
       });
-      console.log('[OrdersAPI] Order item created:', orderItem.id);
 
-      // Registrar rollback para el item
-      rollbacks.push(async () => {
-        await adminPb.collection('order_items').delete(orderItem.id);
-        console.log(`Rollback: Item ${orderItem.id} eliminado`);
-      });
-    }
+      // 5) Descontar stock SOLO si no es preventa
+      if (!product.isPreorder) {
+        const newStock = Math.max(0, (product.stock || 0) - item.quantity);
 
-    return NextResponse.json({ success: true, order });
-  } catch (error: any) {
-    console.error('Order transaction error, starting rollback:', error.message);
-    if (error.data) {
-      console.error('Error details:', JSON.stringify(error.data, null, 2));
-    }
-
-    // Ejecutar todos los rollbacks en orden inverso
-    for (let i = rollbacks.length - 1; i >= 0; i--) {
-      try {
-        await rollbacks[i]();
-      } catch (rollbackError) {
-        console.error('Critical: Rollback operation failed:', rollbackError);
+        await adminPb.collection("products").update(product.id, {
+          stock: newStock
+        });
       }
     }
 
+    return NextResponse.json({ success: true, order: { id: order.id } });
+  } catch (error: any) {
+    console.error("ORDER_ERROR:", error);
     return NextResponse.json(
-      { 
-        error: error.message || 'Internal server error',
-        details: error.data || null
-      },
+      { error: error.message || "Failed to create order" },
       { status: 500 }
     );
   }

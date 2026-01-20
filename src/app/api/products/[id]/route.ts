@@ -9,11 +9,20 @@ export async function GET(
     const { id } = await params
     const pb = await initPocketBase(req);
 
-    // Attempt to fetch, getOne throws 404 if not found
+    // Attempt to fetch by ID or Slug
     try {
-      const record = await pb.collection('products').getOne(id, {
-        expand: 'category'
-      });
+      let record;
+      try {
+        // First try as ID
+        record = await pb.collection('products').getOne(id, {
+          expand: 'category'
+        });
+      } catch (e) {
+        // If not ID, try as Slug
+        record = await pb.collection('products').getFirstListItem(`slug="${id}"`, {
+          expand: 'category'
+        });
+      }
 
       const images = record.images ? record.images.map((filename: string) => ({
         id: filename,
@@ -28,8 +37,7 @@ export async function GET(
         price: record.price,
         stock: record.stock,
         isPreorder: record.isPreorder,
-        arrivalDate: record.arrivalDate,
-        estimatedDeliveryDate: record.estimatedDeliveryDate,
+        estimatedArrivalDate: record.estimatedArrivalDate,
         images: images,
         categoryId: record.category,
         category: record.expand?.category, // Include expanded category if needed

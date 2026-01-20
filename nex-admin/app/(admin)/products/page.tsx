@@ -47,7 +47,11 @@ export default function AdminProductsPage() {
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4 gap-8">
           {products.map((product: any) => (
-            <ProductCardAdmin key={product.id} product={product} />
+            <ProductCardAdmin 
+              key={product.id} 
+              product={product} 
+              onDelete={(id) => setProducts(products.filter((p: any) => p.id !== id))} 
+            />
           ))}
         </div>
       )}
