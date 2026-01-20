@@ -73,7 +73,7 @@ export default function CheckoutPage() {
       })
 
       clearCart()
-      router.push(`/orders?id=${response.data.id}&success=true`)
+      router.push(`/orders?id=${response.data.order.id}&success=true`)
     } catch (err: unknown) {
       if (axios.isAxiosError(err)) {
         setError(err.response?.data?.error || 'Error al procesar el pedido')

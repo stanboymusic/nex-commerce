@@ -31,12 +31,17 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Missing required fields' }, { status: 400 });
     }
 
+    if (isNaN(total) || total < 0) {
+      return NextResponse.json({ error: 'Invalid total amount' }, { status: 400 });
+    }
+
     const isPreorder = items.some((i: { isPreorder?: boolean }) => i.isPreorder);
 
     // 3. Obtener cliente ADMIN
     const adminPb = await getAdminPocketBase();
 
     // 4. Crear la orden (con admin para evitar fallos de permisos)
+    console.log('[OrdersAPI] Creating order for user:', (user as any).id);
     const order = await adminPb.collection('orders').create({
       user: (user as any).id,
       total,
@@ -47,6 +52,7 @@ export async function POST(req: NextRequest) {
       notes,
       status: 'PENDING_PAYMENT',
     });
+    console.log('[OrdersAPI] Order created successfully:', order.id);
 
     // Registrar rollback para la orden
     rollbacks.push(async () => {
@@ -56,6 +62,7 @@ export async function POST(req: NextRequest) {
 
     // 5. Crear items y actualizar stock de forma "transaccional"
     for (const item of items) {
+      console.log('[OrdersAPI] Processing item:', item.id, item.name);
       // Validar stock antes de crear nada si no es preorder
       if (!item.isPreorder) {
         const product = await adminPb.collection('products').getOne(item.id);
@@ -65,6 +72,7 @@ export async function POST(req: NextRequest) {
 
         // Actualizar stock
         const oldStock = product.stock || 0;
+        console.log(`[OrdersAPI] Updating stock for ${item.id}: ${oldStock} -> ${oldStock - item.quantity}`);
         await adminPb.collection('products').update(item.id, {
           stock: oldStock - item.quantity,
         });
@@ -79,6 +87,7 @@ export async function POST(req: NextRequest) {
       }
 
       // Crear order item
+      console.log('[OrdersAPI] Creating order item for product:', item.id);
       const orderItem = await adminPb.collection('order_items').create({
         order: order.id,
         product: item.id,
@@ -86,6 +95,7 @@ export async function POST(req: NextRequest) {
         quantity: item.quantity,
         price: item.price,
       });
+      console.log('[OrdersAPI] Order item created:', orderItem.id);
 
       // Registrar rollback para el item
       rollbacks.push(async () => {
@@ -97,6 +107,9 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ success: true, order });
   } catch (error: any) {
     console.error('Order transaction error, starting rollback:', error.message);
+    if (error.data) {
+      console.error('Error details:', JSON.stringify(error.data, null, 2));
+    }
 
     // Ejecutar todos los rollbacks en orden inverso
     for (let i = rollbacks.length - 1; i >= 0; i--) {
@@ -108,7 +121,10 @@ export async function POST(req: NextRequest) {
     }
 
     return NextResponse.json(
-      { error: error.message || 'Internal server error' },
+      { 
+        error: error.message || 'Internal server error',
+        details: error.data || null
+      },
       { status: 500 }
     );
   }
