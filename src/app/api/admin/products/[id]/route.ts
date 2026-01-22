@@ -1,4 +1,3 @@
-```typescript
 
 import { NextResponse } from "next/server";
 import { getAdminPocketBase } from "@/lib/admin";
@@ -34,4 +33,3 @@ export async function DELETE(req: Request, { params }: { params: Promise<{ id: s
     return NextResponse.json({ error: "Failed to delete product" }, { status: 500 });
   }
 }
-```

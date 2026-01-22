@@ -9,7 +9,7 @@ import Link from "next/link";
 
 export default function EditProductPage() {
   const { id } = useParams();
-  const [product, setProduct] = useState(null);
+  const [product, setProduct] = useState<any>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
