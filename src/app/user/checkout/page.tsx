@@ -47,27 +47,20 @@ export default function CheckoutPage() {
       router.push('/login?redirect=/checkout')
     }
 
-    const fetchRates = async () => {
+    const fetchSettings = async () => {
       try {
-        const res = await axios.get('/api/exchange-rates');
-        setRate(res.data.rate);
+        const { data } = await axios.get("/api/settings");
+        setRate(data.usdToCopRate || 4000);
+        if (data.kontigoQR) {
+          setKontigoSettings({ kontigoQr: data.kontigoQR, kontigoInstructions: "Escanea el QR y reporta el pago" });
+        }
       } catch (err) {
-        console.error("Error fetching rate:", err);
-      }
-    };
-
-    const fetchPaymentSettings = async () => {
-      try {
-        const { data } = await axios.get("/api/payment-settings");
-        setKontigoSettings(data);
-      } catch (err) {
-        console.error("Error fetching payment settings", err);
+        console.error("Error fetching settings", err);
       }
     }
 
     if (mounted) {
-      fetchRates();
-      fetchPaymentSettings();
+      fetchSettings();
     }
   }, [mounted, user, router])
 
@@ -97,9 +90,9 @@ export default function CheckoutPage() {
     try {
       const response = await axios.post('/api/orders', {
         items,
-        total: getTotal(),
-        paymentMethod,
+        // Send explicit totals and currency info
         currency,
+        paymentMethod,
         address,
         notes,
         estimatedDelivery: estimatedDelivery || undefined
@@ -107,7 +100,7 @@ export default function CheckoutPage() {
         headers: {
           Authorization: `Bearer ${token}`
         },
-        withCredentials: true // Ensure cookies are sent if relying on them
+        withCredentials: true
       })
 
       const orderId = response.data.order.id;
@@ -117,7 +110,7 @@ export default function CheckoutPage() {
         // Report manual payment
         await axios.post('/api/payments/kontigo/report', {
           orderId,
-          reference: kontigoReference
+          reference: kontigoReference || 'PENDING'
         });
 
       } else if (paymentMethod === 'BINANCE') {
