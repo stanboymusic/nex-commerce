@@ -6,7 +6,7 @@ import { Card } from "@/components/ui/Card";
 import { Badge } from "@/components/ui/Badge";
 
 export default function AdminOrdersPage() {
-  const [orders, setOrders] = useState([]);
+  const [orders, setOrders] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -15,11 +15,11 @@ export default function AdminOrdersPage() {
       .finally(() => setLoading(false));
   }, []);
 
-  const updateStatus = async (id, status) => {
+  const updateStatus = async (id: string, status: string) => {
     try {
       await apiClient.put("/orders/status", { id, status });
       // Update local state instead of reloading
-      setOrders(orders.map(o => o.id === id ? { ...o, status } : o));
+      setOrders(orders.map((o: any) => o.id === id ? { ...o, status } : o));
     } catch (error) {
       alert("Error al actualizar el estado");
     }
@@ -39,7 +39,7 @@ export default function AdminOrdersPage() {
       </div>
 
       <div className="grid grid-cols-1 gap-4">
-        {orders.map((o) => (
+        {orders.map((o: any) => (
           <Card key={o.id} className="p-6">
             <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
               <div className="space-y-1">
