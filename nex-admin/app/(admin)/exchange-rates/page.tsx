@@ -26,7 +26,7 @@ export default function ExchangeRatesPage() {
         setLoading(true);
         setError(null);
         try {
-            const response = await apiClient.get('/exchange-rates');
+            const response = await apiClient.get('/admin/exchange-rates');
             setRates(response.data || []);
         } catch (err: any) {
             console.error("Error fetching rates:", err);
@@ -48,6 +48,12 @@ export default function ExchangeRatesPage() {
     const handleSave = async (rate: ExchangeRate) => {
         setSaving(rate.id);
         try {
+            // PATCH uses generic ID route, which is fine if permissions allow (ADMIN only)
+            // But checking if we need to map fields?
+            // The UI sends { rate: rate.rate }. The API expects { rate }. This matches.
+            // The endpoint is /exchange-rates/${id}. This hits src/app/api/exchange-rates/[id]/route.ts
+            // That route updates the record directly.
+            // So this is fine.
             await apiClient.patch(`/exchange-rates/${rate.id}`, {
                 rate: rate.rate
             });
@@ -65,8 +71,8 @@ export default function ExchangeRatesPage() {
         setLoading(true);
         try {
             // Logic to create USD to COP and USD to VES if they don't exist
-            await apiClient.post('/exchange-rates', { from: 'USD', to: 'COP', rate: 4000 });
-            await apiClient.post('/exchange-rates', { from: 'USD', to: 'VES', rate: 40 });
+            await apiClient.post('/admin/exchange-rates', { from: 'USD', to: 'COP', rate: 4000 });
+            await apiClient.post('/admin/exchange-rates', { from: 'USD', to: 'VES', rate: 40 });
             fetchRates();
         } catch (err) {
             console.error("Error creating defaults:", err);
@@ -82,9 +88,9 @@ export default function ExchangeRatesPage() {
                     <h1 className="text-4xl font-black text-oxford tracking-tight">Tasas de Cambio</h1>
                     <p className="text-text-medium font-medium mt-1">Configura las conversiones de moneda para los pagos locales.</p>
                 </div>
-                <Button 
-                    variant="outline" 
-                    onClick={fetchRates} 
+                <Button
+                    variant="outline"
+                    onClick={fetchRates}
                     disabled={loading}
                     leftIcon={<RefreshCw className={`h-4 w-4 ${loading ? 'animate-spin' : ''}`} />}
                 >
@@ -134,9 +140,9 @@ export default function ExchangeRatesPage() {
                                     </label>
                                     <div className="relative">
                                         <div className="absolute left-4 top-1/2 -translate-y-1/2 text-text-light font-bold">$</div>
-                                        <Input 
-                                            type="number" 
-                                            value={rate.rate} 
+                                        <Input
+                                            type="number"
+                                            value={rate.rate}
                                             onChange={(e) => handleRateChange(rate.id, e.target.value)}
                                             className="pl-8 text-xl font-black text-oxford"
                                             placeholder="0.00"
@@ -149,8 +155,8 @@ export default function ExchangeRatesPage() {
                                     <p className="text-[10px] text-text-light font-medium uppercase">
                                         Última actualización: {new Date(rate.updated).toLocaleString()}
                                     </p>
-                                    <Button 
-                                        size="sm" 
+                                    <Button
+                                        size="sm"
                                         onClick={() => handleSave(rate)}
                                         isLoading={saving === rate.id}
                                         leftIcon={<Save className="h-4 w-4" />}
@@ -163,7 +169,7 @@ export default function ExchangeRatesPage() {
                     ))
                 )}
             </div>
-            
+
             <div className="mt-12 p-6 bg-purple/5 border border-purple/10 rounded-3xl">
                 <div className="flex gap-4">
                     <div className="w-10 h-10 bg-purple/10 rounded-xl flex items-center justify-center text-purple flex-shrink-0">
@@ -172,7 +178,7 @@ export default function ExchangeRatesPage() {
                     <div>
                         <h4 className="font-bold text-oxford">Nota de Monedas</h4>
                         <p className="text-sm text-text-medium mt-1">
-                            El sistema utiliza estas tasas para calcular los montos totales en la moneda seleccionada por el cliente durante el checkout. 
+                            El sistema utiliza estas tasas para calcular los montos totales en la moneda seleccionada por el cliente durante el checkout.
                             Asegúrate de mantenerlas actualizadas para evitar discrepancias en los cobros.
                         </p>
                     </div>
