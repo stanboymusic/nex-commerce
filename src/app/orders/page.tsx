@@ -36,7 +36,9 @@ const STATUS_LABELS: Record<string, string> = {
   CANCELLED: 'Cancelada',
 }
 
-export default function OrdersPage() {
+import { Suspense } from 'react'
+
+function OrdersContent() {
   const [orders, setOrders] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
   const [reportingId, setReportingId] = useState<string | null>(null)
@@ -109,7 +111,7 @@ export default function OrdersPage() {
             <h3 className="text-lg font-bold text-green-900">¡Pedido realizado con éxito!</h3>
             <p className="text-green-700">Tu orden ha sido registrada. Pronto nos pondremos en contacto contigo.</p>
           </div>
-          <button 
+          <button
             onClick={() => setShowSuccess(false)}
             className="ml-auto text-green-600 hover:text-green-800 font-bold"
           >
@@ -137,7 +139,7 @@ export default function OrdersPage() {
                       <p className="text-xs text-gray-500 uppercase font-bold tracking-wider">Orden #{order.id.slice(-8)}</p>
                       <p className="text-sm text-gray-400">{new Date(order.createdAt).toLocaleDateString()}</p>
                     </div>
-                    
+
                     <div className="flex items-center gap-4">
                       <div className={`flex items-center gap-2 px-4 py-1.5 rounded-full text-sm font-bold ${STATUS_COLORS[order.status]}`}>
                         <StatusIcon className="h-4 w-4" />
@@ -154,22 +156,22 @@ export default function OrdersPage() {
                     <div className="mb-6 p-4 bg-amber-50 rounded-xl border border-amber-100">
                       {reportingId === order.id ? (
                         <form onSubmit={handleReportPayment} className="flex gap-3">
-                          <input 
-                            type="text" 
-                            placeholder="Referencia de pago..." 
+                          <input
+                            type="text"
+                            placeholder="Referencia de pago..."
                             value={reference}
                             onChange={(e) => setReference(e.target.value)}
                             className="flex-grow px-4 py-2 bg-white border border-amber-200 rounded-lg outline-none focus:ring-2 focus:ring-amber-500 text-sm"
                             required
                           />
-                          <button 
+                          <button
                             type="submit"
                             disabled={submitting}
                             className="bg-amber-600 text-white px-6 py-2 rounded-lg text-sm font-bold hover:bg-amber-700 transition-colors disabled:opacity-50"
                           >
                             {submitting ? 'Enviando...' : 'Confirmar'}
                           </button>
-                          <button 
+                          <button
                             type="button"
                             onClick={() => setReportingId(null)}
                             className="text-amber-600 px-2 text-sm font-bold"
@@ -183,7 +185,7 @@ export default function OrdersPage() {
                             <Banknote className="h-5 w-5" />
                             <p className="text-sm font-medium">Por favor, reporta tu pago para procesar la orden.</p>
                           </div>
-                          <button 
+                          <button
                             onClick={() => setReportingId(order.id)}
                             className="bg-amber-600 text-white px-6 py-2 rounded-lg text-sm font-bold hover:bg-amber-700 transition-colors"
                           >
@@ -221,5 +223,13 @@ export default function OrdersPage() {
         </div>
       )}
     </div>
+  )
+}
+
+export default function OrdersPage() {
+  return (
+    <Suspense fallback={<div className="max-w-7xl mx-auto px-4 py-20 text-center text-oxford">Cargando pedidos...</div>}>
+      <OrdersContent />
+    </Suspense>
   )
 }
