@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { X, Upload, Save } from "lucide-react";
+import { X, Upload, Save, Package } from "lucide-react";
 
 interface Props {
     product?: any;
