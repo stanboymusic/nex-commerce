@@ -2,7 +2,6 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { getAdminPocketBase } from "@/lib/admin"; // Warning: This might be server-only. 
 // We should use client-side fetch or server actions. 
 // The prompt example used `fetch("/api/admin/payment-settings", ...)` which implies client-side form.
 
