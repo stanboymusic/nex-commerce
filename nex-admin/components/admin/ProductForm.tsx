@@ -1,7 +1,8 @@
 
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { apiClient } from "@/lib/apiClient";
 
 export default function ProductForm({ initial = null, onSaved }: any) {
   const editing = !!initial?.id;
@@ -9,6 +10,7 @@ export default function ProductForm({ initial = null, onSaved }: any) {
   const [name, setName] = useState(initial?.name || "");
   const [price, setPrice] = useState(initial?.price || 0);
   const [stock, setStock] = useState(initial?.stock || 0);
+  const [categoryId, setCategoryId] = useState(initial?.category || "");
   const [isPreorder, setIsPreorder] = useState(initial?.isPreorder || false);
   const [estimatedArrival, setEstimatedArrival] = useState(
     initial?.estimatedArrival ? initial.estimatedArrival.split("T")[0] : ""
@@ -16,6 +18,14 @@ export default function ProductForm({ initial = null, onSaved }: any) {
   const [file, setFile] = useState<File | null>(null);
   const [gallery, setGallery] = useState<File[]>([]);
   const [loading, setLoading] = useState(false);
+  const [categories, setCategories] = useState<any[]>([]);
+
+  useEffect(() => {
+    // Fetch categories
+    apiClient.get("/categories")
+      .then(res => setCategories(res.data || []))
+      .catch(err => console.error("Error loading categories", err));
+  }, []);
 
   const submit = async (e: any) => {
     e.preventDefault();
@@ -26,6 +36,7 @@ export default function ProductForm({ initial = null, onSaved }: any) {
       form.append("name", name);
       form.append("price", String(price));
       form.append("stock", String(stock));
+      form.append("category", categoryId);
       form.append("isPreorder", String(isPreorder));
 
       // Assuming there is a description field too, but sticking to prompt for now.
@@ -94,6 +105,21 @@ export default function ProductForm({ initial = null, onSaved }: any) {
               className="w-full p-2 border rounded"
             />
           </div>
+        </div>
+
+        <div>
+          <label className="block text-sm font-medium mb-1">Categoría</label>
+          <select
+            value={categoryId}
+            onChange={e => setCategoryId(e.target.value)}
+            required
+            className="w-full p-2 border rounded bg-white"
+          >
+            <option value="">Seleccionar categoría...</option>
+            {categories.map((c: any) => (
+              <option key={c.id} value={c.id}>{c.name}</option>
+            ))}
+          </select>
         </div>
 
         <div className="border p-4 rounded bg-gray-50">
