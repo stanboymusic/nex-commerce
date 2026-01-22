@@ -1,151 +1,165 @@
+
 "use client";
 
 import { useState } from "react";
-import { useRouter } from "next/navigation";
-import Image from "next/image";
-import { apiClient } from "@/lib/apiClient";
 
-export default function ProductForm({ initialData = null }) {
-  const router = useRouter();
-  const isEditing = !!initialData;
+export default function ProductForm({ initial = null, onSaved }: any) {
+  const editing = !!initial?.id;
 
-  const [name, setName] = useState(initialData?.name || "");
-  const [price, setPrice] = useState(initialData?.price || 0);
-  const [stock, setStock] = useState(initialData?.stock || 0);
-  const [isPreorder, setIsPreorder] = useState(initialData?.isPreorder || false);
-  const [estimatedArrivalDate, setEstimatedArrivalDate] = useState(
-    initialData?.estimatedArrivalDate?.split("T")[0] || ""
+  const [name, setName] = useState(initial?.name || "");
+  const [price, setPrice] = useState(initial?.price || 0);
+  const [stock, setStock] = useState(initial?.stock || 0);
+  const [isPreorder, setIsPreorder] = useState(initial?.isPreorder || false);
+  const [estimatedArrival, setEstimatedArrival] = useState(
+    initial?.estimatedArrival ? initial.estimatedArrival.split("T")[0] : ""
   );
-  const [images, setImages] = useState<File[]>([]);
+  const [file, setFile] = useState<File | null>(null);
+  const [gallery, setGallery] = useState<File[]>([]);
   const [loading, setLoading] = useState(false);
 
-  const submit = async (e) => {
+  const submit = async (e: any) => {
     e.preventDefault();
     setLoading(true);
 
     try {
       const form = new FormData();
-      if (isEditing) form.append("id", initialData.id);
-
       form.append("name", name);
-      form.append("price", price.toString());
-      form.append("stock", stock.toString());
+      form.append("price", String(price));
+      form.append("stock", String(stock));
       form.append("isPreorder", String(isPreorder));
 
-      if (estimatedArrivalDate)
-        form.append("estimatedArrivalDate", new Date(estimatedArrivalDate).toISOString());
+      // Assuming there is a description field too, but sticking to prompt for now.
+      // Prompt didn't explicitly ask for description in the form but API sends it. I'll check user prompt 63 again.
+      // Step 63 ProductForm doesn't have description input. I will stick to what was asked.
 
-      images.forEach((img) => form.append("images", img));
+      if (estimatedArrival) form.append("estimatedArrival", new Date(estimatedArrival).toISOString());
 
-      if (isEditing) {
-        await apiClient.put("/products", form);
-      } else {
-        await apiClient.post("/products", form);
-      }
+      // Single image
+      if (file) form.append("image", file);
 
-      router.push("/products");
-      router.refresh();
-    } catch (error) {
-      console.error("Error submitting form:", error);
-      alert("Error al guardar el producto");
+      // Gallery
+      gallery.forEach(f => form.append("images", f));
+
+      const url = editing ? `/api/admin/products/${initial.id}` : `/api/admin/products`;
+      const method = editing ? "PUT" : "POST";
+
+      const res = await fetch(url, { method, body: form });
+      if (!res.ok) throw new Error("Failed to save");
+
+      onSaved?.();
+    } catch (err) {
+      console.error(err);
+      alert("Error al guardar producto");
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <form onSubmit={submit} className="space-y-6 max-w-2xl bg-white p-8 rounded-3xl shadow-sm border border-border">
-      <div className="space-y-2">
-        <label htmlFor="product-name" className="text-sm font-bold text-oxford">Nombre del Producto</label>
-        <input
-          id="product-name"
-          className="w-full p-4 rounded-xl border border-border focus:ring-2 focus:ring-purple/20 outline-none transition-all"
-          placeholder="Ej. NexPhone Ultra"
-          value={name}
-          onChange={(e) => setName(e.target.value)}
-          required
-          title="Nombre del producto"
-        />
-      </div>
+    <form onSubmit={submit} className="space-y-4 bg-white p-6 rounded-lg border">
+      <h3 className="text-lg font-bold">{editing ? "Editar Producto" : "Nuevo Producto"}</h3>
 
-      <div className="grid grid-cols-2 gap-4">
-        <div className="space-y-2">
-          <label htmlFor="product-price" className="text-sm font-bold text-oxford">Precio ($)</label>
+      <div className="grid grid-cols-1 gap-4">
+        <div>
+          <label className="block text-sm font-medium mb-1">Nombre</label>
           <input
-            id="product-price"
-            type="number"
-            className="w-full p-4 rounded-xl border border-border focus:ring-2 focus:ring-purple/20 outline-none transition-all"
-            placeholder="0.00"
-            value={price}
-            onChange={(e) => setPrice(Number(e.target.value))}
+            value={name}
+            onChange={e => setName(e.target.value)}
+            placeholder="Nombre del producto"
             required
-            title="Precio del producto"
+            className="w-full p-2 border rounded"
           />
         </div>
 
-        <div className="space-y-2">
-          <label htmlFor="product-stock" className="text-sm font-bold text-oxford">Stock</label>
-          <input
-            id="product-stock"
-            type="number"
-            className="w-full p-4 rounded-xl border border-border focus:ring-2 focus:ring-purple/20 outline-none transition-all"
-            placeholder="0"
-            value={stock}
-            onChange={(e) => setStock(Number(e.target.value))}
-            required
-            title="Stock disponible"
-          />
-        </div>
-      </div>
-
-      <div className="p-4 bg-muted/30 rounded-2xl space-y-4">
-        <label htmlFor="is-preorder" className="flex items-center gap-3 cursor-pointer">
-          <input
-            id="is-preorder"
-            type="checkbox"
-            className="w-5 h-5 rounded border-border text-purple focus:ring-purple"
-            checked={isPreorder}
-            onChange={(e) => setIsPreorder(e.target.checked)}
-            title="Es una preventa"
-          />
-          <span className="font-bold text-oxford">Este producto es una preventa</span>
-        </label>
-
-        {isPreorder && (
-          <div className="space-y-2 animate-in fade-in slide-in-from-top-2">
-            <label htmlFor="arrival-date" className="text-sm font-bold text-oxford">Fecha Estimada de Llegada</label>
+        <div className="grid grid-cols-2 gap-4">
+          <div>
+            <label className="block text-sm font-medium mb-1">Precio (USD)</label>
             <input
-              id="arrival-date"
-              type="date"
-              className="w-full p-4 rounded-xl border border-border focus:ring-2 focus:ring-purple/20 outline-none transition-all"
-              value={estimatedArrivalDate}
-              onChange={(e) => setEstimatedArrivalDate(e.target.value)}
-              title="Fecha estimada de llegada"
+              type="number"
+              value={price}
+              onChange={e => setPrice(Number(e.target.value))}
+              placeholder="0.00"
+              required
+              className="w-full p-2 border rounded"
             />
           </div>
+          <div>
+            <label className="block text-sm font-medium mb-1">Stock</label>
+            <input
+              type="number"
+              value={stock}
+              onChange={e => setStock(Number(e.target.value))}
+              placeholder="0"
+              required
+              className="w-full p-2 border rounded"
+            />
+          </div>
+        </div>
+
+        <div className="border p-4 rounded bg-gray-50">
+          <label className="flex items-center gap-2 cursor-pointer">
+            <input
+              type="checkbox"
+              checked={isPreorder}
+              onChange={e => setIsPreorder(e.target.checked)}
+              className="w-4 h-4"
+            />
+            <span className="font-medium">Habilitar Preventa</span>
+          </label>
+
+          {isPreorder && (
+            <div className="mt-3">
+              <label className="block text-sm font-medium mb-1">Fecha estimada de llegada</label>
+              <input
+                type="date"
+                value={estimatedArrival}
+                onChange={e => setEstimatedArrival(e.target.value)}
+                className="w-full p-2 border rounded"
+              />
+            </div>
+          )}
+        </div>
+
+        <div>
+          <label className="block text-sm font-medium mb-1">Imagen Principal</label>
+          <input
+            type="file"
+            accept="image/*"
+            onChange={e => setFile(e.target.files?.[0] || null)}
+            className="w-full"
+          />
+        </div>
+
+        <div>
+          <label className="block text-sm font-medium mb-1">Galería</label>
+          <input
+            type="file"
+            multiple
+            accept="image/*"
+            onChange={e => setGallery(Array.from(e.target.files || []))}
+            className="w-full"
+          />
+        </div>
+      </div>
+
+      <div className="flex gap-2 pt-2">
+        <button
+          type="submit"
+          disabled={loading}
+          className="px-4 py-2 bg-oxford text-white rounded hover:bg-oxford/90 disabled:opacity-50"
+        >
+          {loading ? "Guardando..." : (editing ? "Actualizar" : "Crear")}
+        </button>
+        {editing && (
+          <button
+            type="button"
+            onClick={() => onSaved?.()} // Close form logic depends on parent, but sticking to prompt style
+            className="px-4 py-2 border rounded hover:bg-gray-50"
+          >
+            Cancelar
+          </button>
         )}
       </div>
-
-      <div className="space-y-2">
-        <label htmlFor="product-images" className="text-sm font-bold text-oxford">Imágenes</label>
-        <input
-          id="product-images"
-          type="file"
-          multiple
-          accept="image/*"
-          className="w-full p-4 rounded-xl border border-dashed border-border hover:border-purple transition-all cursor-pointer"
-          onChange={(e) => e.target.files && setImages(Array.from(e.target.files))}
-          title="Seleccionar imágenes"
-        />
-        <p className="text-xs text-text-light">Puedes seleccionar varios archivos a la vez.</p>
-      </div>
-
-      <button 
-        disabled={loading} 
-        className="w-full bg-purple text-white py-4 rounded-xl font-bold text-lg hover:scale-[1.02] active:scale-95 transition-all disabled:opacity-50 disabled:cursor-not-allowed shadow-lg shadow-purple/20"
-      >
-        {loading ? "Procesando..." : isEditing ? "Actualizar Producto" : "Crear Producto"}
-      </button>
     </form>
   );
 }

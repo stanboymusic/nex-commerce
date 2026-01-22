@@ -51,7 +51,10 @@ export default function AdminOrdersPage() {
               <div className="flex items-center gap-4 w-full md:w-auto">
                 <div className="text-right mr-4">
                   <p className="text-xl font-black text-purple">${o.total.toLocaleString()}</p>
-                  <p className="text-[10px] font-bold text-text-light uppercase">{o.currency}</p>
+                  <div className="flex flex-col items-end">
+                    <p className="text-[10px] font-bold text-text-light uppercase">{o.currency}</p>
+                    <Badge variant="neutral" className="text-[10px] mt-1">{o.paymentMethod || 'N/A'}</Badge>
+                  </div>
                 </div>
 
                 <select
@@ -59,8 +62,10 @@ export default function AdminOrdersPage() {
                   onChange={(e) => updateStatus(o.id, e.target.value)}
                   className="bg-muted/50 border border-border rounded-xl px-4 py-2 text-sm font-bold text-oxford outline-none focus:ring-2 focus:ring-purple/20"
                 >
-                  <option value="PENDING">Pendiente</option>
-                  <option value="PAID">Pagado</option>
+                  <option value="PENDING_PAYMENT">Pendiente Pago</option>
+                  <option value="PAYMENT_REPORTED">Pago Reportado</option>
+                  <option value="CONFIRMED">Confirmado</option>
+                  <option value="PREPARING">Preparando</option>
                   <option value="SHIPPED">Enviado</option>
                   <option value="DELIVERED">Entregado</option>
                   <option value="CANCELLED">Cancelado</option>

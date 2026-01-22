@@ -1,75 +1,93 @@
-'use client'
 
-import { useState, useEffect } from "react";
-import ProductCardAdmin from "@/components/admin/ProductCardAdmin";
-import { apiClient } from "@/lib/apiClient";
-import { Plus, Search } from "lucide-react";
-import Link from "next/link";
-import { Button } from "@/components/ui/Button";
+"use client";
 
-export default function AdminProductsPage() {
-  const [products, setProducts] = useState([]);
-  const [loading, setLoading] = useState(true);
+import { useEffect, useState } from "react";
+import ProductForm from "@/components/admin/ProductForm";
 
-  useEffect(() => {
-    const fetchProducts = async () => {
-      try {
-        const response = await apiClient.get('/products');
-        setProducts(response.data);
-      } catch (error) {
-        console.error("Error fetching products:", error);
-      } finally {
-        setLoading(false);
-      }
-    };
-    fetchProducts();
-  }, []);
+export default function ProductsPage() {
+  const [products, setProducts] = useState<any[]>([]);
+  const [editing, setEditing] = useState<any>(null);
+
+  const load = async () => {
+    try {
+      const res = await fetch("/api/products"); // Reusing public GET as per prompt Step 64? Prompt says fetch("/api/products")
+      const data = await res.json();
+      setProducts(data);
+    } catch (e) {
+      console.error("Error loading products", e);
+    }
+  };
+
+  useEffect(() => { load(); }, []);
+
+  const del = async (id: string) => {
+    if (!confirm("Eliminar producto?")) return;
+    try {
+      await fetch(`/api/admin/products/${id}`, { method: "DELETE" });
+      load();
+    } catch (e) {
+      console.error("Error deleting", e);
+    }
+  };
 
   return (
-    <>
-      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6 mb-10">
-        <div>
-          <h1 className="text-4xl font-black text-oxford tracking-tight">Gestión de Productos</h1>
-          <p className="text-text-medium font-medium mt-1">Administra tu inventario, precios y estados de preventa.</p>
-        </div>
-
-        <Link href="/products/new">
-          <Button className="shadow-lg shadow-purple/20" leftIcon={<Plus className="h-5 w-5" />}>
-            Nuevo Producto
-          </Button>
-        </Link>
+    <div className="space-y-6 max-w-5xl mx-auto">
+      <div className="flex justify-between items-center">
+        <h1 className="text-2xl font-bold text-oxford">Gestión de Productos</h1>
       </div>
 
-      {loading ? (
-        <div className="flex items-center justify-center py-20">
-          <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-purple"></div>
-        </div>
-      ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4 gap-8">
-          {products.map((product: any) => (
-            <ProductCardAdmin 
-              key={product.id} 
-              product={product} 
-              onDelete={(id) => setProducts(products.filter((p: any) => p.id !== id))} 
-            />
-          ))}
-        </div>
-      )}
+      <ProductForm
+        initial={editing}
+        onSaved={() => {
+          setEditing(null);
+          load();
+        }}
+      />
 
-      {!loading && products.length === 0 && (
-        <div className="bg-white rounded-3xl p-20 text-center border-2 border-dashed border-border mt-8">
-          <div className="w-20 h-20 bg-muted rounded-full flex items-center justify-center mx-auto mb-6">
-            <Search className="h-10 w-10 text-text-light" />
+      <div className="space-y-3">
+        {products.map(p => (
+          <div key={p.id} className="bg-white border p-4 rounded-xl flex items-center gap-4 shadow-sm hover:shadow-md transition-shadow">
+            {p.image ? (
+              <img src={p.image} className="w-16 h-16 rounded-lg object-cover bg-gray-100" />
+            ) : (
+              <div className="w-16 h-16 rounded-lg bg-gray-100 flex items-center justify-center text-xs text-gray-400">No img</div>
+            )}
+
+            <div className="flex-1">
+              <b className="text-lg text-oxford block">{p.name}</b>
+              <div className="text-sm text-gray-600">
+                <span className="font-semibold text-green-600">${p.price}</span>
+                <span className="mx-2 text-gray-300">|</span>
+                Stock: {p.stock}
+              </div>
+              {p.isPreorder && (
+                <div className="mt-1 inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-amber-100 text-amber-800">
+                  PREVENTA {p.estimatedArrival ? `(${new Date(p.estimatedArrival).toLocaleDateString()})` : "(sin fecha)"}
+                </div>
+              )}
+            </div>
+
+            <div className="flex gap-2">
+              <button
+                onClick={() => setEditing(p)}
+                className="px-3 py-1.5 text-sm font-medium text-blue-600 bg-blue-50 rounded-lg hover:bg-blue-100"
+              >
+                Editar
+              </button>
+              <button
+                onClick={() => del(p.id)}
+                className="px-3 py-1.5 text-sm font-medium text-red-600 bg-red-50 rounded-lg hover:bg-red-100"
+              >
+                Eliminar
+              </button>
+            </div>
           </div>
-          <h3 className="text-xl font-bold text-oxford mb-2">No hay productos aún</h3>
-          <p className="text-text-medium max-w-xs mx-auto mb-8">Comienza agregando tu primer producto al catálogo de NexCommerce.</p>
-          <Link href="/products/new">
-            <Button variant="ghost" className="text-purple font-bold">
-              Agregar producto ahora
-            </Button>
-          </Link>
-        </div>
-      )}
-    </>
+        ))}
+
+        {products.length === 0 && (
+          <p className="text-center text-gray-500 py-10">No hay productos registrados.</p>
+        )}
+      </div>
+    </div>
   );
 }

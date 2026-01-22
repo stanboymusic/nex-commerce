@@ -903,5 +903,76 @@
         "updateRule": "@request.auth.id != '' && (user = @request.auth.id || @request.auth.role = 'ADMIN')",
         "deleteRule": "@request.auth.id != '' && (user = @request.auth.id || @request.auth.role = 'ADMIN')",
         "options": {}
+    },
+    {
+        "id": "pbc_exchange_rates",
+        "name": "exchange_rates",
+        "type": "base",
+        "system": false,
+        "fields": [
+            {
+                "id": "text3208210256",
+                "name": "id",
+                "type": "text",
+                "system": true,
+                "required": true,
+                "presentable": false,
+                "unique": true,
+                "primaryKey": true,
+                "autogeneratePattern": "[a-z0-9]{15}"
+            },
+            {
+                "id": "text_from",
+                "name": "from",
+                "type": "text",
+                "system": false,
+                "required": true,
+                "presentable": false,
+                "unique": false
+            },
+            {
+                "id": "text_to",
+                "name": "to",
+                "type": "text",
+                "system": false,
+                "required": true,
+                "presentable": false,
+                "unique": false
+            },
+            {
+                "id": "number_rate",
+                "name": "rate",
+                "type": "number",
+                "system": false,
+                "required": true,
+                "presentable": false,
+                "unique": false
+            },
+            {
+                "id": "autodate2990389176",
+                "name": "created",
+                "type": "autodate",
+                "system": true,
+                "onCreate": true,
+                "onUpdate": false
+            },
+            {
+                "id": "autodate3332085495",
+                "name": "updated",
+                "type": "autodate",
+                "system": true,
+                "onCreate": true,
+                "onUpdate": true
+            }
+        ],
+        "indexes": [
+            "CREATE UNIQUE INDEX `idx_from_to` ON `exchange_rates` (`from`, `to`)"
+        ],
+        "listRule": "",
+        "viewRule": "",
+        "createRule": "@request.auth.role = 'ADMIN'",
+        "updateRule": "@request.auth.role = 'ADMIN'",
+        "deleteRule": "@request.auth.role = 'ADMIN'",
+        "options": {}
     }
 ]

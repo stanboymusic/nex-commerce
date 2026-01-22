@@ -194,7 +194,7 @@
             {
                 "system": false,
                 "id": "date581573000",
-                "name": "arrivalDate",
+                "name": "estimatedArrival",
                 "type": "date",
                 "required": false,
                 "presentable": false,
@@ -236,21 +236,19 @@
             {
                 "system": false,
                 "id": "file3760176746",
-                "name": "images",
+                "name": "image",
                 "type": "file",
                 "required": false,
                 "presentable": false,
                 "unique": false,
                 "options": {
                     "mimeTypes": [
-                        "image/jpeg",
                         "image/png",
-                        "image/svg+xml",
-                        "image/gif",
+                        "image/jpeg",
                         "image/webp"
                     ],
                     "thumbs": [],
-                    "maxSelect": 99,
+                    "maxSelect": 1,
                     "maxSize": 5242880,
                     "protected": false
                 }
@@ -314,16 +312,16 @@
                 "id": "select2223302008",
                 "name": "paymentMethod",
                 "type": "select",
-                "required": false,
+                "required": true,
                 "presentable": false,
                 "unique": false,
                 "options": {
                     "maxSelect": 1,
                     "values": [
                         "KONTIGO",
+                        "BINANCE",
                         "CASH_COP",
-                        "CASH_USD",
-                        "CASH_ON_DELIVERY"
+                        "CASH_USD"
                     ]
                 }
             },
@@ -332,7 +330,7 @@
                 "id": "select1767278655",
                 "name": "currency",
                 "type": "select",
-                "required": false,
+                "required": true,
                 "presentable": false,
                 "unique": false,
                 "options": {
@@ -355,6 +353,108 @@
                     "min": null,
                     "max": null,
                     "noDecimal": false
+                }
+            },
+            {
+                "system": false,
+                "id": "number_exchange_rate",
+                "name": "exchangeRate",
+                "type": "number",
+                "required": true,
+                "presentable": false,
+                "unique": false,
+                "options": {
+                    "min": null,
+                    "max": null,
+                    "noDecimal": false
+                }
+            },
+            {
+                "system": false,
+                "id": "number_total_usd",
+                "name": "totalUSD",
+                "type": "number",
+                "required": true,
+                "presentable": false,
+                "unique": false,
+                "options": {
+                    "min": null,
+                    "max": null,
+                    "noDecimal": false
+                }
+            },
+            {
+                "system": false,
+                "id": "number_total_local",
+                "name": "totalLocal",
+                "type": "number",
+                "required": true,
+                "presentable": false,
+                "unique": false,
+                "options": {
+                    "min": null,
+                    "max": null,
+                    "noDecimal": false
+                }
+            },
+            {
+                "system": false,
+                "id": "select_payment_status",
+                "name": "paymentStatus",
+                "type": "select",
+                "required": true,
+                "presentable": false,
+                "unique": false,
+                "options": {
+                    "maxSelect": 1,
+                    "values": [
+                        "UNPAID",
+                        "REPORTED",
+                        "VERIFIED",
+                        "REJECTED"
+                    ]
+                }
+            },
+            {
+                "system": false,
+                "id": "text_kontigo_customer_id",
+                "name": "kontigoCustomerId",
+                "type": "text",
+                "required": false,
+                "presentable": false,
+                "unique": false,
+                "options": {
+                    "min": null,
+                    "max": null,
+                    "pattern": ""
+                }
+            },
+            {
+                "system": false,
+                "id": "text_kontigo_transfer_id",
+                "name": "kontigoTransferId",
+                "type": "text",
+                "required": false,
+                "presentable": false,
+                "unique": false,
+                "options": {
+                    "min": null,
+                    "max": null,
+                    "pattern": ""
+                }
+            },
+            {
+                "system": false,
+                "id": "text_binance_tx_hash",
+                "name": "binanceTxHash",
+                "type": "text",
+                "required": false,
+                "presentable": false,
+                "unique": false,
+                "options": {
+                    "min": null,
+                    "max": null,
+                    "pattern": ""
                 }
             },
             {
@@ -733,6 +833,73 @@
                         "FULFILLED"
                     ]
                 }
+            }
+        ],
+        "indexes": [],
+        "listRule": "@request.auth.role = \"ADMIN\"",
+        "viewRule": "@request.auth.role = \"ADMIN\"",
+        "createRule": "@request.auth.role = \"ADMIN\"",
+        "updateRule": "@request.auth.role = \"ADMIN\"",
+        "deleteRule": "@request.auth.role = \"ADMIN\"",
+        "options": {}
+    },
+    {
+        "id": "pbc_exchange_rates",
+        "name": "exchange_rates",
+        "type": "base",
+        "system": false,
+        "schema": [
+            {
+                "system": false,
+                "id": "text_base_currency",
+                "name": "baseCurrency",
+                "type": "text",
+                "required": true,
+                "presentable": false,
+                "unique": false,
+                "options": {
+                    "min": null,
+                    "max": null,
+                    "pattern": ""
+                }
+            },
+            {
+                "system": false,
+                "id": "text_target_currency",
+                "name": "targetCurrency",
+                "type": "text",
+                "required": true,
+                "presentable": false,
+                "unique": false,
+                "options": {
+                    "min": null,
+                    "max": null,
+                    "pattern": ""
+                }
+            },
+            {
+                "system": false,
+                "id": "number_rate",
+                "name": "rate",
+                "type": "number",
+                "required": true,
+                "presentable": false,
+                "unique": false,
+                "options": {
+                    "min": null,
+                    "max": null,
+                    "noDecimal": false
+                }
+            },
+            {
+                "system": false,
+                "id": "bool_active",
+                "name": "active",
+                "type": "bool",
+                "required": true,
+                "presentable": false,
+                "unique": false,
+                "options": {}
             }
         ],
         "indexes": [],

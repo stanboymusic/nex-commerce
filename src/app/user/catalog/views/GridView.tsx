@@ -13,8 +13,8 @@ export default function GridView({ products }: { products: Product[] }) {
   return (
     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 p-4">
       {products.map((p) => (
-        <ProductCard 
-          key={p.id} 
+        <ProductCard
+          key={p.id}
           id={p.id}
           name={p.name}
           slug={p.slug}
@@ -22,7 +22,7 @@ export default function GridView({ products }: { products: Product[] }) {
           image={typeof p.images?.[0] === 'string' ? p.images[0] : p.images?.[0]?.url}
           stock={p.stock}
           isPreorder={p.isPreorder}
-          arrivalDate={p.arrivalDate}
+          estimatedArrival={p.estimatedArrival}
         />
       ))}
     </div>

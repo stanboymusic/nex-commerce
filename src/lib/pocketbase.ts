@@ -65,3 +65,7 @@ export async function initPocketBase(req: NextRequest): Promise<PocketBase> {
 
   return client;
 }
+
+export function getPBImageUrl(collection: string, recordId: string, filename: string) {
+  return `${process.env.NEXT_PUBLIC_POCKETBASE_URL}/api/files/${collection}/${recordId}/${filename}`;
+}

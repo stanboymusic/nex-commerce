@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from "next/server";
 import { initPocketBase } from "@/lib/pocketbase";
 import { getAdminPocketBase } from "@/lib/admin";
 
+export const runtime = "nodejs";
+
 export async function POST(req: NextRequest) {
   try {
     const pb = await initPocketBase(req);
@@ -10,8 +12,11 @@ export async function POST(req: NextRequest) {
     }
 
     const user = pb.authStore.model;
+    if (!user) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
     const body = await req.json();
-    const { items, address, notes, currency = "USD" } = body;
+    const { items, address, notes, currency = "COP", paymentMethod } = body;
 
     if (!items || items.length === 0) {
       return NextResponse.json({ error: "No items" }, { status: 400 });
@@ -19,10 +24,9 @@ export async function POST(req: NextRequest) {
 
     const adminPb = await getAdminPocketBase();
 
-    let total = 0;
-    let isPreorder = false;
+    let totalUSD = 0;
 
-    // 1) Validar productos y calcular total
+    // 1) Validar productos y calcular total base (COP)
     const productsMap: any = {};
 
     for (const item of items) {
@@ -37,27 +41,46 @@ export async function POST(req: NextRequest) {
         return NextResponse.json({ error: `Not enough stock for ${product.name}` }, { status: 400 });
       }
 
-      if (product.isPreorder) isPreorder = true;
-
-      total += product.price * item.quantity;
+      totalUSD += product.price * item.quantity;
       productsMap[productId] = product;
     }
 
+    // 1.5) Obtener tasa de cambio activa
+    const rateRecord = await adminPb
+      .collection("exchange_rates")
+      .getFirstListItem("active=true");
+
+    const exchangeRate = rateRecord.rate;
+
+    const totalLocal = totalUSD * exchangeRate;
+
+    // 1.6) Lógica preorder
+    const isPreorder = items.some((i: any) => i.isPreorder);
+
+    let estimatedDelivery = null;
+    if (isPreorder) {
+      estimatedDelivery = body.estimatedDelivery || null;
+    }
+
     // 2) Fecha de entrega
-    const estimatedDelivery = isPreorder
-      ? null
-      : new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString();
+    if (!isPreorder) {
+      estimatedDelivery = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString();
+    }
 
     // 3) Crear orden
     const order = await adminPb.collection("orders").create({
       user: user.id,
-      total,
       currency,
+      paymentMethod,
+      total: currency === "USD" ? totalUSD : totalLocal,
+      totalUSD,
+      totalLocal,
+      exchangeRate,
+      status: "PENDING_PAYMENT",
       address,
       notes,
-      status: "PENDING_PAYMENT",
       isPreorder,
-      estimatedDeliveryDate: estimatedDelivery
+      estimatedDeliveryDate: estimatedDelivery || null
     });
 
     // 4) Crear order_items

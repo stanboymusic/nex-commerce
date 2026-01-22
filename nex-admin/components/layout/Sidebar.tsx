@@ -9,7 +9,8 @@ import {
     ShoppingCart,
     Users,
     Bell,
-    LogOut
+    LogOut,
+    RefreshCw
 } from 'lucide-react';
 import { useAdminStore } from '@/store/admin.store';
 import { useRouter } from 'next/navigation';
@@ -20,6 +21,7 @@ const NAV_ITEMS = [
     { label: 'Órdenes', href: '/orders', icon: ShoppingCart },
     { label: 'Usuarios', href: '/users', icon: Users },
     { label: 'Alertas', href: '/notifications', icon: Bell },
+    { label: 'Tasas de Cambio', href: '/exchange-rates', icon: RefreshCw },
 ];
 
 export const Sidebar = () => {

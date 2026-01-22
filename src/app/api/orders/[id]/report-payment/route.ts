@@ -26,11 +26,11 @@ export async function POST(
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
     }
 
-    // Update order status and set reference
+    // Update order payment status and set reference
     const updatedOrder = await pb.collection('orders').update(id, {
-      status: 'PAYMENT_REPORTED',
+      paymentStatus: 'REPORTED',
       paymentReference: reference,
-      paymentReportedAt: new Date(),
+      paymentReportedAt: new Date().toISOString(),
     })
 
     return NextResponse.json(updatedOrder)

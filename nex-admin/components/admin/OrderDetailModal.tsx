@@ -68,9 +68,8 @@ export const OrderDetailModal = ({ order, isOpen, onClose, onUpdate }: OrderDeta
             const endpoint = `/orders/${order.id}`;
             console.log(`[OrderDetail] Attempting PATCH to: ${apiClient.defaults.baseURL}${endpoint}`);
             
-            await apiClient.patch(endpoint, { 
-                status: 'CONFIRMED',
-                estimatedDeliveryDate: estimatedDate
+            await apiClient.post(`/admin/orders/confirm`, {
+                orderId: order.id
             });
             
             onUpdate();
@@ -277,15 +276,34 @@ export const OrderDetailModal = ({ order, isOpen, onClose, onUpdate }: OrderDeta
                     >
                         Descargar PDF
                     </Button>
-                    {order.status !== 'CONFIRMED' && (
-                        <Button
-                            onClick={handleConfirmOrder}
-                            isLoading={loading}
-                            className={`flex-1 ${isConfirming ? 'bg-green-600 hover:bg-green-700' : 'bg-purple hover:bg-purple/90'}`}
-                            leftIcon={<CheckCircle className="h-5 w-5" />}
-                        >
-                            {isConfirming ? 'Confirmar Pago y Entrega' : 'Confirmar Orden'}
-                        </Button>
+                    {order.status !== 'CONFIRMED' && order.status !== 'CANCELLED' && (
+                        <div className="flex gap-2 flex-1">
+                            <Button
+                                onClick={handleConfirmOrder}
+                                isLoading={loading}
+                                className={`${isConfirming ? 'bg-green-600 hover:bg-green-700' : 'bg-purple hover:bg-purple/90'}`}
+                                leftIcon={<CheckCircle className="h-5 w-5" />}
+                            >
+                                {isConfirming ? 'Confirmar Pago y Entrega' : 'Confirmar Orden'}
+                            </Button>
+                            <Button
+                                onClick={async () => {
+                                    if (confirm('¿Seguro que deseas rechazar esta orden?')) {
+                                        try {
+                                            await apiClient.post('/admin/orders/reject', { orderId: order.id });
+                                            onUpdate();
+                                            onClose();
+                                        } catch (error) {
+                                            alert('Error al rechazar la orden');
+                                        }
+                                    }
+                                }}
+                                variant="outline"
+                                className="text-red-600 border-red-600 hover:bg-red-50"
+                            >
+                                Rechazar
+                            </Button>
+                        </div>
                     )}
                 </div>
             </div>
