@@ -1,21 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react';
-import { Card } from '@/components/ui/Card';
-import { Button } from '@/components/ui/Button';
-import { Input } from '@/components/ui/Input';
-import { Badge } from '@/components/ui/Badge';
 import { apiClient } from '@/lib/apiClient';
-import { RefreshCw, Save, TrendingUp, AlertCircle, Loader2 } from 'lucide-react';
-
-interface ExchangeRate {
-    id: string;
-    from: string;
-    to: string;
-    rate: number;
-    updated: string;
-}
-
 import { RefreshCw, Save, TrendingUp, AlertCircle, Loader2, Plus, ArrowRight } from "lucide-react";
 
 interface ExchangeRate {
@@ -25,6 +11,7 @@ interface ExchangeRate {
     rate: number;
     updated: string;
 }
+
 
 export default function ExchangeRatesPage() {
     const [rates, setRates] = useState<ExchangeRate[]>([]);
