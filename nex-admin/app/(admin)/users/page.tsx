@@ -1,32 +1,53 @@
-'use client'
+"use client";
 
 import { useState, useEffect } from "react";
 import { apiClient } from "@/lib/apiClient";
-import { Users, Search, UserPlus, Mail, Shield } from "lucide-react";
+import {
+    Users, Search, UserPlus, Mail, Shield,
+    MoreHorizontal, ChevronRight, UserCircle,
+    ShieldCheck, ShieldAlert
+} from "lucide-react";
 import { Card } from "@/components/ui/Card";
 import { Badge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Input";
-import Link from "next/link";
+import { motion, AnimatePresence } from "framer-motion";
 
 export default function UsersPage() {
     const [users, setUsers] = useState([]);
     const [loading, setLoading] = useState(true);
     const [searchTerm, setSearchTerm] = useState("");
+    const [updating, setUpdating] = useState<string | null>(null);
 
-    useEffect(() => {
-        const fetchUsers = async () => {
-            try {
-                const response = await apiClient.get('/users');
-                setUsers(response.data || []);
-            } catch (error) {
-                console.error("Error fetching users:", error);
-            } finally {
-                setLoading(false);
-            }
-        };
-        fetchUsers();
-    }, []);
+    const fetchUsers = async () => {
+        try {
+            setLoading(true);
+            const response = await apiClient.get('/users');
+            setUsers(response.data || []);
+        } catch (error) {
+            console.error("Error fetching users:", error);
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    useEffect(() => { fetchUsers(); }, []);
+
+    const toggleRole = async (user: any) => {
+        const newRole = user.role === 'ADMIN' ? 'USER' : 'ADMIN';
+        if (!confirm(`¿Cambiar el rol de ${user.name} a ${newRole}?`)) return;
+
+        try {
+            setUpdating(user.id);
+            await apiClient.patch(`/users/${user.id}`, { role: newRole });
+            await fetchUsers();
+        } catch (error) {
+            console.error("Error updating role:", error);
+            alert("Error al actualizar el rol");
+        } finally {
+            setUpdating(null);
+        }
+    };
 
     const filteredUsers = users.filter((user: any) =>
         user.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -40,78 +61,89 @@ export default function UsersPage() {
                     <h1 className="text-4xl font-black text-oxford tracking-tight">Usuarios</h1>
                     <p className="text-text-medium font-medium mt-1">Administra los roles y el acceso a la plataforma.</p>
                 </div>
-                <Link href="/users/new">
-                    <Button leftIcon={<UserPlus className="h-5 w-5" />}>
-                        Nuevo Usuario
-                    </Button>
-                </Link>
             </div>
 
-            <Card className="mb-8">
-                <Input
-                    placeholder="Buscar por nombre o correo..."
-                    value={searchTerm}
-                    onChange={(e) => setSearchTerm(e.target.value)}
-                    leftIcon={<Search className="h-5 w-5" />}
-                />
-            </Card>
+            <div className="mb-8 max-w-xl">
+                <div className="relative group">
+                    <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400 group-focus-within:text-purple transition-colors" />
+                    <input
+                        type="text"
+                        placeholder="Buscar por nombre o correo..."
+                        value={searchTerm}
+                        onChange={(e) => setSearchTerm(e.target.value)}
+                        className="w-full pl-12 pr-6 py-4 bg-white border border-gray-100 rounded-[20px] shadow-sm outline-none focus:ring-4 focus:ring-purple/5 focus:border-purple transition-all font-medium"
+                    />
+                </div>
+            </div>
 
             {loading ? (
-                <div className="flex items-center justify-center py-20">
-                    <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-purple"></div>
+                <div className="flex flex-col items-center justify-center py-32 gap-4">
+                    <div className="w-10 h-10 border-4 border-purple/20 border-t-purple rounded-full animate-spin" />
+                    <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest font-bold">Cargando comunidad...</p>
                 </div>
             ) : (
-                <Card className="p-0 overflow-hidden">
-                    <div className="overflow-x-auto">
-                        <table className="w-full text-left">
-                            <thead className="bg-muted border-b border-border">
-                                <tr>
-                                    <th className="px-6 py-4 text-sm font-bold text-oxford">Usuario</th>
-                                    <th className="px-6 py-4 text-sm font-bold text-oxford">Correo</th>
-                                    <th className="px-6 py-4 text-sm font-bold text-oxford">Rol</th>
-                                    <th className="px-6 py-4 text-sm font-bold text-oxford">Fecha Registro</th>
-                                    <th className="px-6 py-4 text-sm font-bold text-oxford">Acciones</th>
-                                </tr>
-                            </thead>
-                            <tbody className="divide-y divide-border">
-                                {filteredUsers.length > 0 ? (
-                                    filteredUsers.map((user: any) => (
-                                        <tr key={user.id} className="hover:bg-muted/50 transition-colors">
-                                            <td className="px-6 py-4">
-                                                <div className="flex items-center gap-3">
-                                                    <div className="h-8 w-8 rounded-full bg-purple/10 flex items-center justify-center text-purple text-xs font-bold uppercase">
-                                                        {user.name?.slice(0, 2) || '??'}
-                                                    </div>
-                                                    <span className="text-sm font-medium text-oxford">{user.name}</span>
-                                                </div>
-                                            </td>
-                                            <td className="px-6 py-4 text-sm text-text-medium">{user.email}</td>
-                                            <td className="px-6 py-4">
-                                                <Badge variant={user.role === 'ADMIN' ? 'purple' : 'neutral'}>
-                                                    <Shield className="h-3 w-3 mr-1" />
-                                                    {user.role}
-                                                </Badge>
-                                            </td>
-                                            <td className="px-6 py-4 text-sm text-text-light">
-                                                {new Date(user.created).toLocaleDateString()}
-                                            </td>
-                                            <td className="px-6 py-4">
-                                                <Button variant="ghost" size="sm">Editar</Button>
-                                            </td>
-                                        </tr>
-                                    ))
-                                ) : (
-                                    <tr>
-                                        <td colSpan={5} className="px-6 py-10 text-center text-text-medium">
-                                            No se encontraron usuarios.
-                                        </td>
-                                    </tr>
-                                )}
-                            </tbody>
-                        </table>
-                    </div>
-                </Card>
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                    <AnimatePresence>
+                        {filteredUsers.map((user: any, index: number) => (
+                            <motion.div
+                                key={user.id}
+                                initial={{ opacity: 0, scale: 0.95 }}
+                                animate={{ opacity: 1, scale: 1 }}
+                                transition={{ delay: index * 0.03 }}
+                            >
+                                <Card className="p-8 hover:shadow-2xl transition-all group relative overflow-hidden rounded-[40px] border-gray-50">
+                                    <div className="flex justify-between items-start mb-6">
+                                        <div className="w-16 h-16 rounded-[24px] bg-gradient-to-br from-purple to-pink-500 flex items-center justify-center text-white text-xl font-black shadow-lg shadow-purple/20">
+                                            {user.name?.slice(0, 2).toUpperCase() || '??'}
+                                        </div>
+                                        <Badge variant={user.role === 'ADMIN' ? 'purple' : 'neutral'} className="px-4 py-1.5 rounded-full text-[10px] font-black uppercase tracking-widest">
+                                            {user.role}
+                                        </Badge>
+                                    </div>
+
+                                    <div className="mb-6">
+                                        <h3 className="text-xl font-black text-oxford leading-tight group-hover:text-purple transition-colors">
+                                            {user.name}
+                                        </h3>
+                                        <div className="flex items-center gap-2 mt-1 text-text-light">
+                                            <Mail className="w-3 h-3 text-gray-300" />
+                                            <p className="text-xs font-medium truncate">{user.email}</p>
+                                        </div>
+                                    </div>
+
+                                    <div className="pt-6 border-t border-gray-50 flex items-center justify-between">
+                                        <div className="text-[10px] text-gray-400 font-bold uppercase tracking-widest">
+                                            Desde {new Date(user.created).toLocaleDateString()}
+                                        </div>
+                                        <button
+                                            onClick={() => toggleRole(user)}
+                                            disabled={updating === user.id}
+                                            className={`p-3 rounded-2xl transition-all active:scale-90 ${user.role === 'ADMIN'
+                                                    ? 'bg-red-50 text-red-500 hover:bg-red-100'
+                                                    : 'bg-purple/10 text-purple hover:bg-purple/20'
+                                                }`}
+                                        >
+                                            {updating === user.id ? (
+                                                <div className="w-5 h-5 border-2 border-current border-t-transparent rounded-full animate-spin" />
+                                            ) : user.role === 'ADMIN' ? (
+                                                <ShieldAlert className="w-5 h-5" />
+                                            ) : (
+                                                <ShieldCheck className="w-5 h-5" />
+                                            )}
+                                        </button>
+                                    </div>
+
+                                    {/* Decorative background icon */}
+                                    <div className="absolute -right-8 -bottom-8 opacity-[0.03] group-hover:scale-125 transition-transform">
+                                        <UserCircle className="w-40 h-40 text-oxford" />
+                                    </div>
+                                </Card>
+                            </motion.div>
+                        ))}
+                    </AnimatePresence>
+                </div>
             )}
         </>
     );
 }
+

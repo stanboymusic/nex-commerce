@@ -1,83 +1,175 @@
-'use client'
+"use client";
 
 import { useState, useEffect } from "react";
 import { apiClient } from "@/lib/apiClient";
-import { Bell, AlertTriangle, Package, CheckCircle, Info } from "lucide-react";
+import {
+    Bell, AlertTriangle, Package, CheckCircle, Info,
+    ChevronRight, DollarSign, Clock, Calendar
+} from "lucide-react";
 import { Card } from "@/components/ui/Card";
 import { Badge } from "@/components/ui/Badge";
-import { Button } from "@/components/ui/Button";
+import { motion, AnimatePresence } from "framer-motion";
 
 export default function NotificationsPage() {
-    const [notifications, setNotifications] = useState([]);
+    const [alerts, setAlerts] = useState<any[]>([]);
     const [loading, setLoading] = useState(true);
 
-    useEffect(() => {
-        const fetchNotifications = async () => {
-            try {
-                const response = await apiClient.get('/notifications');
-                setNotifications(response.data || []);
-            } catch (error) {
-                console.error("Error fetching notifications:", error);
-            } finally {
-                setLoading(false);
-            }
-        };
-        fetchNotifications();
-    }, []);
+    const fetchAlerts = async () => {
+        try {
+            setLoading(true);
+            const [ordersRes, productsRes] = await Promise.all([
+                apiClient.get('/orders').catch(() => ({ data: [] })),
+                apiClient.get('/products').catch(() => ({ data: [] }))
+            ]);
 
-    const getVariant = (type: string) => {
-        switch (type) {
-            case 'warning': return 'warning';
-            case 'success': return 'success';
-            case 'error': return 'error';
-            default: return 'info';
+            const orders = ordersRes.data || [];
+            const products = productsRes.data || [];
+
+            const gathered: any[] = [];
+
+            // 1. Critical Stock
+            products.filter((p: any) => (p.stock || 0) < 5 && !p.isPreorder).forEach((p: any) => {
+                gathered.push({
+                    id: `stock-${p.id}`,
+                    type: 'error',
+                    category: 'Inventario',
+                    title: `Stock Crítico: ${p.name}`,
+                    description: `Quedan solo ${p.stock || 0} unidades disponibles. Considera reponer stock pronto.`,
+                    icon: <Package className="w-6 h-6" />,
+                    link: '/products'
+                });
+            });
+
+            // 2. Pending Payments
+            orders.filter((o: any) => o.status === 'PAYMENT_REPORTED').forEach((o: any) => {
+                gathered.push({
+                    id: `order-${o.id}`,
+                    type: 'info',
+                    category: 'Pagos',
+                    title: `Validación de Pago Requerida`,
+                    description: `La orden #${o.id.slice(0, 8)} tiene un reporte de pago esperando revisión.`,
+                    icon: <DollarSign className="w-6 h-6" />,
+                    link: '/orders'
+                });
+            });
+
+            // 3. Pre-order Arrivals (within 7 days)
+            const today = new Date();
+            const nextWeek = new Date();
+            nextWeek.setDate(today.getDate() + 7);
+
+            products.filter((p: any) => p.isPreorder && p.estimatedArrival).forEach((p: any) => {
+                const arrival = new Date(p.estimatedArrival);
+                if (arrival >= today && arrival <= nextWeek) {
+                    gathered.push({
+                        id: `preorder-${p.id}`,
+                        type: 'warning',
+                        category: 'Preventa',
+                        title: `Llegada Próxima: ${p.name}`,
+                        description: `Se estima que este producto llegará el ${arrival.toLocaleDateString()}. Prepárate para los envíos.`,
+                        icon: <Calendar className="w-6 h-6" />,
+                        link: '/products'
+                    });
+                }
+            });
+
+            setAlerts(gathered);
+        } catch (error) {
+            console.error("Error fetching alerts:", error);
+        } finally {
+            setLoading(false);
         }
     };
 
+    useEffect(() => { fetchAlerts(); }, []);
+
     return (
-        <>
-            <div className="mb-10">
-                <h1 className="text-4xl font-black text-oxford tracking-tight">Alertas de Sistema</h1>
-                <p className="text-text-medium font-medium mt-1">Mantente al tanto de lo que sucede en tu tienda.</p>
+        <div className="max-w-4xl mx-auto">
+            <div className="flex justify-between items-end mb-10">
+                <div>
+                    <h1 className="text-4xl font-black text-oxford tracking-tight">Alertas de Sistema</h1>
+                    <p className="text-text-medium font-medium mt-1">Eventos críticos que requieren tu atención inmediata.</p>
+                </div>
+                <button
+                    onClick={fetchAlerts}
+                    className="p-3 bg-white border border-gray-100 rounded-2xl hover:bg-gray-50 transition-all shadow-sm"
+                >
+                    <Bell className={`w-5 h-5 text-gray-400 ${loading ? 'animate-pulse' : ''}`} />
+                </button>
             </div>
 
-            <div className="max-w-4xl space-y-4">
+            <div className="space-y-6">
                 {loading ? (
-                    <div className="flex items-center justify-center py-20">
-                        <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-purple"></div>
+                    <div className="flex flex-col items-center justify-center py-32 gap-4">
+                        <div className="w-10 h-10 border-4 border-purple/20 border-t-purple rounded-full animate-spin" />
+                        <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Analizando sistema...</p>
                     </div>
-                ) : (
-                    notifications.map((notif: any) => {
-                        const Icon = notif.type === 'warning' ? AlertTriangle : Info;
-                        return (
-                            <Card key={notif.id} className="hover:shadow-md transition-all cursor-pointer">
-                                <div className="flex items-start gap-4">
-                                    <div className={`p-3 rounded-xl bg-${getVariant(notif.type)}/10 text-${getVariant(notif.type)}`}>
-                                        <Icon className="h-6 w-6" />
-                                    </div>
-                                    <div className="flex-1">
-                                        <div className="flex justify-between items-center mb-1">
-                                            <h3 className="font-bold text-oxford">{notif.title}</h3>
-                                            <span className="text-xs text-text-light">{notif.time}</span>
+                ) : alerts.length > 0 ? (
+                    <AnimatePresence>
+                        {alerts.map((alert, index) => (
+                            <motion.div
+                                key={alert.id}
+                                initial={{ opacity: 0, y: 20 }}
+                                animate={{ opacity: 1, y: 0 }}
+                                transition={{ delay: index * 0.05 }}
+                            >
+                                <div
+                                    onClick={() => window.location.href = alert.link}
+                                    className={`group cursor-pointer p-8 rounded-[40px] border-2 transition-all hover:shadow-2xl flex items-center justify-between ${alert.type === 'error' ? 'bg-red-50 border-red-100/50 hover:border-red-200' :
+                                            alert.type === 'warning' ? 'bg-amber-50 border-amber-100/50 hover:border-amber-200' :
+                                                'bg-blue-50 border-blue-100/50 hover:border-blue-200'
+                                        }`}
+                                >
+                                    <div className="flex items-center gap-6">
+                                        <div className={`w-16 h-16 rounded-3xl flex items-center justify-center shadow-sm ${alert.type === 'error' ? 'bg-white text-red-500' :
+                                                alert.type === 'warning' ? 'bg-white text-amber-500' :
+                                                    'bg-white text-blue-500'
+                                            }`}>
+                                            {alert.icon}
                                         </div>
-                                        <p className="text-sm text-text-medium mb-3">{notif.description}</p>
-                                        <div className="flex gap-2">
-                                            <Badge variant={getVariant(notif.type)}>{notif.type.toUpperCase()}</Badge>
-                                            <Button variant="ghost" size="sm">Descartar</Button>
+                                        <div>
+                                            <div className="flex items-center gap-3 mb-1">
+                                                <span className={`text-[10px] font-black uppercase tracking-widest ${alert.type === 'error' ? 'text-red-400' :
+                                                        alert.type === 'warning' ? 'text-amber-400' :
+                                                            'text-blue-400'
+                                                    }`}>
+                                                    {alert.category}
+                                                </span>
+                                            </div>
+                                            <h3 className="text-lg font-black text-oxford leading-tight group-hover:text-purple transition-colors">
+                                                {alert.title}
+                                            </h3>
+                                            <p className="text-sm text-text-medium mt-1 font-medium max-w-lg">
+                                                {alert.description}
+                                            </p>
+                                        </div>
+                                    </div>
+                                    <div className="flex items-center gap-4">
+                                        <div className="w-10 h-10 rounded-full border border-gray-200 flex items-center justify-center group-hover:bg-purple group-hover:border-purple transition-all">
+                                            <ChevronRight className="w-5 h-5 text-gray-300 group-hover:text-white transition-colors" />
                                         </div>
                                     </div>
                                 </div>
-                            </Card>
-                        );
-                    }))}
+                            </motion.div>
+                        ))}
+                    </AnimatePresence>
+                ) : (
+                    <div className="bg-gray-50 border-2 border-dashed border-gray-200 rounded-[50px] p-24 text-center">
+                        <div className="w-20 h-20 bg-white rounded-3xl shadow-sm border border-gray-100 flex items-center justify-center text-green-500 mx-auto mb-6">
+                            <CheckCircle className="w-10 h-10" />
+                        </div>
+                        <h3 className="text-2xl font-black text-oxford">Sistema Optimizado</h3>
+                        <p className="text-gray-400 font-medium max-w-xs mx-auto mt-2">No se han detectado anomalías o tareas pendientes que requieran tu atención hoy.</p>
+                        <button
+                            onClick={fetchAlerts}
+                            className="mt-8 bg-oxford text-white px-8 py-3 rounded-2xl font-black text-xs uppercase tracking-widest hover:bg-navy transition-all shadow-xl shadow-oxford/10"
+                        >
+                            Re-escanear
+                        </button>
+                    </div>
+                )}
             </div>
-
-            {notifications.length === 0 && (
-                <div className="text-center py-20 bg-white rounded-3xl border border-border">
-                    <Bell className="h-12 w-12 text-text-light mx-auto mb-4" />
-                    <p className="text-text-medium font-bold">No tienes alertas pendientes</p>
-                </div>
-            )}
-        </>
+        </div>
     );
 }
+
