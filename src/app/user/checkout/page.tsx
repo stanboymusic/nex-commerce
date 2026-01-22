@@ -51,9 +51,10 @@ export default function CheckoutPage() {
       try {
         const { data } = await axios.get("/api/settings");
         setRate(data.usdToCopRate || 4000);
-        if (data.kontigoQR) {
-          setKontigoSettings({ kontigoQr: data.kontigoQR, kontigoInstructions: "Escanea el QR y reporta el pago" });
-        }
+        setKontigoSettings({
+          kontigoQr: data.kontigoQR,
+          kontigoInstructions: data.kontigoInstructions || "Reporta tu pago adjuntando el comprobante."
+        });
       } catch (err) {
         console.error("Error fetching settings", err);
       }

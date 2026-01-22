@@ -45,13 +45,13 @@ export async function POST(req: NextRequest) {
       productsMap[productId] = product;
     }
 
-    // 1.5) Obtener tasa de cambio activa desde SETTINGS
-    const settingsRecord = await adminPb
-      .collection("settings")
-      .getFirstListItem("active=true")
-      .catch(() => ({ usdToCopRate: 4000 })); // Default
+    // 1.5) Obtener tasa de cambio activa desde EXCHANGE_RATES
+    const rateRecord = await adminPb
+      .collection("exchange_rates")
+      .getFirstListItem('targetCurrency="COP" && active=true')
+      .catch(() => ({ rate: 4000 })); // Default
 
-    const exchangeRate = settingsRecord.usdToCopRate;
+    const exchangeRate = rateRecord.rate;
 
     const totalLocal = totalUSD * exchangeRate;
 

@@ -7,21 +7,18 @@ export async function GET() {
     try {
         const pb = await getAdminPocketBase();
 
-        // Fetch the active settings record
-        const record = await pb
-            .collection("settings")
-            .getFirstListItem("active=true")
-            .catch(() => null);
+        // Fetch COP rate from exchange_rates
+        const rateRecord = await pb.collection("exchange_rates").getFirstListItem('targetCurrency="COP" && active=true').catch(() => null);
 
-        if (!record) {
-            return NextResponse.json({ usdToCopRate: 4000, kontigoQR: null });
-        }
+        // Fetch Kontigo settings
+        const paymentRecord = await pb.collection("payment_settings").getFirstListItem('method="kontigo"').catch(() => null);
 
         return NextResponse.json({
-            usdToCopRate: record.usdToCopRate,
-            kontigoQR: record.kontigoQR
-                ? `${pb.baseUrl}/api/files/settings/${record.id}/${record.kontigoQR}`
-                : null
+            usdToCopRate: rateRecord?.rate || 4000,
+            kontigoQR: paymentRecord?.kontigoQr
+                ? pb.files.getUrl(paymentRecord, paymentRecord.kontigoQr)
+                : null,
+            kontigoInstructions: paymentRecord?.kontigoInstructions || "Reporta tu pago adjuntando el comprobante."
         });
     } catch (error) {
         console.error("Error fetching settings:", error);

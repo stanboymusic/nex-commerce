@@ -10,6 +10,7 @@ interface Product {
     categoryName: string;
     isPreorder: boolean;
     estimatedArrival: string;
+    image?: string;
 }
 
 interface Props {
@@ -25,6 +26,7 @@ export default function ProductsTable({ products, onEdit, onDelete }: Props) {
                 <table className="w-full text-left text-sm border-collapse">
                     <thead>
                         <tr className="bg-gray-50 border-b border-gray-200">
+                            <th className="px-6 py-4 font-bold text-oxford uppercase tracking-wider w-20"></th>
                             <th className="px-6 py-4 font-bold text-oxford uppercase tracking-wider">Producto</th>
                             <th className="px-6 py-4 font-bold text-oxford uppercase tracking-wider">Categoría</th>
                             <th className="px-6 py-4 font-bold text-oxford uppercase tracking-wider">Precio</th>
@@ -36,6 +38,19 @@ export default function ProductsTable({ products, onEdit, onDelete }: Props) {
                     <tbody className="divide-y divide-gray-100">
                         {products.map((p) => (
                             <tr key={p.id} className="hover:bg-gray-50/50 transition-colors">
+                                <td className="px-6 py-4 whitespace-nowrap">
+                                    {p.image ? (
+                                        <img
+                                            src={`${process.env.NEXT_PUBLIC_POCKETBASE_URL || 'https://nexcommerce.fly.dev'}/api/files/products/${p.id}/${p.image}`}
+                                            alt={p.name}
+                                            className="w-12 h-12 rounded-lg object-contain bg-gray-50 border border-gray-100"
+                                        />
+                                    ) : (
+                                        <div className="w-12 h-12 rounded-lg bg-gray-50 border border-gray-100 flex items-center justify-center text-[10px] text-gray-300">
+                                            No img
+                                        </div>
+                                    )}
+                                </td>
                                 <td className="px-6 py-4">
                                     <div className="font-bold text-oxford">{p.name}</div>
                                     <div className="text-[10px] text-gray-400 font-mono">{p.id}</div>

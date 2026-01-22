@@ -21,6 +21,14 @@ export default function ProductFormModal({ product, categories, onSave, onClose 
         estimatedArrival: product?.estimatedArrival ? new Date(product.estimatedArrival).toISOString().split('T')[0] : "",
     });
 
+    const [imagePreview, setImagePreview] = useState<string | null>(
+        product?.image ? `${process.env.NEXT_PUBLIC_POCKETBASE_URL || 'https://nexcommerce.fly.dev'}/api/files/products/${product.id}/${product.image}` : null
+    );
+
+    const [galleryPreviews, setGalleryPreviews] = useState<string[]>(
+        product?.images?.map((img: string) => `${process.env.NEXT_PUBLIC_POCKETBASE_URL || 'https://nexcommerce.fly.dev'}/api/files/products/${product.id}/${img}`) || []
+    );
+
     const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault();
         const formData = new FormData(e.currentTarget as HTMLFormElement);
@@ -138,27 +146,60 @@ export default function ProductFormModal({ product, categories, onSave, onClose 
                     </div>
 
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                        <div className="space-y-2">
+                        <div className="space-y-3">
                             <label className="text-xs font-bold text-gray-400 uppercase flex items-center gap-2">
                                 <Upload className="w-3 h-3" /> Imagen Principal
                             </label>
+
+                            {imagePreview && (
+                                <div className="relative w-32 h-32 rounded-xl overflow-hidden border bg-gray-50 mb-2">
+                                    <img src={imagePreview} className="w-full h-full object-contain" alt="Preview" />
+                                    <button
+                                        type="button"
+                                        onClick={() => setImagePreview(null)}
+                                        className="absolute top-1 right-1 bg-white/80 p-1 rounded-full hover:bg-white shadow-sm"
+                                    >
+                                        <X className="w-3 h-3 text-red-500" />
+                                    </button>
+                                </div>
+                            )}
+
                             <input
                                 type="file"
                                 name="image"
                                 accept="image/*"
+                                onChange={(e) => {
+                                    const file = e.target.files?.[0];
+                                    if (file) setImagePreview(URL.createObjectURL(file));
+                                }}
                                 className="w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-xl file:border-0 file:text-sm file:font-bold file:bg-purple/10 file:text-purple hover:file:bg-purple/20 transition-all cursor-pointer"
                             />
                         </div>
 
-                        <div className="space-y-2">
+                        <div className="space-y-3">
                             <label className="text-xs font-bold text-gray-400 uppercase flex items-center gap-2">
                                 <Package className="w-3 h-3" /> Galería (Opcional)
                             </label>
+
+                            {galleryPreviews.length > 0 && (
+                                <div className="flex flex-wrap gap-2 mb-2">
+                                    {galleryPreviews.map((url, i) => (
+                                        <div key={i} className="relative w-14 h-14 rounded-lg overflow-hidden border bg-gray-50">
+                                            <img src={url} className="w-full h-full object-cover" alt={`Gallery ${i}`} />
+                                        </div>
+                                    ))}
+                                </div>
+                            )}
+
                             <input
                                 type="file"
                                 name="images"
                                 multiple
                                 accept="image/*"
+                                onChange={(e) => {
+                                    const files = Array.from(e.target.files || []);
+                                    setGalleryPreviews(files.map(f => URL.createObjectURL(f)));
+                                }}
                                 className="w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-xl file:border-0 file:text-sm file:font-bold file:bg-gray-100 file:text-gray-700 hover:file:bg-gray-200 transition-all cursor-pointer"
                             />
                         </div>
