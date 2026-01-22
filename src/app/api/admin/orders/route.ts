@@ -23,6 +23,7 @@ export async function GET() {
             address: o.address,
             notes: o.notes,
             paymentReference: o.paymentReference,
+            paymentProof: o.paymentProof,
             paymentReportedAt: o.paymentReportedAt,
             customer: o.expand?.user
                 ? { id: o.expand.user.id, name: o.expand.user.name, email: o.expand.user.email }

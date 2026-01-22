@@ -14,6 +14,7 @@ const STATUS_ICONS: Record<string, any> = {
   SHIPPED: Truck,
   DELIVERED: ShoppingBag,
   CANCELLED: XCircle,
+  REJECTED: AlertCircle,
 }
 
 const STATUS_COLORS: Record<string, string> = {
@@ -24,6 +25,7 @@ const STATUS_COLORS: Record<string, string> = {
   SHIPPED: 'text-indigo-600 bg-indigo-50',
   DELIVERED: 'text-emerald-600 bg-emerald-50',
   CANCELLED: 'text-red-600 bg-red-50',
+  REJECTED: 'text-red-700 bg-red-100',
 }
 
 const STATUS_LABELS: Record<string, string> = {
@@ -34,6 +36,7 @@ const STATUS_LABELS: Record<string, string> = {
   SHIPPED: 'Enviada',
   DELIVERED: 'Entregada',
   CANCELLED: 'Cancelada',
+  REJECTED: 'Pago Rechazado',
 }
 
 import { Suspense } from 'react'
@@ -43,6 +46,7 @@ function OrdersContent() {
   const [loading, setLoading] = useState(true)
   const [reportingId, setReportingId] = useState<string | null>(null)
   const [reference, setReference] = useState('')
+  const [file, setFile] = useState<File | null>(null)
   const [submitting, setSubmitting] = useState(false)
   const { user, token } = useAuthStore()
   const router = useRouter()
@@ -83,11 +87,19 @@ function OrdersContent() {
 
     setSubmitting(true)
     try {
-      await axios.post(`/api/orders/${reportingId}/report-payment`, { reference }, {
-        headers: { Authorization: `Bearer ${token}` }
+      const formData = new FormData()
+      formData.append('reference', reference)
+      if (file) formData.append('paymentProof', file)
+
+      await axios.post(`/api/orders/${reportingId}/report-payment`, formData, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+          'Content-Type': 'multipart/form-data'
+        }
       })
       setReportingId(null)
       setReference('')
+      setFile(null)
       fetchOrders()
     } catch (error) {
       alert('Error al reportar el pago')
@@ -146,8 +158,14 @@ function OrdersContent() {
                         {STATUS_LABELS[order.status]}
                       </div>
                       <div className="text-right">
-                        <span className="block text-xl font-bold text-oxford">${order.total.toLocaleString()}</span>
-                        <span className="text-[10px] bg-gray-100 px-2 py-0.5 rounded font-bold text-gray-500 uppercase">{order.currency}</span>
+                        <span className="block text-xl font-bold text-oxford">
+                          ${order.totalUSD?.toLocaleString()} USD
+                        </span>
+                        {order.totalLocal && (
+                          <span className="text-[10px] bg-blue-50 px-2 py-0.5 rounded font-bold text-blue-600 uppercase">
+                            ≈ ${order.totalLocal?.toLocaleString()} COP
+                          </span>
+                        )}
                       </div>
                     </div>
                   </div>
@@ -155,29 +173,48 @@ function OrdersContent() {
                   {order.status === 'PENDING_PAYMENT' && (
                     <div className="mb-6 p-4 bg-amber-50 rounded-xl border border-amber-100">
                       {reportingId === order.id ? (
-                        <form onSubmit={handleReportPayment} className="flex gap-3">
-                          <input
-                            type="text"
-                            placeholder="Referencia de pago..."
-                            value={reference}
-                            onChange={(e) => setReference(e.target.value)}
-                            className="flex-grow px-4 py-2 bg-white border border-amber-200 rounded-lg outline-none focus:ring-2 focus:ring-amber-500 text-sm"
-                            required
-                          />
-                          <button
-                            type="submit"
-                            disabled={submitting}
-                            className="bg-amber-600 text-white px-6 py-2 rounded-lg text-sm font-bold hover:bg-amber-700 transition-colors disabled:opacity-50"
-                          >
-                            {submitting ? 'Enviando...' : 'Confirmar'}
-                          </button>
-                          <button
-                            type="button"
-                            onClick={() => setReportingId(null)}
-                            className="text-amber-600 px-2 text-sm font-bold"
-                          >
-                            Cancelar
-                          </button>
+                        <form onSubmit={handleReportPayment} className="space-y-4">
+                          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div className="space-y-1">
+                              <label className="text-xs font-bold text-amber-800 uppercase">Referencia de Pago</label>
+                              <input
+                                type="text"
+                                placeholder="Ej: Transacción #12345"
+                                value={reference}
+                                onChange={(e) => setReference(e.target.value)}
+                                className="w-full px-4 py-2 bg-white border border-amber-200 rounded-lg outline-none focus:ring-2 focus:ring-amber-500 text-sm"
+                                required
+                              />
+                            </div>
+                            <div className="space-y-1">
+                              <label className="text-xs font-bold text-amber-800 uppercase">Comprobante (Imagen)</label>
+                              <input
+                                type="file"
+                                accept="image/*"
+                                onChange={(e) => setFile(e.target.files?.[0] || null)}
+                                className="w-full px-4 py-1.5 bg-white border border-amber-200 rounded-lg outline-none focus:ring-2 focus:ring-amber-500 text-sm file:mr-4 file:py-1 file:px-2 file:rounded file:border-0 file:text-xs file:font-semibold file:bg-amber-100 file:text-amber-700 hover:file:bg-amber-200"
+                              />
+                            </div>
+                          </div>
+                          <div className="flex justify-end gap-3">
+                            <button
+                              type="button"
+                              onClick={() => {
+                                setReportingId(null)
+                                setFile(null)
+                              }}
+                              className="text-amber-600 px-4 py-2 text-sm font-bold hover:text-amber-800"
+                            >
+                              Cancelar
+                            </button>
+                            <button
+                              type="submit"
+                              disabled={submitting}
+                              className="bg-amber-600 text-white px-8 py-2 rounded-lg text-sm font-bold hover:bg-amber-700 transition-colors disabled:opacity-50 flex items-center gap-2"
+                            >
+                              {submitting ? 'Enviando...' : 'Confirmar Reporte'}
+                            </button>
+                          </div>
                         </form>
                       ) : (
                         <div className="flex items-center justify-between gap-4">
@@ -196,10 +233,46 @@ function OrdersContent() {
                     </div>
                   )}
 
-                  {order.status === 'PAYMENT_REPORTED' && order.paymentReference && (
-                    <div className="mb-6 p-4 bg-blue-50 rounded-xl border border-blue-100 flex items-center gap-2 text-blue-800">
-                      <CheckCircle className="h-5 w-5" />
-                      <p className="text-sm font-medium">Pago reportado (Ref: {order.paymentReference}). Esperando verificación.</p>
+                  {order.status === 'PAYMENT_REPORTED' && (
+                    <div className="mb-6 p-4 bg-blue-50 rounded-xl border border-blue-100 space-y-2">
+                      <div className="flex items-center gap-2 text-blue-800">
+                        <CheckCircle className="h-5 w-5" />
+                        <p className="text-sm font-medium">Pago reportado correctamente. Esperando verificación.</p>
+                      </div>
+                      <div className="flex flex-wrap gap-4 text-xs text-blue-600 font-medium">
+                        {order.paymentReference && <span>Ref: {order.paymentReference}</span>}
+                        {order.paymentReportedAt && <span>Fecha: {new Date(order.paymentReportedAt).toLocaleString()}</span>}
+                        {order.paymentProof && (
+                          <a
+                            href={`${process.env.NEXT_PUBLIC_POCKETBASE_URL || ''}/api/files/orders/${order.id}/${order.paymentProof}`}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="flex items-center gap-1 underline"
+                          >
+                            Ver comprobante <ExternalLink className="h-3 w-3" />
+                          </a>
+                        )}
+                      </div>
+                    </div>
+                  )}
+
+                  {order.status === 'REJECTED' && (
+                    <div className="mb-6 p-4 bg-red-50 rounded-xl border border-red-100">
+                      <div className="flex items-center justify-between gap-4">
+                        <div className="flex items-center gap-2 text-red-800">
+                          <XCircle className="h-5 w-5" />
+                          <div>
+                            <p className="text-sm font-bold">Pago Rechazado</p>
+                            <p className="text-xs">Hubo un problema con tu pago. Por favor, intenta de nuevo o contacta a soporte.</p>
+                          </div>
+                        </div>
+                        <button
+                          onClick={() => setReportingId(order.id)}
+                          className="bg-red-600 text-white px-6 py-2 rounded-lg text-sm font-bold hover:bg-red-700 transition-colors"
+                        >
+                          Reintentar Reporte
+                        </button>
+                      </div>
                     </div>
                   )}
 

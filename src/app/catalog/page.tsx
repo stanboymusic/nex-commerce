@@ -19,24 +19,63 @@ interface Product {
 
 export default function CatalogPage() {
   const [products, setProducts] = useState<Product[]>([])
+  const [categories, setCategories] = useState<any[]>([])
+  const [selectedCategory, setSelectedCategory] = useState<string | null>(null)
+  const [sortBy, setSortBy] = useState<string>("recent")
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
 
+  const sortProducts = (list: Product[], sort: string) => {
+    const sorted = [...list]
+    if (sort === "price-asc") {
+      sorted.sort((a, b) => a.price - b.price)
+    } else if (sort === "price-desc") {
+      sorted.sort((a, b) => b.price - a.price)
+    } else {
+      // Default to ID/Created order (assuming API returns recent first)
+      // Since we don't have 'created' in the interface, we'll keep API order
+    }
+    return sorted
+  }
+
   useEffect(() => {
-    const fetchProducts = async () => {
+    const fetchInitialData = async () => {
       try {
-        const response = await axios.get('/api/products')
-        setProducts(response.data)
+        const [productsRes, categoriesRes] = await Promise.all([
+          axios.get('/api/products'),
+          axios.get('/api/categories')
+        ])
+        setProducts(sortProducts(productsRes.data, sortBy))
+        setCategories(categoriesRes.data)
       } catch (err) {
-        console.error('Failed to fetch products:', err)
-        setError('Error al cargar el catálogo')
+        console.error('Failed to fetch initial data:', err)
+        setError('Error al cargar la información')
       } finally {
         setLoading(false)
       }
     }
 
-    fetchProducts()
+    fetchInitialData()
   }, [])
+
+  const handleCategoryChange = async (categoryId: string | null) => {
+    setSelectedCategory(categoryId)
+    setLoading(true)
+    try {
+      const url = categoryId ? `/api/products?category=${categoryId}` : '/api/products'
+      const response = await axios.get(url)
+      setProducts(sortProducts(response.data, sortBy))
+    } catch (err) {
+      console.error('Failed to filter products:', err)
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  const handleSortChange = (sort: string) => {
+    setSortBy(sort)
+    setProducts(sortProducts(products, sort))
+  }
 
   if (loading) {
     return (
@@ -62,12 +101,28 @@ export default function CatalogPage() {
           <p className="text-gray-500 mt-1">Explora nuestros productos premium disponibles.</p>
         </div>
 
-        <div className="flex items-center gap-2">
-          {/* Filters would go here */}
-          <select aria-label="Ordenar productos" className="border border-gray-200 rounded-md px-3 py-2 text-sm text-oxford focus:outline-none focus:ring-2 focus:ring-almond">
-            <option>Más recientes</option>
-            <option>Precio: Menor a Mayor</option>
-            <option>Precio: Mayor a Menor</option>
+        <div className="flex flex-wrap items-center gap-4">
+          <select
+            aria-label="Filtrar por categoría"
+            className="border border-gray-200 rounded-md px-3 py-2 text-sm text-oxford focus:outline-none focus:ring-2 focus:ring-almond transition-all bg-white"
+            value={selectedCategory || ""}
+            onChange={(e) => handleCategoryChange(e.target.value || null)}
+          >
+            <option value="">Todas las categorías</option>
+            {categories.map((cat) => (
+              <option key={cat.id} value={cat.id}>{cat.name}</option>
+            ))}
+          </select>
+
+          <select
+            aria-label="Ordenar productos"
+            className="border border-gray-200 rounded-md px-3 py-2 text-sm text-oxford focus:outline-none focus:ring-2 focus:ring-almond transition-all bg-white"
+            value={sortBy}
+            onChange={(e) => handleSortChange(e.target.value)}
+          >
+            <option value="recent">Más recientes</option>
+            <option value="price-asc">Precio: Menor a Mayor</option>
+            <option value="price-desc">Precio: Mayor a Menor</option>
           </select>
         </div>
       </div>
@@ -88,6 +143,7 @@ export default function CatalogPage() {
               stock={p.stock}
               isPreorder={p.isPreorder}
               estimatedArrival={p.estimatedArrival}
+              categoryName={(p as any).category?.name}
               image={p.images?.[0]?.url || ''} // Use first image url if available
             />
           ))}

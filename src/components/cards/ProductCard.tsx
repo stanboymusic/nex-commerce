@@ -15,10 +15,11 @@ interface ProductCardProps {
   stock: number;
   isPreorder: boolean;
   estimatedArrival?: string;
+  categoryName?: string;
   image?: string;
 }
 
-export default function ProductCard({ id, name, slug, price, image, stock, isPreorder, estimatedArrival }: ProductCardProps) {
+export default function ProductCard({ id, name, slug, price, image, stock, isPreorder, estimatedArrival, categoryName }: ProductCardProps) {
   const { addItem } = useCartStore()
 
   const handleAddToCart = () => {
@@ -66,6 +67,11 @@ export default function ProductCard({ id, name, slug, price, image, stock, isPre
 
       <div className="p-5 flex flex-col flex-grow">
         <div className="flex-grow">
+          {categoryName && (
+            <span className="text-[10px] uppercase tracking-wider font-bold text-gray-400 mb-1 block">
+              {categoryName}
+            </span>
+          )}
           <Link href={`/product/${slug}`} className="text-oxford font-bold text-lg hover:text-purple transition-colors line-clamp-1">
             {name}
           </Link>
