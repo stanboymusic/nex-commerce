@@ -1,23 +1,13 @@
-
 import { NextResponse } from "next/server";
 import { getAdminPocketBase } from "@/lib/admin";
 
-export async function GET(req: Request) {
+export async function GET() {
   try {
-    const { searchParams } = new URL(req.url);
-    const categoryId = searchParams.get("category");
-
     const pb = await getAdminPocketBase();
-
-    let filter = "";
-    if (categoryId) {
-      filter = `category = "${categoryId}"`;
-    }
 
     const records = await pb.collection("products").getFullList({
       sort: "-created",
-      expand: "category",
-      filter
+      requestKey: null
     });
 
     const products = records.map((r: any) => ({
@@ -25,20 +15,26 @@ export async function GET(req: Request) {
       name: r.name,
       slug: r.slug,
       description: r.description,
-      price: r.price,
-      stock: r.stock,
-      isPreorder: r.isPreorder,
-      estimatedArrival: r.estimatedArrival || null,
-      category: r.expand?.category || null,
+      priceUSD: r.priceUSD ?? r.price ?? 0,
+      stock: r.stock ?? 0,
+      isPreorder: !!r.isPreorder,
+      preorderArrivalDate: r.preorderArrivalDate ?? null,
+      category: r.category ?? null,
+
+      // principal
       image: r.image ? pb.files.getUrl(r, r.image) : null,
-      images: r.images?.length
-        ? r.images.map((f: string) => pb.files.getUrl(r, f))
-        : []
+
+      // gallery
+      gallery: Array.isArray(r.gallery)
+        ? r.gallery.map((f: string) => pb.files.getUrl(r, f))
+        : Array.isArray(r.images)
+          ? r.images.map((f: string) => pb.files.getUrl(r, f))
+          : []
     }));
 
     return NextResponse.json(products);
-  } catch (error) {
-    console.error("Error fetching products:", error);
+  } catch (e: any) {
+    console.error("[GET /api/products] error:", e?.data || e?.message || e);
     return NextResponse.json({ error: "Failed to fetch products" }, { status: 500 });
   }
 }

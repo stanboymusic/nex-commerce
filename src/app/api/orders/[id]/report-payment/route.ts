@@ -22,10 +22,10 @@ export async function POST(
       return NextResponse.json({ error: 'Reference or Payment Proof is required' }, { status: 400 })
     }
 
-    // Fetch the order first to check ownership if not admin
+    // Fetch the order first to check ownership
     const order = await pb.collection('orders').getOne(id);
 
-    if (order.user !== user.id && user.role !== 'ADMIN') {
+    if (order.user !== user.id) {
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
     }
 

@@ -8,9 +8,6 @@ console.log('[apiClient] Production API URL initialized:', API_URL);
 export const apiClient = axios.create({
   baseURL: API_URL,
   withCredentials: true,
-  headers: {
-    'Content-Type': 'application/json',
-  },
 });
 
 // Interceptor to automatically add token from store

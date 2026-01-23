@@ -22,7 +22,7 @@ export default function ProductForm({ initial = null, onSaved }: any) {
 
   useEffect(() => {
     // Fetch categories
-    apiClient.get("/categories")
+    apiClient.get("/admin/categories")
       .then(res => setCategories(res.data || []))
       .catch(err => console.error("Error loading categories", err));
   }, []);

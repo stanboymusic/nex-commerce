@@ -1,4 +1,3 @@
-
 import { NextResponse } from "next/server";
 import { getAdminPocketBase } from "@/lib/admin";
 
@@ -7,19 +6,16 @@ export async function POST(req: Request) {
     const pb = await getAdminPocketBase();
     const form = await req.formData();
 
-    // slug autogenerado si no viene
+    // slug auto
     if (!form.get("slug")) {
       const name = String(form.get("name") || "");
-      const slug = name.toLowerCase().trim()
-        .replace(/\s+/g, "-")
-        .replace(/[^\w-]/g, "");
-      form.set("slug", slug);
+      form.set("slug", name.toLowerCase().trim().replace(/\s+/g, "-").replace(/[^\w-]/g, ""));
     }
 
     const created = await pb.collection("products").create(form);
-    return NextResponse.json({ success: true, product: created });
-  } catch (error) {
-    console.error("Error creating product:", error);
-    return NextResponse.json({ error: "Failed to create product" }, { status: 500 });
+    return NextResponse.json(created);
+  } catch (e: any) {
+    console.error("[POST /api/admin/products]", e?.data || e?.message || e);
+    return NextResponse.json({ error: e?.data?.message || e?.message || "Create failed" }, { status: 500 });
   }
 }
