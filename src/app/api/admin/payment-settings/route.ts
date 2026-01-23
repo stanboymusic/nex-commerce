@@ -7,24 +7,44 @@ export async function POST(req: Request) {
     const pb = await getAdminPocketBase();
     const form = await req.formData();
 
-    // enforce method
+    // VALIDACIÓN CRÍTICA
+    const hasFile =
+      form.get("qrImage") instanceof File &&
+      (form.get("qrImage") as File).size > 0;
+
     if (!form.get("method")) form.set("method", "KONTIGO");
 
-    const existing = await pb.collection("payment_settings").getList(1, 1, {
-      filter: `method="KONTIGO"`,
-      requestKey: null
-    });
+    if (!hasFile && !form.get("instructions")) {
+      return NextResponse.json(
+        { error: "No data provided" },
+        { status: 400 }
+      );
+    }
+
+    const existing = await pb
+      .collection("payment_settings")
+      .getList(1, 1, {
+        filter: `method="KONTIGO"`,
+        requestKey: null,
+      });
 
     let saved;
     if (existing.items.length) {
-      saved = await pb.collection("payment_settings").update(existing.items[0].id, form);
+      saved = await pb
+        .collection("payment_settings")
+        .update(existing.items[0].id, form);
     } else {
-      saved = await pb.collection("payment_settings").create(form);
+      saved = await pb
+        .collection("payment_settings")
+        .create(form);
     }
 
     return NextResponse.json({ success: true, saved });
   } catch (e: any) {
     console.error("[POST /api/admin/payment-settings]", e?.data || e?.message || e);
-    return NextResponse.json({ error: e?.data?.message || e?.message || "Save failed" }, { status: 500 });
+    return NextResponse.json(
+      { error: e?.data?.message || e?.message || "Save failed" },
+      { status: 500 }
+    );
   }
 }

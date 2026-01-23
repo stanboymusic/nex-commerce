@@ -1,38 +1,43 @@
-import { getAdminPocketBase, initPocketBase } from '@/lib/pocketbase';
-import { NextRequest, NextResponse } from 'next/server';
+import { getAdminPocketBase } from "@/lib/admin";
+import { NextResponse } from "next/server";
 
-export async function GET(req: NextRequest) {
+export async function GET() {
   try {
     const pb = await getAdminPocketBase();
-    const records = await pb.collection('categories').getFullList({ sort: 'name' });
 
-    const categories = records.map(r => ({ id: r.id, name: r.name, user: r.user }));
+    const records = await pb.collection("categories").getFullList({
+      sort: "name",
+      requestKey: null,
+    });
 
-    return NextResponse.json(categories);
-  } catch (error: any) {
-    console.error('Error fetching categories:', error);
-    return NextResponse.json({ error: error.message || 'Error fetching categories' }, { status: 500 });
+    return NextResponse.json(
+      records.map((r: any) => ({
+        id: r.id,
+        name: r.name,
+      }))
+    );
+  } catch (e: any) {
+    console.error("[GET /api/categories]", e?.data || e?.message || e);
+    return NextResponse.json({ error: "Failed to fetch categories" }, { status: 500 });
   }
 }
 
-export async function POST(req: NextRequest) {
+export async function POST(req: Request) {
   try {
-    const pb = await initPocketBase(req);
-    const user = pb.authStore.model;
+    const pb = await getAdminPocketBase();
+    const body = await req.json();
 
-    if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    if (!body?.name) {
+      return NextResponse.json({ error: "Name is required" }, { status: 400 });
+    }
 
-    const data = await req.json();
-    if (!data.name) return NextResponse.json({ error: 'Name is required' }, { status: 400 });
-
-    const record = await pb.collection('categories').create({
-      name: data.name,
-      user: user.id,
+    const created = await pb.collection("categories").create({
+      name: body.name,
     });
 
-    return NextResponse.json({ id: record.id, name: record.name });
-  } catch (error: any) {
-    console.error('Error creating category:', error);
-    return NextResponse.json({ error: error.message || 'Error creating category' }, { status: 500 });
+    return NextResponse.json({ id: created.id, name: created.name });
+  } catch (e: any) {
+    console.error("[POST /api/categories]", e?.data || e?.message || e);
+    return NextResponse.json({ error: "Failed to create category" }, { status: 500 });
   }
 }
