@@ -5,6 +5,7 @@ import { useCartStore } from "@/store/cart.store";
 import { ShoppingCart, Info } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
+import { formatMoney } from "@/lib/format";
 
 export default function ListRow({ product }: { product: Product }) {
   const { addItem } = useCartStore();
@@ -67,7 +68,7 @@ export default function ListRow({ product }: { product: Product }) {
       {/* Price */}
       <div className="col-span-1 md:col-span-2 text-right">
         <span className="text-lg font-black text-oxford">
-          ${product.price.toLocaleString()}
+          {formatMoney(product.price)}
         </span>
       </div>
 

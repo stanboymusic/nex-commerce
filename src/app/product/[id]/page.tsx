@@ -7,6 +7,7 @@ import { ShoppingCart, Plus, Minus, Calendar, Package, AlertCircle, CheckCircle 
 import { useCartStore } from '@/store/cart.store'
 import { useAuthStore } from '@/store/auth.store'
 import axios from 'axios'
+import { formatMoney } from '@/lib/format'
 
 export default function ProductDetailsPage() {
   const { id } = useParams()
@@ -130,7 +131,7 @@ export default function ProductDetailsPage() {
           </p>
 
           <div className="mb-8">
-            <span className="text-3xl font-bold text-oxford">${product.price.toLocaleString()}</span>
+            <span className="text-3xl font-bold text-oxford">{formatMoney(product.price)}</span>
           </div>
 
           <div className="space-y-6 mb-10">

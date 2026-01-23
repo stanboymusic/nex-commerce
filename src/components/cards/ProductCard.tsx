@@ -6,6 +6,7 @@ import { ShoppingCart, Plus, Minus, Info } from 'lucide-react'
 import { motion } from 'framer-motion'
 import { useCartStore } from '@/store/cart.store'
 import { getPBImageUrl } from '@/lib/pocketbase'
+import { formatMoney } from '@/lib/format'
 
 interface ProductCardProps {
   id: string;
@@ -78,7 +79,7 @@ export default function ProductCard({ id, name, slug, price, image, stock, isPre
 
           <div className="mt-2 flex items-baseline gap-2">
             <span className="text-2xl font-black text-oxford">
-              ${price.toLocaleString()}
+              {formatMoney(price)}
             </span>
           </div>
 
