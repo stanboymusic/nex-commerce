@@ -18,6 +18,25 @@ export default function ProductFormModal({ product, categories, onSave, onClose 
         "image/gif",
         "image/webp"
     ]);
+    const mimeByExt: Record<string, string> = {
+        jpg: "image/jpeg",
+        jpeg: "image/jpeg",
+        png: "image/png",
+        svg: "image/svg+xml",
+        gif: "image/gif",
+        webp: "image/webp"
+    };
+
+    const normalizeImageFile = (file: File) => {
+        if (allowedMimeTypes.has(file.type)) return file;
+        const parts = file.name.split(".");
+        const ext = parts.length > 1 ? parts[parts.length - 1].toLowerCase() : "";
+        const inferred = mimeByExt[ext];
+        if (inferred && allowedMimeTypes.has(inferred)) {
+            return new File([file], file.name, { type: inferred });
+        }
+        return null;
+    };
 
     const [form, setForm] = useState({
         name: product?.name || "",
@@ -43,11 +62,13 @@ export default function ProductFormModal({ product, categories, onSave, onClose 
     const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault();
 
-        if (imageFile && !allowedMimeTypes.has(imageFile.type)) {
+        const normalizedMain = imageFile ? normalizeImageFile(imageFile) : null;
+        if (imageFile && !normalizedMain) {
             alert('Imagen principal inválida. Usa JPG, PNG, SVG, GIF o WebP.');
             return;
         }
-        if (galleryFiles.some(file => !allowedMimeTypes.has(file.type))) {
+        const normalizedGallery = galleryFiles.map(normalizeImageFile);
+        if (normalizedGallery.some((file) => !file)) {
             alert('Hay imágenes de galería inválidas. Usa JPG, PNG, SVG, GIF o WebP.');
             return;
         }
@@ -67,10 +88,12 @@ export default function ProductFormModal({ product, categories, onSave, onClose 
         }
         if (removeImage) {
             formData.append("image", "");
-        } else if (imageFile) {
-            formData.append("image", imageFile);
+        } else if (normalizedMain) {
+            formData.append("image", normalizedMain);
         }
-        galleryFiles.forEach((file) => formData.append("images", file));
+        normalizedGallery.forEach((file) => {
+            if (file) formData.append("images", file);
+        });
 
         // Handle the checkbox specifically as FormData often misses 'false' states
         formData.set("isPreorder", String(form.isPreorder));

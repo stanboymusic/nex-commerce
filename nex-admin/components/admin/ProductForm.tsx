@@ -13,6 +13,24 @@ export default function ProductForm({ initial = null, onSaved }: any) {
     "image/gif",
     "image/webp"
   ]);
+  const mimeByExt: Record<string, string> = {
+    jpg: "image/jpeg",
+    jpeg: "image/jpeg",
+    png: "image/png",
+    svg: "image/svg+xml",
+    gif: "image/gif",
+    webp: "image/webp"
+  };
+  const normalizeImageFile = (file: File) => {
+    if (allowedMimeTypes.has(file.type)) return file;
+    const parts = file.name.split(".");
+    const ext = parts.length > 1 ? parts[parts.length - 1].toLowerCase() : "";
+    const inferred = mimeByExt[ext];
+    if (inferred && allowedMimeTypes.has(inferred)) {
+      return new File([file], file.name, { type: inferred });
+    }
+    return null;
+  };
 
   const [name, setName] = useState(initial?.name || "");
   const [price, setPrice] = useState(initial?.price || 0);
@@ -39,12 +57,14 @@ export default function ProductForm({ initial = null, onSaved }: any) {
     setLoading(true);
 
     try {
-      if (file && !allowedMimeTypes.has(file.type)) {
+      const normalizedMain = file ? normalizeImageFile(file) : null;
+      if (file && !normalizedMain) {
         alert("Imagen principal inválida. Usa JPG, PNG, SVG, GIF o WebP.");
         setLoading(false);
         return;
       }
-      if (gallery.some(f => !allowedMimeTypes.has(f.type))) {
+      const normalizedGallery = gallery.map(normalizeImageFile);
+      if (normalizedGallery.some((f) => !f)) {
         alert("Hay imágenes de galería inválidas. Usa JPG, PNG, SVG, GIF o WebP.");
         setLoading(false);
         return;
@@ -64,10 +84,12 @@ export default function ProductForm({ initial = null, onSaved }: any) {
       if (estimatedArrivalDate) form.append("estimatedArrivalDate", estimatedArrivalDate);
 
       // Single image
-      if (file) form.append("image", file);
+      if (normalizedMain) form.append("image", normalizedMain);
 
       // Gallery
-      gallery.forEach(f => form.append("images", f));
+      normalizedGallery.forEach((f) => {
+        if (f) form.append("images", f);
+      });
 
       const url = editing ? `/api/admin/products/${initial.id}` : `/api/admin/products`;
       const method = editing ? "PUT" : "POST";
