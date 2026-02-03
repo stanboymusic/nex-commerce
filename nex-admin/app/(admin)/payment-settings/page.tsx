@@ -10,6 +10,8 @@ export default function PaymentSettingsPage() {
     const [success, setSuccess] = useState(false);
     const [currentQr, setCurrentQr] = useState<string | null>(null);
     const [instructions, setInstructions] = useState("");
+    const [qrPreview, setQrPreview] = useState<string | null>(null);
+    const [qrFile, setQrFile] = useState<File | null>(null);
     const token = useAdminStore((s) => s.token);
     const API_URL = process.env.NEXT_PUBLIC_API_URL || "https://nex-users.vercel.app/api";
     const allowedMimeTypes = new Set([
@@ -58,12 +60,10 @@ export default function PaymentSettingsPage() {
         setLoading(true);
         setSuccess(false);
 
-        const form = new FormData(e.currentTarget);
-        if (!form.get("method")) {
-            form.set("method", "KONTIGO");
-        }
-        const qrFile = form.get("kontigoQr");
-        if (qrFile instanceof File && qrFile.size > 0) {
+        const form = new FormData();
+        form.set("method", "KONTIGO");
+        form.set("kontigoInstructions", instructions);
+        if (qrFile) {
             const normalized = normalizeImageFile(qrFile);
             if (!normalized) {
                 alert("QR inválido. Usa JPG, PNG, SVG, GIF o WebP.");
@@ -121,7 +121,11 @@ export default function PaymentSettingsPage() {
 
                                     <div className="flex items-start gap-6">
                                         <div className="relative group">
-                                            {currentQr ? (
+                                            {qrPreview ? (
+                                                <div className="w-48 h-48 border-2 border-dashed border-purple-200 rounded-2xl overflow-hidden flex items-center justify-center bg-purple/5">
+                                                    <img src={qrPreview} alt="QR preview" className="w-full h-full object-contain p-2" />
+                                                </div>
+                                            ) : currentQr ? (
                                                 <div className="w-48 h-48 border-2 border-dashed border-gray-100 rounded-2xl overflow-hidden flex items-center justify-center bg-gray-50">
                                                     <img src={currentQr} alt="QR" className="w-full h-full object-contain p-2" />
                                                 </div>
@@ -139,12 +143,27 @@ export default function PaymentSettingsPage() {
                                             <p className="text-xs text-gray-500 leading-relaxed italic">
                                                 * Sube una imagen clara de tu QR de Kontigo. El cliente la verá durante el proceso de pago para realizar la transferencia.
                                             </p>
-                                            <input
-                                                type="file"
-                                                name="kontigoQr"
-                                                accept="image/*"
-                                                className="block w-full text-xs text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-xl file:border-0 file:text-sm file:font-bold file:bg-purple/10 file:text-purple hover:file:bg-purple/20 transition-all cursor-pointer"
-                                            />
+                                    <input
+                                        type="file"
+                                        name="kontigoQr"
+                                        accept="image/*"
+                                        onChange={(e) => {
+                                            const file = e.target.files?.[0] || null;
+                                            if (!file) {
+                                                setQrFile(null);
+                                                setQrPreview(null);
+                                                return;
+                                            }
+                                            const normalized = normalizeImageFile(file);
+                                            if (!normalized) {
+                                                alert("QR inválido. Usa JPG, PNG, SVG, GIF o WebP.");
+                                                return;
+                                            }
+                                            setQrFile(normalized);
+                                            setQrPreview(URL.createObjectURL(normalized));
+                                        }}
+                                        className="block w-full text-xs text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-xl file:border-0 file:text-sm file:font-bold file:bg-purple/10 file:text-purple hover:file:bg-purple/20 transition-all cursor-pointer"
+                                    />
                                         </div>
                                     </div>
                                 </div>

@@ -1,11 +1,11 @@
 import { NextResponse } from "next/server";
-import { getAdminPocketBase } from "@/lib/admin";
+import { getPocketBase } from "@/lib/pocketbase";
 
 export const dynamic = 'force-dynamic';
 
 export async function GET() {
     try {
-        const pb = await getAdminPocketBase();
+        const pb = getPocketBase();
 
         // Fetch COP rate from exchange_rates
         const rateRecord = await pb.collection("exchange_rates").getFirstListItem('targetCurrency="COP" && active=true').catch(() => null);

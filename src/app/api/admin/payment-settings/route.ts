@@ -30,7 +30,13 @@ export async function POST(req: Request) {
     if (hasInstructions) data.set("kontigoInstructions", String(instructions));
     if (hasFile) {
       const file = form.get("kontigoQr");
-      if (file) data.set("kontigoQr", file);
+      if (file instanceof File) {
+        const name = file.name || "kontigo-qr.png";
+        const type = file.type || "image/png";
+        const buffer = await file.arrayBuffer();
+        const safeFile = new File([buffer], name, { type });
+        data.set("kontigoQr", safeFile);
+      }
     }
 
     const existing = await pb

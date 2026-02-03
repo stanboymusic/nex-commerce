@@ -59,7 +59,18 @@ export async function initPocketBase(req: NextRequest): Promise<PocketBase> {
       console.log('[PocketBase] Auth refresh successful for:', (client.authStore.model as any)?.id);
     } catch (err: any) {
       console.error('[PocketBase] Auth refresh failed:', err.message, err.status);
-      client.authStore.clear();
+      // Fallback: decode token payload to keep minimal user context
+      try {
+        const token = client.authStore.token;
+        const payload = JSON.parse(Buffer.from(token.split('.')[1], 'base64').toString('utf8'));
+        if (payload?.collectionId === '_pb_users_auth_' && payload?.id) {
+          client.authStore.save(token, { id: payload.id, collectionId: payload.collectionId });
+        } else {
+          client.authStore.clear();
+        }
+      } catch (_) {
+        client.authStore.clear();
+      }
     }
   }
 
