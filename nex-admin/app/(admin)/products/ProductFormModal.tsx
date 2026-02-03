@@ -11,6 +11,14 @@ interface Props {
 }
 
 export default function ProductFormModal({ product, categories, onSave, onClose }: Props) {
+    const allowedMimeTypes = new Set([
+        "image/jpeg",
+        "image/png",
+        "image/svg+xml",
+        "image/gif",
+        "image/webp"
+    ]);
+
     const [form, setForm] = useState({
         name: product?.name || "",
         description: product?.description || "",
@@ -24,17 +32,46 @@ export default function ProductFormModal({ product, categories, onSave, onClose 
     const [imagePreview, setImagePreview] = useState<string | null>(
         product?.image ? `${process.env.NEXT_PUBLIC_POCKETBASE_URL || 'https://nexcommerce.fly.dev'}/api/files/products/${product.id}/${product.image}` : null
     );
+    const [imageFile, setImageFile] = useState<File | null>(null);
+    const [removeImage, setRemoveImage] = useState(false);
 
     const [galleryPreviews, setGalleryPreviews] = useState<string[]>(
         product?.images?.map((img: string) => `${process.env.NEXT_PUBLIC_POCKETBASE_URL || 'https://nexcommerce.fly.dev'}/api/files/products/${product.id}/${img}`) || []
     );
+    const [galleryFiles, setGalleryFiles] = useState<File[]>([]);
 
     const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault();
-        const formData = new FormData(e.currentTarget as HTMLFormElement);
+
+        if (imageFile && !allowedMimeTypes.has(imageFile.type)) {
+            alert('Imagen principal inválida. Usa JPG, PNG, SVG, GIF o WebP.');
+            return;
+        }
+        if (galleryFiles.some(file => !allowedMimeTypes.has(file.type))) {
+            alert('Hay imágenes de galería inválidas. Usa JPG, PNG, SVG, GIF o WebP.');
+            return;
+        }
+
+        const formData = new FormData();
+        formData.append("name", form.name);
+        formData.append("description", form.description || "");
+        formData.append("price", String(form.price));
+        formData.append("stock", String(form.stock));
+        formData.append("category", form.category);
+        formData.append("isPreorder", String(form.isPreorder));
+        if (form.estimatedArrivalDate) {
+            formData.append("estimatedArrivalDate", form.estimatedArrivalDate);
+        }
         if (product?.id) {
             formData.append("id", product.id);
         }
+        if (removeImage) {
+            formData.append("image", "");
+        } else if (imageFile) {
+            formData.append("image", imageFile);
+        }
+        galleryFiles.forEach((file) => formData.append("images", file));
+
         // Handle the checkbox specifically as FormData often misses 'false' states
         formData.set("isPreorder", String(form.isPreorder));
         onSave(formData);
@@ -156,7 +193,11 @@ export default function ProductFormModal({ product, categories, onSave, onClose 
                                     <img src={imagePreview} className="w-full h-full object-contain" alt="Preview" />
                                     <button
                                         type="button"
-                                        onClick={() => setImagePreview(null)}
+                                        onClick={() => {
+                                            setImagePreview(null);
+                                            setImageFile(null);
+                                            setRemoveImage(true);
+                                        }}
                                         className="absolute top-1 right-1 bg-white/80 p-1 rounded-full hover:bg-white shadow-sm"
                                     >
                                         <X className="w-3 h-3 text-red-500" />
@@ -170,7 +211,11 @@ export default function ProductFormModal({ product, categories, onSave, onClose 
                                 accept="image/*"
                                 onChange={(e) => {
                                     const file = e.target.files?.[0];
-                                    if (file) setImagePreview(URL.createObjectURL(file));
+                                    if (file) {
+                                        setImagePreview(URL.createObjectURL(file));
+                                        setImageFile(file);
+                                        setRemoveImage(false);
+                                    }
                                 }}
                                 className="w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-xl file:border-0 file:text-sm file:font-bold file:bg-purple/10 file:text-purple hover:file:bg-purple/20 transition-all cursor-pointer"
                             />
@@ -199,6 +244,7 @@ export default function ProductFormModal({ product, categories, onSave, onClose 
                                 onChange={(e) => {
                                     const files = Array.from(e.target.files || []);
                                     setGalleryPreviews(files.map(f => URL.createObjectURL(f)));
+                                    setGalleryFiles(files);
                                 }}
                                 className="w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-xl file:border-0 file:text-sm file:font-bold file:bg-gray-100 file:text-gray-700 hover:file:bg-gray-200 transition-all cursor-pointer"
                             />

@@ -6,6 +6,13 @@ import { apiClient } from "@/lib/apiClient";
 
 export default function ProductForm({ initial = null, onSaved }: any) {
   const editing = !!initial?.id;
+  const allowedMimeTypes = new Set([
+    "image/jpeg",
+    "image/png",
+    "image/svg+xml",
+    "image/gif",
+    "image/webp"
+  ]);
 
   const [name, setName] = useState(initial?.name || "");
   const [price, setPrice] = useState(initial?.price || 0);
@@ -32,6 +39,17 @@ export default function ProductForm({ initial = null, onSaved }: any) {
     setLoading(true);
 
     try {
+      if (file && !allowedMimeTypes.has(file.type)) {
+        alert("Imagen principal inválida. Usa JPG, PNG, SVG, GIF o WebP.");
+        setLoading(false);
+        return;
+      }
+      if (gallery.some(f => !allowedMimeTypes.has(f.type))) {
+        alert("Hay imágenes de galería inválidas. Usa JPG, PNG, SVG, GIF o WebP.");
+        setLoading(false);
+        return;
+      }
+
       const form = new FormData();
       form.append("name", name);
       form.append("price", String(price));
