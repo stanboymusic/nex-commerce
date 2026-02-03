@@ -56,6 +56,9 @@ export default function PaymentSettingsPage() {
         setSuccess(false);
 
         const form = new FormData(e.currentTarget);
+        if (!form.get("method")) {
+            form.set("method", "KONTIGO");
+        }
         const qrFile = form.get("kontigoQr");
         if (qrFile instanceof File && qrFile.size > 0) {
             const normalized = normalizeImageFile(qrFile);
@@ -69,9 +72,7 @@ export default function PaymentSettingsPage() {
 
         try {
             // This hits src/app/api/admin/payment-settings/route.ts
-            const res = await apiClient.post("/admin/payment-settings", form, {
-                headers: { "Content-Type": "multipart/form-data" }
-            });
+            const res = await apiClient.post("/admin/payment-settings", form);
 
             if (res.status >= 200 && res.status < 300) {
                 setSuccess(true);

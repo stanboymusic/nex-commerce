@@ -25,6 +25,10 @@ export async function POST(req: Request) {
       );
     }
 
+    const data: any = { method: "KONTIGO" };
+    if (hasInstructions) data.kontigoInstructions = instructions;
+    if (hasFile) data.kontigoQr = form.get("kontigoQr");
+
     const existing = await pb
       .collection("payment_settings")
       .getList(1, 1, {
@@ -36,11 +40,11 @@ export async function POST(req: Request) {
     if (existing.items.length) {
       saved = await pb
         .collection("payment_settings")
-        .update(existing.items[0].id, form);
+        .update(existing.items[0].id, data);
     } else {
       saved = await pb
         .collection("payment_settings")
-        .create(form);
+        .create(data);
     }
 
     return NextResponse.json({ success: true, saved });
