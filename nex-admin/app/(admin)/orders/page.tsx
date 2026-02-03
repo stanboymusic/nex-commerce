@@ -18,6 +18,17 @@ export default function OrdersPage() {
   const [searchTerm, setSearchTerm] = useState("");
   const [loading, setLoading] = useState(true);
   const [showProof, setShowProof] = useState(false);
+  const [statusChoice, setStatusChoice] = useState("");
+
+  const statusOptions = [
+    { value: "PENDING_PAYMENT", label: "Pendiente Pago" },
+    { value: "PAYMENT_REPORTED", label: "Pago Reportado" },
+    { value: "CONFIRMED", label: "Confirmado" },
+    { value: "PREPARING", label: "En Preparación" },
+    { value: "SHIPPED", label: "Enviado" },
+    { value: "DELIVERED", label: "Entregado" },
+    { value: "CANCELLED", label: "Cancelado" },
+  ];
 
   const filteredOrders = orders.filter(o =>
     o.id.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -43,6 +54,11 @@ export default function OrdersPage() {
   };
 
   useEffect(() => { load(); }, []);
+  useEffect(() => {
+    if (selected?.status) {
+      setStatusChoice(selected.status);
+    }
+  }, [selected?.status]);
 
   const approve = async (id: string) => {
     if (!confirm("¿Aprobar el pago de esta orden?")) return;
@@ -382,9 +398,9 @@ export default function OrdersPage() {
 
                 {/* Fixed Footer Actions */}
                 <div className="shrink-0 p-8 border-t border-gray-50 flex flex-wrap items-center justify-between gap-4 bg-white/50 backdrop-blur-sm">
-                  <div className="flex items-center gap-3">
+                  <div className="flex flex-col gap-3">
                     <span className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Avance de Estado:</span>
-                    <div className="flex gap-2">
+                    <div className="flex flex-wrap gap-2">
                       {selected.status === "CONFIRMED" && (
                         <button
                           onClick={() => advanceStatus(selected.id, "PREPARING")}
@@ -414,7 +430,25 @@ export default function OrdersPage() {
                     </div>
                   </div>
 
-                  <div className="flex items-center gap-3 ml-auto">
+                  <div className="flex flex-wrap items-center gap-3 ml-auto">
+                    <div className="flex items-center gap-2">
+                      <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Cambiar estado:</label>
+                      <select
+                        value={statusChoice}
+                        onChange={(e) => {
+                          const nextStatus = e.target.value;
+                          setStatusChoice(nextStatus);
+                          if (nextStatus !== selected.status) {
+                            advanceStatus(selected.id, nextStatus);
+                          }
+                        }}
+                        className="bg-white border border-gray-200 px-3 py-2 rounded-xl text-xs font-black text-oxford outline-none focus:ring-2 focus:ring-purple/20"
+                      >
+                        {statusOptions.map((option) => (
+                          <option key={option.value} value={option.value}>{option.label}</option>
+                        ))}
+                      </select>
+                    </div>
                     {(selected.status !== "CANCELLED" && selected.status !== "DELIVERED") && (
                       <button
                         onClick={() => advanceStatus(selected.id, "CANCELLED")}
@@ -469,4 +503,3 @@ export default function OrdersPage() {
     </div>
   );
 }
-

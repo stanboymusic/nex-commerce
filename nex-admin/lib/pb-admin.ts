@@ -1,4 +1,5 @@
 import PocketBase from 'pocketbase';
+import { cookies } from 'next/headers';
 
 let adminClient: PocketBase | null = null;
 
@@ -19,11 +20,17 @@ export async function getAdminPB(): Promise<PocketBase> {
     const email = process.env.PB_ADMIN_EMAIL || process.env.POCKETBASE_ADMIN_EMAIL;
     const password = process.env.PB_ADMIN_PASSWORD || process.env.POCKETBASE_ADMIN_PASSWORD;
 
-    if (!email || !password) {
-        throw new Error('Missing PB admin credentials in environment variables.');
-    }
-
     try {
+        if (!email || !password) {
+            const cookieStore = cookies();
+            const token = cookieStore.get('pb_auth')?.value;
+            if (!token) {
+                throw new Error('Missing PB admin credentials and no auth cookie found.');
+            }
+            adminClient.authStore.save(token, null);
+            return adminClient;
+        }
+
         await adminClient.admins.authWithPassword(email, password);
     } catch (error: any) {
         console.error('[PB-ADMIN] Auth failed:', error);

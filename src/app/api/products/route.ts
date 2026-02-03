@@ -15,6 +15,7 @@ export async function GET() {
       name: r.name,
       slug: r.slug,
       description: r.description,
+      price: Number(r.price ?? 0),
       priceUSD: Number(r.priceUSD ?? r.price ?? 0),
       stock: Number(r.stock ?? 0),
       isPreorder: !!r.isPreorder,
