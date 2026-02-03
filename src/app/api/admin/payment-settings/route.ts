@@ -25,9 +25,13 @@ export async function POST(req: Request) {
       );
     }
 
-    const data: any = { method: "KONTIGO" };
-    if (hasInstructions) data.kontigoInstructions = instructions;
-    if (hasFile) data.kontigoQr = form.get("kontigoQr");
+    const data = new FormData();
+    data.set("method", "KONTIGO");
+    if (hasInstructions) data.set("kontigoInstructions", String(instructions));
+    if (hasFile) {
+      const file = form.get("kontigoQr");
+      if (file) data.set("kontigoQr", file);
+    }
 
     const existing = await pb
       .collection("payment_settings")

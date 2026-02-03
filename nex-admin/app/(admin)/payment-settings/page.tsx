@@ -3,12 +3,15 @@
 import { useState, useEffect } from "react";
 import { Upload, Save, CheckCircle, AlertCircle, Image as ImageIcon, RefreshCw } from "lucide-react";
 import { apiClient } from "@/lib/apiClient";
+import { useAdminStore } from "@/store/admin.store";
 
 export default function PaymentSettingsPage() {
     const [loading, setLoading] = useState(false);
     const [success, setSuccess] = useState(false);
     const [currentQr, setCurrentQr] = useState<string | null>(null);
     const [instructions, setInstructions] = useState("");
+    const token = useAdminStore((s) => s.token);
+    const API_URL = process.env.NEXT_PUBLIC_API_URL || "https://nex-users.vercel.app/api";
     const allowedMimeTypes = new Set([
         "image/jpeg",
         "image/png",
@@ -72,9 +75,13 @@ export default function PaymentSettingsPage() {
 
         try {
             // This hits src/app/api/admin/payment-settings/route.ts
-            const res = await apiClient.post("/admin/payment-settings", form);
+            const res = await fetch(`${API_URL}/admin/payment-settings`, {
+                method: "POST",
+                headers: token ? { Authorization: `Bearer ${token}` } : undefined,
+                body: form
+            });
 
-            if (res.status >= 200 && res.status < 300) {
+            if (res.ok) {
                 setSuccess(true);
                 // Refresh preview
                 const { data } = await apiClient.get("/settings");
@@ -83,7 +90,8 @@ export default function PaymentSettingsPage() {
                 }
                 setTimeout(() => setSuccess(false), 3000);
             } else {
-                alert("Error al guardar la configuración");
+                const data = await res.json().catch(() => null);
+                alert(data?.error || "Error al guardar la configuración");
             }
         } catch (err: any) {
             console.error(err);
