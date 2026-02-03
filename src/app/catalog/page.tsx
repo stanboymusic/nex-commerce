@@ -13,7 +13,7 @@ interface Product {
   price: number
   stock: number
   isPreorder: boolean
-  estimatedArrival?: string
+  estimatedArrivalDate?: string
   images: { id: string, url: string }[]
 }
 
@@ -173,7 +173,7 @@ export default function CatalogPage() {
               price={p.price}
               stock={p.stock}
               isPreorder={p.isPreorder}
-              estimatedArrival={p.estimatedArrival}
+              estimatedArrivalDate={p.estimatedArrivalDate}
               categoryName={(p as any).category?.name}
               image={p.images?.[0]?.url || ''} // Use first image url if available
             />

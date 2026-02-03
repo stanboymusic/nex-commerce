@@ -15,12 +15,12 @@ interface ProductCardProps {
   price: number;
   stock: number;
   isPreorder: boolean;
-  estimatedArrival?: string;
+  estimatedArrivalDate?: string;
   categoryName?: string;
   image?: string;
 }
 
-export default function ProductCard({ id, name, slug, price, image, stock, isPreorder, estimatedArrival, categoryName }: ProductCardProps) {
+export default function ProductCard({ id, name, slug, price, image, stock, isPreorder, estimatedArrivalDate, categoryName }: ProductCardProps) {
   const { addItem } = useCartStore()
 
   const handleAddToCart = () => {
@@ -87,7 +87,7 @@ export default function ProductCard({ id, name, slug, price, image, stock, isPre
             {isPreorder ? (
               <div className="inline-flex items-center text-[11px] font-semibold text-purple bg-purple/10 px-2 py-1 rounded-md">
                 <Info className="h-3 w-3 mr-1" />
-                Preventa {estimatedArrival ? `• llega aprox ${new Date(estimatedArrival).toLocaleDateString()}` : "• fecha por confirmar"}
+                Preventa {estimatedArrivalDate ? `• llega aprox ${new Date(estimatedArrivalDate).toLocaleDateString()}` : "• fecha por confirmar"}
               </div>
             ) : (
               <div className={`inline-flex items-center text-[11px] font-semibold px-2 py-1 rounded-md ${stock > 0 ? 'text-green-600 bg-green-50' : 'text-red-500 bg-red-50'

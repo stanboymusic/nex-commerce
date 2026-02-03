@@ -12,8 +12,8 @@ export default function ProductForm({ initial = null, onSaved }: any) {
   const [stock, setStock] = useState(initial?.stock || 0);
   const [categoryId, setCategoryId] = useState(initial?.category || "");
   const [isPreorder, setIsPreorder] = useState(initial?.isPreorder || false);
-  const [estimatedArrival, setEstimatedArrival] = useState(
-    initial?.estimatedArrival ? initial.estimatedArrival.split("T")[0] : ""
+  const [estimatedArrivalDate, setEstimatedArrivalDate] = useState(
+    initial?.estimatedArrivalDate ? initial.estimatedArrivalDate.split("T")[0] : ""
   );
   const [file, setFile] = useState<File | null>(null);
   const [gallery, setGallery] = useState<File[]>([]);
@@ -43,7 +43,7 @@ export default function ProductForm({ initial = null, onSaved }: any) {
       // Prompt didn't explicitly ask for description in the form but API sends it. I'll check user prompt 63 again.
       // Step 63 ProductForm doesn't have description input. I will stick to what was asked.
 
-      if (estimatedArrival) form.append("estimatedArrival", new Date(estimatedArrival).toISOString());
+      if (estimatedArrivalDate) form.append("estimatedArrivalDate", new Date(estimatedArrivalDate).toISOString());
 
       // Single image
       if (file) form.append("image", file);
@@ -138,8 +138,8 @@ export default function ProductForm({ initial = null, onSaved }: any) {
               <label className="block text-sm font-medium mb-1">Fecha estimada de llegada</label>
               <input
                 type="date"
-                value={estimatedArrival}
-                onChange={e => setEstimatedArrival(e.target.value)}
+                value={estimatedArrivalDate}
+                onChange={e => setEstimatedArrivalDate(e.target.value)}
                 className="w-full p-2 border rounded"
               />
             </div>

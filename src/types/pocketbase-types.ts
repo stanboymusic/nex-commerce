@@ -31,6 +31,7 @@ export interface Product extends BaseRecord {
     isPreorder: boolean;
     stock: number;
     arrivalDate?: string;
+    estimatedArrivalDate?: string;
     estimatedDeliveryDate?: string;
     category: string; // Relation ID
     images?: string[];

@@ -19,7 +19,7 @@ export async function GET() {
       priceUSD: Number(r.priceUSD ?? r.price ?? 0),
       stock: Number(r.stock ?? 0),
       isPreorder: !!r.isPreorder,
-      preorderArrivalDate: r.preorderArrivalDate ?? null,
+      estimatedArrivalDate: r.estimatedArrivalDate ?? null,
       category: r.category ?? null,
 
       // principal

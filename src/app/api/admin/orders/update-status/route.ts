@@ -1,13 +1,15 @@
 import { NextResponse } from "next/server";
 import { getAdminPocketBase } from "@/lib/admin";
 
-const allowed: Record<string, string[]> = {
-  PENDING_PAYMENT: ["CANCELLED"],
-  PAYMENT_REPORTED: ["CANCELLED"],
-  CONFIRMED: ["PREPARING", "CANCELLED"],
-  PREPARING: ["SHIPPED", "CANCELLED"],
-  SHIPPED: ["DELIVERED", "CANCELLED"]
-};
+const allowedStatuses = new Set([
+  "PENDING_PAYMENT",
+  "PAYMENT_REPORTED",
+  "CONFIRMED",
+  "PREPARING",
+  "SHIPPED",
+  "DELIVERED",
+  "CANCELLED"
+]);
 
 export async function POST(req: Request) {
   try {
@@ -18,8 +20,8 @@ export async function POST(req: Request) {
       expand: "order_items(order)"
     });
 
-    if (!allowed[order.status]?.includes(newStatus)) {
-      return NextResponse.json({ error: "Invalid transition" }, { status: 400 });
+    if (!allowedStatuses.has(newStatus)) {
+      return NextResponse.json({ error: "Invalid status" }, { status: 400 });
     }
 
     // Handle stock rollback if cancelling

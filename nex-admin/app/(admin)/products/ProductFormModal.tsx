@@ -18,7 +18,7 @@ export default function ProductFormModal({ product, categories, onSave, onClose 
         stock: product?.stock || 0,
         category: product?.category || "",
         isPreorder: product?.isPreorder || false,
-        estimatedArrival: product?.estimatedArrival ? new Date(product.estimatedArrival).toISOString().split('T')[0] : "",
+        estimatedArrivalDate: product?.estimatedArrivalDate ? new Date(product.estimatedArrivalDate).toISOString().split('T')[0] : "",
     });
 
     const [imagePreview, setImagePreview] = useState<string | null>(
@@ -135,10 +135,10 @@ export default function ProductFormModal({ product, categories, onSave, onClose 
                                 <label className="text-xs font-bold text-amber-600 uppercase">Fecha de Llegada Estimada</label>
                                 <input
                                     type="date"
-                                    name="estimatedArrival"
+                                    name="estimatedArrivalDate"
                                     required={form.isPreorder}
-                                    value={form.estimatedArrival}
-                                    onChange={e => setForm({ ...form, estimatedArrival: e.target.value })}
+                                    value={form.estimatedArrivalDate}
+                                    onChange={e => setForm({ ...form, estimatedArrivalDate: e.target.value })}
                                     className="w-full md:w-1/2 px-4 py-2 bg-white border border-amber-200 rounded-xl outline-none focus:ring-2 focus:ring-amber-500/20"
                                 />
                             </div>

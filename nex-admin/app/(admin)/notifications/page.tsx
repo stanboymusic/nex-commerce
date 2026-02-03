@@ -58,8 +58,8 @@ export default function NotificationsPage() {
             const nextWeek = new Date();
             nextWeek.setDate(today.getDate() + 7);
 
-            products.filter((p: any) => p.isPreorder && p.estimatedArrival).forEach((p: any) => {
-                const arrival = new Date(p.estimatedArrival);
+            products.filter((p: any) => p.isPreorder && p.estimatedArrivalDate).forEach((p: any) => {
+                const arrival = new Date(p.estimatedArrivalDate);
                 if (arrival >= today && arrival <= nextWeek) {
                     gathered.push({
                         id: `preorder-${p.id}`,

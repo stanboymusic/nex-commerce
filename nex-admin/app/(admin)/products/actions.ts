@@ -19,7 +19,7 @@ export async function getProducts() {
             category: r.category,
             categoryName: r.expand?.category?.name || "S/N",
             isPreorder: r.isPreorder,
-            estimatedArrival: r.estimatedArrival,
+            estimatedArrivalDate: r.estimatedArrivalDate,
             description: r.description,
             image: r.image,
             images: r.images,

@@ -11,7 +11,7 @@ export interface Product {
   price: number;
   stock: number;
   isPreorder: boolean;
-  estimatedArrival?: string;
+  estimatedArrivalDate?: string;
   estimatedDeliveryDate?: string;
   images?: any[]; // Flexible para soportar string[] o {url: string}[]
   categoryId?: string;

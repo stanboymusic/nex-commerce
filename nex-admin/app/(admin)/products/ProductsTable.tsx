@@ -9,7 +9,7 @@ interface Product {
     stock: number;
     categoryName: string;
     isPreorder: boolean;
-    estimatedArrival: string;
+    estimatedArrivalDate: string;
     image?: string;
 }
 
@@ -73,10 +73,10 @@ export default function ProductsTable({ products, onEdit, onDelete }: Props) {
                                     {p.isPreorder ? (
                                         <div className="flex flex-col items-center">
                                             <span className="bg-amber-100 text-amber-800 px-2 py-0.5 rounded text-[10px] font-bold uppercase mb-1">Sí</span>
-                                            {p.estimatedArrival && (
+                                            {p.estimatedArrivalDate && (
                                                 <div className="flex items-center gap-1 text-[10px] text-amber-600 font-medium">
                                                     <Calendar className="w-2.5 h-2.5" />
-                                                    {new Date(p.estimatedArrival).toLocaleDateString()}
+                                                    {new Date(p.estimatedArrivalDate).toLocaleDateString()}
                                                 </div>
                                             )}
                                         </div>
