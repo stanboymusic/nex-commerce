@@ -1,7 +1,7 @@
 'use client'
 
 import ProductCard from '@/components/cards/ProductCard'
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useMemo } from 'react'
 import axios from 'axios'
 import { Loader2 } from 'lucide-react'
 
@@ -24,6 +24,7 @@ export default function CatalogPage() {
   const [sortBy, setSortBy] = useState<string>("recent")
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
+  const [searchTerm, setSearchTerm] = useState("")
 
   const sortProducts = (list: Product[], sort: string) => {
     const sorted = [...list]
@@ -77,6 +78,19 @@ export default function CatalogPage() {
     setProducts(sortProducts(products, sort))
   }
 
+  const visibleProducts = useMemo(() => {
+    if (!searchTerm.trim()) {
+      return products
+    }
+
+    const normalizedSearch = searchTerm.trim().toLowerCase()
+    return products.filter((product) => {
+      const name = product.name?.toLowerCase() ?? ""
+      const slug = product.slug?.toLowerCase() ?? ""
+      return name.includes(normalizedSearch) || slug.includes(normalizedSearch)
+    })
+  }, [products, searchTerm])
+
   if (loading) {
     return (
       <div className="flex h-[50vh] w-full items-center justify-center">
@@ -99,9 +113,22 @@ export default function CatalogPage() {
         <div>
           <h1 className="text-3xl font-bold text-oxford">Nuestro Catálogo</h1>
           <p className="text-gray-500 mt-1">Explora nuestros productos premium disponibles.</p>
+          <p className="text-sm text-gray-400 mt-2">
+            {visibleProducts.length} producto{visibleProducts.length === 1 ? "" : "s"} encontrado{visibleProducts.length === 1 ? "" : "s"}.
+          </p>
         </div>
 
         <div className="flex flex-wrap items-center gap-4">
+          <label className="relative flex items-center">
+            <span className="sr-only">Buscar productos</span>
+            <input
+              type="search"
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              placeholder="Buscar por nombre o slug"
+              className="border border-gray-200 rounded-md px-3 py-2 text-sm text-oxford focus:outline-none focus:ring-2 focus:ring-almond transition-all bg-white w-60"
+            />
+          </label>
           <select
             aria-label="Filtrar por categoría"
             className="border border-gray-200 rounded-md px-3 py-2 text-sm text-oxford focus:outline-none focus:ring-2 focus:ring-almond transition-all bg-white"
@@ -131,9 +158,13 @@ export default function CatalogPage() {
         <div className="text-center py-20 text-gray-500">
           No hay productos disponibles en este momento.
         </div>
+      ) : visibleProducts.length === 0 ? (
+        <div className="text-center py-20 text-gray-500">
+          No encontramos productos con ese criterio.
+        </div>
       ) : (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-          {products.map((p) => (
+          {visibleProducts.map((p) => (
             <ProductCard
               key={p.id}
               id={p.id}
