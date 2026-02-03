@@ -56,7 +56,8 @@ export default function ProductsPage() {
       setShowModal(false);
       loadData();
     } else {
-      alert("Error al guardar: " + res.error);
+      const details = res.details ? JSON.stringify(res.details, null, 2) : "";
+      alert(`Error al guardar: ${res.error}${details ? `\n\nDetalles:\n${details}` : ""}`);
     }
   };
 

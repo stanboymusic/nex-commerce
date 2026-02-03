@@ -43,7 +43,7 @@ export default function ProductForm({ initial = null, onSaved }: any) {
       // Prompt didn't explicitly ask for description in the form but API sends it. I'll check user prompt 63 again.
       // Step 63 ProductForm doesn't have description input. I will stick to what was asked.
 
-      if (estimatedArrivalDate) form.append("estimatedArrivalDate", new Date(estimatedArrivalDate).toISOString());
+      if (estimatedArrivalDate) form.append("estimatedArrivalDate", estimatedArrivalDate);
 
       // Single image
       if (file) form.append("image", file);

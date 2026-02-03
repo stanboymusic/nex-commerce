@@ -49,8 +49,16 @@ export async function saveProduct(formData: FormData) {
         return { success: true };
     } catch (error: any) {
         const details = error?.data || error?.response?.data;
+        const detailsJson = details ? JSON.stringify(details) : "";
         console.error("Error saving product:", details || error);
-        return { success: false, error: details?.message || error.message, details };
+        if (detailsJson) {
+            console.error("Error saving product (details):", detailsJson);
+        }
+        return {
+            success: false,
+            error: details?.message || error.message,
+            details
+        };
     }
 }
 
