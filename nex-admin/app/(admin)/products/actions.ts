@@ -35,10 +35,11 @@ export async function saveProduct(formData: FormData) {
     try {
         const pb = await getAdminPB();
         const id = formData.get("id") as string;
+        // PB does not accept "id" as an updatable field
+        formData.delete("id");
 
         // Remove ID from formData before sending to PB if we are creating
         if (!id) {
-            formData.delete("id");
             await pb.collection("products").create(formData);
         } else {
             await pb.collection("products").update(id, formData);
@@ -47,8 +48,9 @@ export async function saveProduct(formData: FormData) {
         revalidatePath("/(admin)/products");
         return { success: true };
     } catch (error: any) {
-        console.error("Error saving product:", error);
-        return { success: false, error: error.message };
+        const details = error?.data || error?.response?.data;
+        console.error("Error saving product:", details || error);
+        return { success: false, error: details?.message || error.message, details };
     }
 }
 
