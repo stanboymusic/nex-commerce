@@ -14,7 +14,11 @@ export async function POST(req: Request) {
 
     if (!form.get("method")) form.set("method", "KONTIGO");
 
-    if (!hasFile && !form.get("instructions")) {
+    const instructions = form.get("kontigoInstructions");
+    const hasInstructions =
+      typeof instructions === "string" && instructions.trim().length > 0;
+
+    if (!hasFile && !hasInstructions) {
       return NextResponse.json(
         { error: "No data provided" },
         { status: 400 }

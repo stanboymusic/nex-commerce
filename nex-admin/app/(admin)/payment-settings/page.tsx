@@ -9,6 +9,31 @@ export default function PaymentSettingsPage() {
     const [success, setSuccess] = useState(false);
     const [currentQr, setCurrentQr] = useState<string | null>(null);
     const [instructions, setInstructions] = useState("");
+    const allowedMimeTypes = new Set([
+        "image/jpeg",
+        "image/png",
+        "image/svg+xml",
+        "image/gif",
+        "image/webp"
+    ]);
+    const mimeByExt: Record<string, string> = {
+        jpg: "image/jpeg",
+        jpeg: "image/jpeg",
+        png: "image/png",
+        svg: "image/svg+xml",
+        gif: "image/gif",
+        webp: "image/webp"
+    };
+    const normalizeImageFile = (file: File) => {
+        if (allowedMimeTypes.has(file.type)) return file;
+        const parts = file.name.split(".");
+        const ext = parts.length > 1 ? parts[parts.length - 1].toLowerCase() : "";
+        const inferred = mimeByExt[ext];
+        if (inferred && allowedMimeTypes.has(inferred)) {
+            return new File([file], file.name, { type: inferred });
+        }
+        return null;
+    };
 
     useEffect(() => {
         const fetchSettings = async () => {
@@ -31,6 +56,16 @@ export default function PaymentSettingsPage() {
         setSuccess(false);
 
         const form = new FormData(e.currentTarget);
+        const qrFile = form.get("kontigoQr");
+        if (qrFile instanceof File && qrFile.size > 0) {
+            const normalized = normalizeImageFile(qrFile);
+            if (!normalized) {
+                alert("QR inválido. Usa JPG, PNG, SVG, GIF o WebP.");
+                setLoading(false);
+                return;
+            }
+            form.set("kontigoQr", normalized);
+        }
 
         try {
             // This hits src/app/api/admin/payment-settings/route.ts
@@ -49,9 +84,10 @@ export default function PaymentSettingsPage() {
             } else {
                 alert("Error al guardar la configuración");
             }
-        } catch (err) {
+        } catch (err: any) {
             console.error(err);
-            alert("Error al conectar con el servidor");
+            const message = err?.response?.data?.error || "Error al conectar con el servidor";
+            alert(message);
         } finally {
             setLoading(false);
         }
