@@ -22,7 +22,11 @@ export async function getAdminPB(): Promise<PocketBase> {
 
     try {
         if (!email || !password) {
+<<<<<<< ours
             const cookieStore = cookies();
+=======
+            const cookieStore = await cookies();
+>>>>>>> theirs
             const token = cookieStore.get('pb_auth')?.value;
             if (!token) {
                 throw new Error('Missing PB admin credentials and no auth cookie found.');
