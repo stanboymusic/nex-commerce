@@ -112,6 +112,11 @@ export default function CheckoutPage() {
         await axios.post('/api/payments/kontigo/report', {
           orderId,
           reference: kontigoReference || 'PENDING'
+        }, {
+          headers: {
+            Authorization: `Bearer ${token}`
+          },
+          withCredentials: true
         });
 
       } else if (paymentMethod === 'BINANCE') {
