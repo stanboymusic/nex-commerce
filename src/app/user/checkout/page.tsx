@@ -243,7 +243,7 @@ export default function CheckoutPage() {
                     title="Kontigo"
                     description="Paga con tarjeta o transferencia local"
                     selected={paymentMethod === 'KONTIGO'}
-                    onClick={() => setPaymentMethod('KONTIGO')}
+                    onClick={() => { setCurrency('USD'); setPaymentMethod('KONTIGO'); }}
                     icon={<CreditCard className="w-5 h-5" />}
                   />
                   <PaymentOption
@@ -271,6 +271,13 @@ export default function CheckoutPage() {
                     selected={paymentMethod === 'BINANCE'}
                     onClick={() => setPaymentMethod('BINANCE')}
                     icon={<Coins className="w-5 h-5" />}
+                  />
+                  <PaymentOption
+                    title="Kontigo"
+                    description="Paga con USDC (equivale a USD)"
+                    selected={paymentMethod === 'KONTIGO'}
+                    onClick={() => setPaymentMethod('KONTIGO')}
+                    icon={<CreditCard className="w-5 h-5" />}
                   />
                 </>
               )}

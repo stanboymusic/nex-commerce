@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { Upload, Save, CheckCircle, AlertCircle, Image as ImageIcon, RefreshCw } from "lucide-react";
+import { apiClient } from "@/lib/apiClient";
 
 export default function PaymentSettingsPage() {
     const [loading, setLoading] = useState(false);
@@ -12,8 +13,7 @@ export default function PaymentSettingsPage() {
     useEffect(() => {
         const fetchSettings = async () => {
             try {
-                const res = await fetch("/api/settings"); // Public settings endpoint
-                const data = await res.json();
+                const { data } = await apiClient.get("/settings");
                 if (data) {
                     setCurrentQr(data.kontigoQR);
                     setInstructions(data.kontigoInstructions);
@@ -34,15 +34,14 @@ export default function PaymentSettingsPage() {
 
         try {
             // This hits src/app/api/admin/payment-settings/route.ts
-            const res = await fetch("/api/admin/payment-settings", {
-                method: "POST",
-                body: form
+            const res = await apiClient.post("/admin/payment-settings", form, {
+                headers: { "Content-Type": "multipart/form-data" }
             });
 
-            if (res.ok) {
+            if (res.status >= 200 && res.status < 300) {
                 setSuccess(true);
                 // Refresh preview
-                const data = await fetch("/api/settings").then(r => r.json());
+                const { data } = await apiClient.get("/settings");
                 if (data) {
                     setCurrentQr(data.kontigoQR);
                 }

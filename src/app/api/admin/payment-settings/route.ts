@@ -9,8 +9,8 @@ export async function POST(req: Request) {
 
     // VALIDACIÓN CRÍTICA
     const hasFile =
-      form.get("qrImage") instanceof File &&
-      (form.get("qrImage") as File).size > 0;
+      form.get("kontigoQr") instanceof File &&
+      (form.get("kontigoQr") as File).size > 0;
 
     if (!form.get("method")) form.set("method", "KONTIGO");
 

@@ -11,7 +11,7 @@ export async function GET() {
         const rateRecord = await pb.collection("exchange_rates").getFirstListItem('targetCurrency="COP" && active=true').catch(() => null);
 
         // Fetch Kontigo settings
-        const paymentRecord = await pb.collection("payment_settings").getFirstListItem('method="kontigo"').catch(() => null);
+        const paymentRecord = await pb.collection("payment_settings").getFirstListItem('method="KONTIGO"').catch(() => null);
 
         return NextResponse.json({
             usdToCopRate: rateRecord?.rate || 4000,
