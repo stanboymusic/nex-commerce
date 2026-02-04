@@ -38,6 +38,8 @@ export default function CheckoutPage() {
   const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>('CASH_COP')
   const [estimatedDelivery, setEstimatedDelivery] = useState('')
   const [binanceTxHash, setBinanceTxHash] = useState('')
+  const [binanceProof, setBinanceProof] = useState<File | null>(null)
+  const [binanceProofPreview, setBinanceProofPreview] = useState<string | null>(null)
   const [kontigoReference, setKontigoReference] = useState('')
   const [kontigoProof, setKontigoProof] = useState<File | null>(null)
   const [kontigoProofPreview, setKontigoProofPreview] = useState<string | null>(null)
@@ -90,6 +92,10 @@ export default function CheckoutPage() {
       setError('Debes subir el comprobante de pago para continuar')
       return
     }
+    if (paymentMethod === 'BINANCE' && (!binanceTxHash || !binanceProof)) {
+      setError('Debes ingresar el hash y subir el comprobante de Binance')
+      return
+    }
 
     setLoading(true)
     setError(null)
@@ -119,6 +125,19 @@ export default function CheckoutPage() {
         const formData = new FormData();
         if (kontigoReference) formData.append('reference', kontigoReference);
         if (kontigoProof) formData.append('paymentProof', kontigoProof);
+
+        await axios.post(`/api/orders/${orderId}/report-payment`, formData, {
+          headers: {
+            Authorization: `Bearer ${token}`
+          },
+          withCredentials: true
+        });
+      }
+
+      if (paymentMethod === 'BINANCE') {
+        const formData = new FormData();
+        formData.append('binanceTxHash', binanceTxHash);
+        if (binanceProof) formData.append('paymentProof', binanceProof);
 
         await axios.post(`/api/orders/${orderId}/report-payment`, formData, {
           headers: {
@@ -199,6 +218,28 @@ export default function CheckoutPage() {
                 className="w-full p-4 rounded-xl border border-gray-200 outline-none"
                 placeholder="Ingresa el hash de la transacción..."
               />
+              <div className="mt-4">
+                <label className="text-sm font-bold text-oxford mb-2 block">Comprobante de pago (obligatorio)</label>
+                <input
+                  type="file"
+                  accept="image/*"
+                  onChange={(e) => {
+                    const file = e.target.files?.[0] || null;
+                    setBinanceProof(file);
+                    setBinanceProofPreview(file ? URL.createObjectURL(file) : null);
+                  }}
+                  className="w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-xl file:border-0 file:text-sm file:font-bold file:bg-purple/10 file:text-purple hover:file:bg-purple/20 transition-all cursor-pointer"
+                />
+                {binanceProofPreview && (
+                  <div className="mt-3 flex justify-center">
+                    <img
+                      src={binanceProofPreview}
+                      alt="Comprobante de Binance"
+                      className="max-w-[220px] rounded-xl border border-gray-200 shadow-sm"
+                    />
+                  </div>
+                )}
+              </div>
             </section>
           )}
 

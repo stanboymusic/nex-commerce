@@ -18,6 +18,7 @@ export async function POST(
 
     const formData = await req.formData();
     const reference = formData.get('reference') as string;
+    const binanceTxHash = formData.get('binanceTxHash') as string;
     const file = formData.get('paymentProof') as File;
 
     if (!file) {
@@ -31,9 +32,16 @@ export async function POST(
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
     }
 
+    if (reference) {
+      formData.append('paymentReference', reference);
+    }
+    if (binanceTxHash) {
+      formData.append('paymentMethod', 'BINANCE');
+      formData.append('binanceTxHash', binanceTxHash);
+    }
+
     formData.append('paymentStatus', 'REPORTED');
     formData.append('paymentReportedAt', new Date().toISOString());
-
     formData.append('status', 'PAYMENT_REPORTED');
 
     const adminPb = await getAdminPocketBase();

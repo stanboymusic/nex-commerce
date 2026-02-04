@@ -28,6 +28,7 @@ interface Order {
   currency: string
   status: OrderStatus
   paymentReference?: string
+  binanceTxHash?: string
   user?: {
     name: string
     email?: string
@@ -165,6 +166,11 @@ export default function AdminOrdersPage() {
                         {order.paymentReference && (
                           <span className="text-[10px] bg-blue-50 px-2.5 py-1 rounded-lg font-black text-blue-600 border border-blue-100 w-fit tracking-wider">
                             REF: {order.paymentReference}
+                          </span>
+                        )}
+                        {order.binanceTxHash && (
+                          <span className="text-[10px] bg-emerald-50 px-2.5 py-1 rounded-lg font-black text-emerald-700 border border-emerald-100 w-fit tracking-wider">
+                            BINANCE: {order.binanceTxHash}
                           </span>
                         )}
                       </div>
