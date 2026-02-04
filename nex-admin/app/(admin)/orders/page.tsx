@@ -310,7 +310,7 @@ export default function OrdersPage() {
                     </div>
                   </div>
 
-                  {selected?.items?.some((it: any) => it.product?.isPreorder) && (
+                  {selected?.items?.some((it: any) => it.product?.isPreorder) && !selected?.estimatedDeliveryDate && (
                     <div className="mb-10 bg-amber-50 border border-amber-100 rounded-[30px] p-6 space-y-4">
                       <div className="flex items-center gap-3">
                         <Package className="w-5 h-5 text-amber-600" />
@@ -348,11 +348,20 @@ export default function OrdersPage() {
                           Asignar y notificar
                         </button>
                       </div>
-                      {selected?.estimatedDeliveryDate && (
-                        <p className="text-xs text-amber-800 font-medium">
-                          Fecha actual: {new Date(selected.estimatedDeliveryDate).toLocaleDateString()}
-                        </p>
-                      )}
+                    </div>
+                  )}
+
+                  {selected?.items?.some((it: any) => it.product?.isPreorder) && selected?.estimatedDeliveryDate && (
+                    <div className="mb-10 bg-emerald-50 border border-emerald-100 rounded-[30px] p-6">
+                      <div className="flex items-center gap-3">
+                        <CheckCircle className="w-5 h-5 text-emerald-600" />
+                        <div>
+                          <h4 className="text-sm font-black text-emerald-900">Preventa: fecha asignada</h4>
+                          <p className="text-xs text-emerald-700 font-medium">
+                            Fecha actual: {new Date(selected.estimatedDeliveryDate).toLocaleDateString()}
+                          </p>
+                        </div>
+                      </div>
                     </div>
                   )}
 

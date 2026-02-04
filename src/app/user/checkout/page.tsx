@@ -36,7 +36,6 @@ export default function CheckoutPage() {
   const [notes, setNotes] = useState('')
   const [currency, setCurrency] = useState<Currency>('COP')
   const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>('CASH_COP')
-  const [estimatedDelivery, setEstimatedDelivery] = useState('')
   const [binanceTxHash, setBinanceTxHash] = useState('')
   const [binanceProof, setBinanceProof] = useState<File | null>(null)
   const [binanceProofPreview, setBinanceProofPreview] = useState<string | null>(null)
@@ -81,8 +80,6 @@ export default function CheckoutPage() {
     return baseTotal * rate; // to COP
   }
 
-  const hasPreorder = items.some(item => item.isPreorder);
-
   const handlePlaceOrder = async () => {
     if (!address) {
       setError('La dirección de envío es obligatoria')
@@ -110,7 +107,7 @@ export default function CheckoutPage() {
         notes,
         binanceTxHash: paymentMethod === 'BINANCE' ? binanceTxHash : undefined,
         kontigoReference: paymentMethod === 'KONTIGO' ? (kontigoReference || 'PENDING') : undefined,
-        estimatedDelivery: !hasPreorder ? (estimatedDelivery || undefined) : undefined
+        estimatedDelivery: undefined
       }, {
         headers: {
           Authorization: `Bearer ${token}`
@@ -360,18 +357,6 @@ export default function CheckoutPage() {
             />
           </section>
 
-          {!hasPreorder && (
-            <section>
-              <label htmlFor="estimatedDelivery" className="text-xl font-bold text-oxford mb-4 block cursor-pointer">Fecha estimada de entrega (opcional)</label>
-              <input
-                id="estimatedDelivery"
-                type="date"
-                value={estimatedDelivery}
-                onChange={(e) => setEstimatedDelivery(e.target.value)}
-                className="w-full p-4 rounded-xl border border-gray-200 outline-none"
-              />
-            </section>
-          )}
         </div>
 
         {/* Order Summary Sidebar */}

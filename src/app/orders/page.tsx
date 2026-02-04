@@ -158,6 +158,11 @@ function OrdersContent() {
                     <div>
                       <p className="text-xs text-gray-500 uppercase font-bold tracking-wider">Orden #{order.id.slice(-6).toUpperCase()}</p>
                       <p className="text-sm text-gray-400">{new Date(order.createdAt).toLocaleDateString()}</p>
+                      {order.estimatedDeliveryDate && (
+                        <p className="text-xs text-emerald-600 font-bold mt-2">
+                          Fecha asignada de entrega: {new Date(order.estimatedDeliveryDate).toLocaleDateString()}
+                        </p>
+                      )}
                     </div>
 
                     <div className="flex items-center gap-4">
