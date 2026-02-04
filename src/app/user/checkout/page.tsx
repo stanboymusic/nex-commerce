@@ -119,11 +119,21 @@ export default function CheckoutPage() {
         await axios.patch(`/api/orders/${orderId}`, {
           binanceTxHash,
           paymentStatus: 'REPORTED'
+        }, {
+          headers: {
+            Authorization: `Bearer ${token}`
+          },
+          withCredentials: true
         });
       } else if (paymentMethod.startsWith('CASH')) {
         // For cash methods, mark as reported
         await axios.patch(`/api/orders/${orderId}`, {
           paymentStatus: 'REPORTED'
+        }, {
+          headers: {
+            Authorization: `Bearer ${token}`
+          },
+          withCredentials: true
         });
       } else if (paymentMethod === 'KONTIGO') {
         const formData = new FormData();

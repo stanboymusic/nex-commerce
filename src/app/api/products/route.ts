@@ -10,7 +10,21 @@ export async function GET() {
       requestKey: null
     });
 
-    const products = records.map((r: any) => ({
+    const products = records.map((r: any) => {
+      const imageFiles = Array.isArray(r.image)
+        ? r.image
+        : r.image
+          ? [r.image]
+          : Array.isArray(r.images)
+            ? r.images
+            : [];
+
+      const images = imageFiles.map((f: string) => ({
+        id: f,
+        url: pb.files.getUrl(r, f)
+      }));
+
+      return {
       id: r.id,
       name: r.name,
       slug: r.slug,
@@ -23,15 +37,13 @@ export async function GET() {
       category: r.category ?? null,
 
       // principal
-      image: r.image ? pb.files.getUrl(r, r.image) : null,
+      image: images[0]?.url || null,
 
-      // gallery
-      gallery: Array.isArray(r.gallery)
-        ? r.gallery.map((f: string) => pb.files.getUrl(r, f))
-        : Array.isArray(r.images)
-          ? r.images.map((f: string) => pb.files.getUrl(r, f))
-          : []
-    }));
+      // images array
+      images,
+      gallery: images.slice(1).map((img: { id: string; url: string }) => img.url)
+    };
+    });
 
     return NextResponse.json(products);
   } catch (e: any) {

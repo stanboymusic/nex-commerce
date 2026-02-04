@@ -24,10 +24,17 @@ export async function GET(
         });
       }
 
-      const images = record.images ? record.images.map((filename: string) => ({
+      const imageFiles = Array.isArray(record.image)
+        ? record.image
+        : record.image
+          ? [record.image]
+          : Array.isArray(record.images)
+            ? record.images
+            : [];
+      const images = imageFiles.map((filename: string) => ({
         id: filename,
         url: pb.files.getUrl(record, filename)
-      })) : [];
+      }));
 
       const product = {
         id: record.id,

@@ -92,7 +92,7 @@ export default function ProductFormModal({ product, categories, onSave, onClose 
             formData.append("image", normalizedMain);
         }
         normalizedGallery.forEach((file) => {
-            if (file) formData.append("images", file);
+            if (file) formData.append("image", file);
         });
 
         // Handle the checkbox specifically as FormData often misses 'false' states
@@ -261,7 +261,7 @@ export default function ProductFormModal({ product, categories, onSave, onClose 
 
                             <input
                                 type="file"
-                                name="images"
+                                name="image"
                                 multiple
                                 accept="image/*"
                                 onChange={(e) => {

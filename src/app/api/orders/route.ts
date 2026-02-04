@@ -92,13 +92,14 @@ export async function POST(req: NextRequest) {
     for (const item of items) {
       const productId = item.productId || item.id;
       const product = productsMap[productId];
+      const quantity = Number(item.quantity || 0);
 
       try {
         await adminPb.collection("order_items").create({
           order: order.id,
           product: product.id,
           name: product.name,
-          quantity: item.quantity,
+          quantity,
           price: product.price
         });
       } catch (err: any) {
@@ -112,7 +113,7 @@ export async function POST(req: NextRequest) {
 
       // 5) Descontar stock SOLO si no es preventa
       if (!product.isPreorder) {
-        const newStock = Math.max(0, (product.stock || 0) - item.quantity);
+        const newStock = Math.max(0, Number(product.stock || 0) - quantity);
         try {
           await adminPb.collection("products").update(product.id, {
             stock: newStock

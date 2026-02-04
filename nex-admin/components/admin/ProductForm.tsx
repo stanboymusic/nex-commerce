@@ -88,7 +88,7 @@ export default function ProductForm({ initial = null, onSaved }: any) {
 
       // Gallery
       normalizedGallery.forEach((f) => {
-        if (f) form.append("images", f);
+        if (f) form.append("image", f);
       });
 
       const url = editing ? `/api/admin/products/${initial.id}` : `/api/admin/products`;

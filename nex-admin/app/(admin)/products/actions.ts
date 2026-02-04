@@ -21,8 +21,8 @@ export async function getProducts() {
             isPreorder: r.isPreorder,
             estimatedArrivalDate: r.estimatedArrivalDate,
             description: r.description,
-            image: r.image,
-            images: r.images,
+            image: Array.isArray(r.image) ? r.image[0] : r.image,
+            images: Array.isArray(r.image) ? r.image : r.images,
             created: r.created
         }));
     } catch (error) {
