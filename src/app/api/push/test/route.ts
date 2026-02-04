@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from 'next/server';
 import { initPocketBase } from '@/lib/pocketbase';
 import { sendPushToRole, sendPushToUser } from '@/lib/push';
 
+export const runtime = 'nodejs';
+
 export async function POST(req: NextRequest) {
   try {
     const pb = await initPocketBase(req);

@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from 'next/server';
 import { initPocketBase } from '@/lib/pocketbase';
 import { getAdminPocketBase } from '@/lib/admin';
 
+export const runtime = 'nodejs';
+
 export async function POST(req: NextRequest) {
   try {
     const pb = await initPocketBase(req);

@@ -40,6 +40,8 @@ export async function sendPushToUser(userId: string, payload: any) {
         const status = error?.statusCode || error?.status;
         if (status === 404 || status === 410) {
           await removeSubscriptionById(sub.id);
+        } else {
+          console.error('PUSH_SEND_ERROR:', error?.message || error);
         }
       }
     }));
@@ -66,6 +68,8 @@ export async function sendPushToRole(role: 'ADMIN' | 'USER', payload: any) {
         const status = error?.statusCode || error?.status;
         if (status === 404 || status === 410) {
           await removeSubscriptionById(sub.id);
+        } else {
+          console.error('PUSH_SEND_ERROR:', error?.message || error);
         }
       }
     }));
