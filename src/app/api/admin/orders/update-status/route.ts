@@ -51,7 +51,8 @@ export async function POST(req: Request) {
         status: newStatus,
         message: getDefaultStatusMessage(newStatus),
         visibleToUser: true,
-        actorRole: 'ADMIN'
+        actorRole: 'ADMIN',
+        notifyUserId: order.user
       });
     }
     return NextResponse.json({ success: true, order: updated });

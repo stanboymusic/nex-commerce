@@ -19,7 +19,8 @@ export async function POST(req: Request) {
       status: "CANCELLED",
       message: getDefaultStatusMessage("CANCELLED"),
       visibleToUser: true,
-      actorRole: 'ADMIN'
+      actorRole: 'ADMIN',
+      notifyUserId: existing.user
     });
   }
 

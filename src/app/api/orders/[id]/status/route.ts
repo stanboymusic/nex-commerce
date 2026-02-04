@@ -33,7 +33,8 @@ export async function PATCH(
         message: getDefaultStatusMessage(status),
         visibleToUser: true,
         actorRole: 'ADMIN',
-        actorId: user.id
+        actorId: user.id,
+        notifyUserId: existing.user
       })
     }
 

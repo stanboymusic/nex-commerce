@@ -20,7 +20,8 @@ export async function POST(req: Request) {
             status: "CONFIRMED",
             message: getDefaultStatusMessage("CONFIRMED"),
             visibleToUser: true,
-            actorRole: 'ADMIN'
+            actorRole: 'ADMIN',
+            notifyUserId: existing.user
           });
         }
 

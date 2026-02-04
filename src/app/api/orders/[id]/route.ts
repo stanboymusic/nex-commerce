@@ -72,7 +72,8 @@ export async function PATCH(
         message: statusMessage || getDefaultStatusMessage(data.status),
         visibleToUser: statusVisible !== false,
         actorRole: 'ADMIN',
-        actorId: (user as any).id
+        actorId: (user as any).id,
+        notifyUserId: existing.user
       });
     } else if (statusMessage) {
       await recordOrderStatusEvent({
@@ -82,7 +83,8 @@ export async function PATCH(
         message: statusMessage,
         visibleToUser: statusVisible !== false,
         actorRole: 'ADMIN',
-        actorId: (user as any).id
+        actorId: (user as any).id,
+        notifyUserId: existing.user
       });
     }
 
