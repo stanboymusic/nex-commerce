@@ -102,6 +102,7 @@ export default function CheckoutPage() {
         paymentMethod,
         address,
         notes,
+        binanceTxHash: paymentMethod === 'BINANCE' ? binanceTxHash : undefined,
         kontigoReference: paymentMethod === 'KONTIGO' ? (kontigoReference || 'PENDING') : undefined,
         estimatedDelivery: estimatedDelivery || undefined
       }, {
@@ -114,28 +115,7 @@ export default function CheckoutPage() {
       const orderId = response.data.order.id;
 
       // Handle payment methods
-      if (paymentMethod === 'BINANCE') {
-        // Update order with binanceTxHash
-        await axios.patch(`/api/orders/${orderId}`, {
-          binanceTxHash,
-          paymentStatus: 'REPORTED'
-        }, {
-          headers: {
-            Authorization: `Bearer ${token}`
-          },
-          withCredentials: true
-        });
-      } else if (paymentMethod.startsWith('CASH')) {
-        // For cash methods, mark as reported
-        await axios.patch(`/api/orders/${orderId}`, {
-          paymentStatus: 'REPORTED'
-        }, {
-          headers: {
-            Authorization: `Bearer ${token}`
-          },
-          withCredentials: true
-        });
-      } else if (paymentMethod === 'KONTIGO') {
+      if (paymentMethod === 'KONTIGO') {
         const formData = new FormData();
         if (kontigoReference) formData.append('reference', kontigoReference);
         if (kontigoProof) formData.append('paymentProof', kontigoProof);

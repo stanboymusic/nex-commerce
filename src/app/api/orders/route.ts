@@ -16,7 +16,7 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
     const body = await req.json();
-    const { items, address, notes, currency = "COP", paymentMethod, kontigoReference } = body;
+    const { items, address, notes, currency = "COP", paymentMethod, kontigoReference, binanceTxHash } = body;
 
     if (!items || items.length === 0) {
       return NextResponse.json({ error: "No items" }, { status: 400 });
@@ -77,9 +77,14 @@ export async function POST(req: NextRequest) {
       totalUSD,
       totalLocal,
       exchangeRate,
-      status: paymentMethod === "KONTIGO" ? "PAYMENT_REPORTED" : "PENDING_PAYMENT",
-      paymentStatus: paymentMethod === "KONTIGO" ? "REPORTED" : "UNPAID",
+      status: paymentMethod === "KONTIGO" || paymentMethod?.startsWith("CASH") || paymentMethod === "BINANCE"
+        ? "PAYMENT_REPORTED"
+        : "PENDING_PAYMENT",
+      paymentStatus: paymentMethod === "KONTIGO" || paymentMethod?.startsWith("CASH") || paymentMethod === "BINANCE"
+        ? "REPORTED"
+        : "UNPAID",
       paymentReference: paymentMethod === "KONTIGO" ? (kontigoReference || "PENDING") : null,
+      binanceTxHash: paymentMethod === "BINANCE" ? (binanceTxHash || null) : null,
       paymentReportedAt: paymentMethod === "KONTIGO" ? new Date().toISOString() : null,
       address,
       notes,

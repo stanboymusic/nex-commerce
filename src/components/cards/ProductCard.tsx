@@ -42,7 +42,7 @@ export default function ProductCard({ id, name, slug, price, image, stock, isPre
       <Link href={`/product/${slug}`} className="relative h-56 w-full block bg-muted/30">
         {image ? (
           <Image
-            src={getPBImageUrl("products", id, image)}
+            src={image.startsWith("http") ? image : getPBImageUrl("products", id, image)}
             alt={name}
             fill
             className="object-contain p-4"
