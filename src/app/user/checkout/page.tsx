@@ -96,6 +96,7 @@ export default function CheckoutPage() {
         paymentMethod,
         address,
         notes,
+        kontigoReference: paymentMethod === 'KONTIGO' ? (kontigoReference || 'PENDING') : undefined,
         estimatedDelivery: estimatedDelivery || undefined
       }, {
         headers: {
@@ -107,19 +108,7 @@ export default function CheckoutPage() {
       const orderId = response.data.order.id;
 
       // Handle payment methods
-      if (paymentMethod === 'KONTIGO') {
-        // Report manual payment
-        await axios.post('/api/payments/kontigo/report', {
-          orderId,
-          reference: kontigoReference || 'PENDING'
-        }, {
-          headers: {
-            Authorization: `Bearer ${token}`
-          },
-          withCredentials: true
-        });
-
-      } else if (paymentMethod === 'BINANCE') {
+      if (paymentMethod === 'BINANCE') {
         // Update order with binanceTxHash
         await axios.patch(`/api/orders/${orderId}`, {
           binanceTxHash,
