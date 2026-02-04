@@ -97,7 +97,9 @@ export async function POST(req: NextRequest) {
     for (const item of items) {
       const productId = item.productId || item.id;
       const product = productsMap[productId];
-      const quantity = Number(item.quantity || 0);
+      const quantity = Number(
+        item.quantity ?? item.qty ?? item.count ?? item.amount ?? 0
+      );
 
       try {
         await adminPb.collection("order_items").create({
@@ -119,21 +121,35 @@ export async function POST(req: NextRequest) {
       // 5) Descontar stock SOLO si no es preventa
       if (!product.isPreorder) {
         const currentStock = Number(product.stock);
-        if (!Number.isFinite(currentStock)) {
+        if (!Number.isFinite(currentStock) || !Number.isFinite(quantity)) {
           console.error("STOCK_UPDATE_ERROR: invalid current stock", {
             productId,
-            stock: product.stock
+            stock: product.stock,
+            quantity: item.quantity
           });
           itemErrors.push({
             productId,
             step: "update_stock",
-            message: "Invalid current stock value"
+            message: "Invalid current stock or quantity value"
           });
         } else {
           const newStock = Math.max(0, currentStock - quantity);
+          if (!Number.isFinite(newStock)) {
+            console.error("STOCK_UPDATE_ERROR: invalid computed stock", {
+              productId,
+              currentStock,
+              quantity
+            });
+            itemErrors.push({
+              productId,
+              step: "update_stock",
+              message: "Invalid computed stock value"
+            });
+            continue;
+          }
           try {
             await adminPb.collection("products").update(product.id, {
-              stock: newStock
+              stock: Number(newStock)
             });
           } catch (err: any) {
             console.error("STOCK_UPDATE_ERROR:", err?.data || err);
