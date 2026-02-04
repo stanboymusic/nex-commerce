@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { initPocketBase } from '@/lib/pocketbase'
+import { getAdminPocketBase } from '@/lib/admin'
 
 export async function GET(
   req: NextRequest,
@@ -7,7 +8,7 @@ export async function GET(
 ) {
   try {
     const { id } = await params
-    const pb = await initPocketBase(req);
+    const pb = await getAdminPocketBase();
 
     // Attempt to fetch by ID or Slug
     try {

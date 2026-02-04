@@ -47,12 +47,15 @@ export const useCartStore = create<CartState>()(
         }
 
         // Sync with backend if logged in
-        const user = useAuthStore.getState().user
-        if (user) {
+        const { user, token } = useAuthStore.getState()
+        if (user && token) {
           try {
             await axios.post('/api/cart', {
               productId: newItem.id,
               quantity: newItem.quantity
+            }, {
+              headers: { Authorization: `Bearer ${token}` },
+              withCredentials: true
             })
           } catch (error) {
             console.error("Failed to sync cart add:", error)
@@ -65,10 +68,13 @@ export const useCartStore = create<CartState>()(
         set({ items: get().items.filter(item => item.id !== id) })
 
         // Sync with backend if logged in
-        const user = useAuthStore.getState().user
-        if (user) {
+        const { user, token } = useAuthStore.getState()
+        if (user && token) {
           try {
-            await axios.delete(`/api/cart?productId=${id}`)
+            await axios.delete(`/api/cart?productId=${id}`, {
+              headers: { Authorization: `Bearer ${token}` },
+              withCredentials: true
+            })
           } catch (error) {
             console.error("Failed to sync cart remove:", error)
           }
@@ -89,12 +95,15 @@ export const useCartStore = create<CartState>()(
         })
 
         // Sync with backend if logged in
-        const user = useAuthStore.getState().user
-        if (user) {
+        const { user, token } = useAuthStore.getState()
+        if (user && token) {
           try {
             await axios.put('/api/cart', {
               productId: id,
               quantity: quantity
+            }, {
+              headers: { Authorization: `Bearer ${token}` },
+              withCredentials: true
             })
           } catch (error) {
             console.error("Failed to sync cart update:", error)
@@ -120,7 +129,11 @@ export const useCartStore = create<CartState>()(
 
       loadFromBackend: async () => {
         try {
-          const response = await axios.get('/api/cart');
+          const { token } = useAuthStore.getState()
+          const response = await axios.get('/api/cart', token ? {
+            headers: { Authorization: `Bearer ${token}` },
+            withCredentials: true
+          } : undefined);
           if (response.data && response.data.items) {
             // Replace local items with backend items to avoid "ghost items"
             // Or merge? User said "not in cache", implies backend is truth.
