@@ -151,16 +151,43 @@ export async function POST(req: NextRequest) {
             // Use direct REST call to avoid SDK quirks with numeric zero
             const baseUrl = adminPb.baseUrl || (process.env.PB_URL || process.env.POCKETBASE_URL || process.env.NEXT_PUBLIC_POCKETBASE_URL || 'https://nexcommerce.fly.dev');
             const url = baseUrl.startsWith('http') ? baseUrl : `https://${baseUrl}`;
+            const payload = { stock: Number.isFinite(newStock) ? Math.round(newStock) : newStock };
             const resp = await fetch(`${url}/api/collections/products/records/${product.id}`, {
               method: 'PATCH',
               headers: {
                 'Content-Type': 'application/json',
                 Authorization: `Bearer ${adminPb.authStore.token}`
               },
-              body: JSON.stringify({ stock: newStock })
+              body: JSON.stringify(payload)
             });
             if (!resp.ok) {
               const text = await resp.text();
+              let parsed: any = null;
+              try { parsed = JSON.parse(text); } catch (_) { /* ignore */ }
+              // Fallback: include required fields if PB treats stock as blank
+              if (parsed?.data?.stock?.code === 'validation_required') {
+                const fallbackPayload = {
+                  stock: payload.stock,
+                  name: product.name,
+                  slug: product.slug,
+                  price: product.price,
+                  category: product.category,
+                  user: product.user
+                };
+                const retry = await fetch(`${url}/api/collections/products/records/${product.id}`, {
+                  method: 'PATCH',
+                  headers: {
+                    'Content-Type': 'application/json',
+                    Authorization: `Bearer ${adminPb.authStore.token}`
+                  },
+                  body: JSON.stringify(fallbackPayload)
+                });
+                if (retry.ok) {
+                  continue;
+                }
+                const retryText = await retry.text();
+                throw new Error(retryText || text || `HTTP ${resp.status}`);
+              }
               throw new Error(text || `HTTP ${resp.status}`);
             }
           } catch (err: any) {
