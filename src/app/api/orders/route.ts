@@ -118,18 +118,31 @@ export async function POST(req: NextRequest) {
 
       // 5) Descontar stock SOLO si no es preventa
       if (!product.isPreorder) {
-        const newStock = Math.max(0, Number(product.stock || 0) - quantity);
-        try {
-          await adminPb.collection("products").update(product.id, {
-            stock: newStock
+        const currentStock = Number(product.stock);
+        if (!Number.isFinite(currentStock)) {
+          console.error("STOCK_UPDATE_ERROR: invalid current stock", {
+            productId,
+            stock: product.stock
           });
-        } catch (err: any) {
-          console.error("STOCK_UPDATE_ERROR:", err);
           itemErrors.push({
             productId,
             step: "update_stock",
-            message: err?.message || "Failed to update stock"
+            message: "Invalid current stock value"
           });
+        } else {
+          const newStock = Math.max(0, currentStock - quantity);
+          try {
+            await adminPb.collection("products").update(product.id, {
+              stock: newStock
+            });
+          } catch (err: any) {
+            console.error("STOCK_UPDATE_ERROR:", err?.data || err);
+            itemErrors.push({
+              productId,
+              step: "update_stock",
+              message: err?.data?.message || err?.message || "Failed to update stock"
+            });
+          }
         }
       }
     }
