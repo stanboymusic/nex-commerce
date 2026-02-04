@@ -301,13 +301,6 @@ export default function CheckoutPage() {
               {currency === 'COP' && (
                 <>
                   <PaymentOption
-                    title="Kontigo"
-                    description="Paga con tarjeta o transferencia local"
-                    selected={paymentMethod === 'KONTIGO'}
-                    onClick={() => { setCurrency('USD'); setPaymentMethod('KONTIGO'); }}
-                    icon={<CreditCard className="w-5 h-5" />}
-                  />
-                  <PaymentOption
                     title="Efectivo COP"
                     description="Paga al reportar tu comprobante"
                     selected={paymentMethod === 'CASH_COP'}
