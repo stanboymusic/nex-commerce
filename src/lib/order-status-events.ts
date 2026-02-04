@@ -1,4 +1,5 @@
 import { sendPushToRole, sendPushToUser } from './push';
+import { sendOneSignalToRole, sendOneSignalToUser } from './onesignal';
 
 export type OrderStatus =
   | 'PENDING_PAYMENT'
@@ -64,12 +65,22 @@ export async function recordOrderStatusEvent({
         body: text,
         data: { orderId, url: '/orders' }
       });
+      await sendOneSignalToUser(notifyUserId, {
+        title: 'Actualización de pedido',
+        body: text,
+        url: '/orders'
+      });
     }
     if (notifyAdmins) {
       await sendPushToRole('ADMIN', {
         title: 'Actualización de pedido',
         body: text,
         data: { orderId, url: '/orders' }
+      });
+      await sendOneSignalToRole('ADMIN', {
+        title: 'Actualización de pedido',
+        body: text,
+        url: '/orders'
       });
     }
   } catch (error) {

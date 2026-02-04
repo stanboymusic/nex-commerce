@@ -33,7 +33,14 @@ export default function PushSubscriptionManager() {
           : Notification.permission
         if (permission !== 'granted') return
 
-        const registration = await navigator.serviceWorker.register('/sw.js')
+        const registrations = await navigator.serviceWorker.getRegistrations()
+        registrations.forEach((reg) => {
+          if (reg.active?.scriptURL?.endsWith('/sw.js')) {
+            reg.unregister()
+          }
+        })
+
+        const registration = await navigator.serviceWorker.register('/push/sw.js', { scope: '/push/' })
         let subscription = await registration.pushManager.getSubscription()
         if (!subscription) {
           subscription = await registration.pushManager.subscribe({

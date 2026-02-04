@@ -2,6 +2,8 @@ import "./globals.css";
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import MainLayout from "@/components/layout/MainLayout";
+import Script from "next/script";
+import OneSignalInit from "@/components/notifications/OneSignalInit";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -26,6 +28,8 @@ export default function RootLayout({
   return (
     <html lang="es">
       <body className={`${geistSans.variable} ${geistMono.variable} antialiased`}>
+        <Script src="https://cdn.onesignal.com/sdks/web/v16/OneSignalSDK.page.js" strategy="afterInteractive" />
+        <OneSignalInit />
         <MainLayout>{children}</MainLayout>
       </body>
     </html>
