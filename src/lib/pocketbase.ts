@@ -64,7 +64,11 @@ export async function initPocketBase(req: NextRequest): Promise<PocketBase> {
         const token = client.authStore.token;
         const payload = JSON.parse(Buffer.from(token.split('.')[1], 'base64').toString('utf8'));
         if (payload?.collectionId === '_pb_users_auth_' && payload?.id) {
-          client.authStore.save(token, { id: payload.id, collectionId: payload.collectionId });
+          client.authStore.save(token, {
+            id: payload.id,
+            collectionId: payload.collectionId,
+            collectionName: payload.collectionName || 'users'
+          } as any);
         } else {
           client.authStore.clear();
         }
