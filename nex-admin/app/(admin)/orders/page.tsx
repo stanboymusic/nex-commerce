@@ -25,6 +25,8 @@ export default function OrdersPage() {
   } | null>(null);
   const [deliveryDate, setDeliveryDate] = useState("");
   const [deliveryMessage, setDeliveryMessage] = useState("");
+  const [shippingCost, setShippingCost] = useState("");
+  const [shippingMessage, setShippingMessage] = useState("");
 
   const statusOptions = [
     { value: "PENDING_PAYMENT", label: "Pendiente Pago" },
@@ -86,7 +88,14 @@ export default function OrdersPage() {
       setDeliveryDate("");
       setDeliveryMessage("");
     }
-  }, [selected?.id, selected?.status, selected?.estimatedDeliveryDate]);
+    if (typeof selected?.shippingCost === "number") {
+      setShippingCost(String(selected.shippingCost));
+      setShippingMessage(`Costo de envío asignado: ${selected.shippingCost} ${selected.currency}.`);
+    } else {
+      setShippingCost("");
+      setShippingMessage("");
+    }
+  }, [selected?.id, selected?.status, selected?.estimatedDeliveryDate, selected?.shippingCost, selected?.currency]);
 
   const approve = async (id: string) => {
     if (!confirm("¿Aprobar el pago de esta orden?")) return;
@@ -142,6 +151,31 @@ export default function OrdersPage() {
       load();
     } catch (err) {
       alert("Error al asignar la fecha de entrega");
+    }
+  };
+
+  const assignShippingCost = async () => {
+    if (!selected) return;
+    if (!shippingCost) return alert("Ingresa el costo de envío.");
+    const costValue = Number(shippingCost);
+    if (!Number.isFinite(costValue) || costValue < 0) {
+      return alert("Costo de envío inválido.");
+    }
+
+    const message = shippingMessage?.trim()
+      ? shippingMessage.trim()
+      : `Costo de envío asignado: ${costValue} ${selected.currency}.`;
+
+    if (!confirm("¿Asignar costo de envío y notificar al cliente?")) return;
+    try {
+      await apiClient.patch(`/orders/${selected.id}`, {
+        shippingCost: costValue,
+        statusMessage: message,
+        statusVisible: true
+      });
+      load();
+    } catch (err) {
+      alert("Error al asignar el costo de envío");
     }
   };
 
@@ -336,7 +370,53 @@ export default function OrdersPage() {
                           </div>
                         )}
                       </div>
+                  </div>
+                  </div>
+
+                  <div className="mb-10 bg-slate-50 border border-slate-100 rounded-[30px] p-6 space-y-4">
+                    <div className="flex items-center gap-3">
+                      <Truck className="w-5 h-5 text-slate-600" />
+                      <div>
+                        <h4 className="text-sm font-black text-slate-900">Costo de envío</h4>
+                        <p className="text-xs text-slate-600 font-medium">Opcional. Si se asigna, el cliente será notificado.</p>
+                      </div>
                     </div>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 items-end">
+                      <div>
+                        <label className="text-[9px] font-black text-slate-500 uppercase tracking-widest block mb-2">Monto</label>
+                        <input
+                          type="number"
+                          min="0"
+                          value={shippingCost}
+                          onChange={(e) => setShippingCost(e.target.value)}
+                          className="w-full bg-white border border-slate-200 px-4 py-3 rounded-2xl text-sm font-bold text-oxford outline-none focus:ring-4 focus:ring-slate-200/50"
+                          placeholder={`Ej: 15000 (${selected.currency})`}
+                        />
+                      </div>
+                      <div>
+                        <label className="text-[9px] font-black text-slate-500 uppercase tracking-widest block mb-2">Mensaje para el cliente</label>
+                        <input
+                          type="text"
+                          value={shippingMessage}
+                          onChange={(e) => setShippingMessage(e.target.value)}
+                          placeholder="Ej: El envío tiene un costo adicional."
+                          className="w-full bg-white border border-slate-200 px-4 py-3 rounded-2xl text-sm font-bold text-oxford outline-none focus:ring-4 focus:ring-slate-200/50"
+                        />
+                      </div>
+                    </div>
+                    <div className="flex justify-end">
+                      <button
+                        onClick={assignShippingCost}
+                        className="bg-slate-800 text-white px-6 py-3 rounded-2xl font-black text-xs hover:bg-slate-900 transition-all shadow-lg shadow-slate-900/10"
+                      >
+                        Asignar y notificar
+                      </button>
+                    </div>
+                    {typeof selected?.shippingCost === "number" && (
+                      <p className="text-xs text-slate-600 font-medium">
+                        Costo actual: {selected.shippingCost} {selected.currency}
+                      </p>
+                    )}
                   </div>
 
                   {selected?.items?.some((it: any) => it.product?.isPreorder) && !selected?.estimatedDeliveryDate && (

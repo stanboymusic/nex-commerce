@@ -447,7 +447,7 @@ export default function CheckoutPage() {
               </div>
               <div className="flex justify-between text-gray-500">
                 <span>Envío</span>
-                <span className="text-green-600 font-bold uppercase text-xs">Gratis</span>
+                <span className="text-gray-400 font-bold uppercase text-xs">Por definir</span>
               </div>
               <div className="flex justify-between text-2xl font-black text-oxford pt-2">
                 <span>Total</span>

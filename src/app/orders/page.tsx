@@ -179,6 +179,15 @@ function OrdersContent() {
                             ≈ ${order.totalLocal?.toLocaleString()} COP
                           </span>
                         )}
+                        {typeof order.shippingCost === 'number' ? (
+                          <span className="block text-[10px] bg-emerald-50 px-2 py-0.5 rounded font-bold text-emerald-700 uppercase mt-2">
+                            Envío: ${order.shippingCost.toLocaleString()} {order.currency}
+                          </span>
+                        ) : (
+                          <span className="block text-[10px] text-gray-400 font-bold uppercase mt-2">
+                            Envío por definir
+                          </span>
+                        )}
                       </div>
                     </div>
                   </div>

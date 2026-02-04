@@ -321,6 +321,7 @@ export async function GET(req: NextRequest) {
       paymentReportedAt: r.paymentReportedAt,
       paymentMethod: r.paymentMethod,
       binanceTxHash: r.binanceTxHash,
+      shippingCost: r.shippingCost,
       currency: r.currency,
         address: r.address,
         notes: r.notes,

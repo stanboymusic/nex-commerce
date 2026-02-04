@@ -52,6 +52,7 @@ export interface Order extends BaseRecord {
     paymentReference?: string;
     paymentReportedAt?: string;
     binanceTxHash?: string;
+    shippingCost?: number;
     expand?: {
         user?: User;
         'order_items(order)'?: OrderItem[]; // Reverse relation
