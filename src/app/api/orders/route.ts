@@ -148,15 +148,27 @@ export async function POST(req: NextRequest) {
             continue;
           }
           try {
-            const stockForm = new FormData();
-            stockForm.set("stock", String(Number(newStock)));
-            await adminPb.collection("products").update(product.id, stockForm);
+            // Use direct REST call to avoid SDK quirks with numeric zero
+            const baseUrl = adminPb.baseUrl || (process.env.PB_URL || process.env.POCKETBASE_URL || process.env.NEXT_PUBLIC_POCKETBASE_URL || 'https://nexcommerce.fly.dev');
+            const url = baseUrl.startsWith('http') ? baseUrl : `https://${baseUrl}`;
+            const resp = await fetch(`${url}/api/collections/products/records/${product.id}`, {
+              method: 'PATCH',
+              headers: {
+                'Content-Type': 'application/json',
+                Authorization: `Bearer ${adminPb.authStore.token}`
+              },
+              body: JSON.stringify({ stock: newStock })
+            });
+            if (!resp.ok) {
+              const text = await resp.text();
+              throw new Error(text || `HTTP ${resp.status}`);
+            }
           } catch (err: any) {
-            console.error("STOCK_UPDATE_ERROR:", err?.data || err);
+            console.error("STOCK_UPDATE_ERROR:", err?.message || err);
             itemErrors.push({
               productId,
               step: "update_stock",
-              message: err?.data?.message || err?.message || "Failed to update stock"
+              message: err?.message || "Failed to update stock"
             });
           }
         }
