@@ -22,6 +22,7 @@ export default function NotificationToggle() {
   const [permission, setPermission] = useState<NotificationPermission>('default')
   const [enabled, setEnabled] = useState(false)
   const [loading, setLoading] = useState(false)
+  const [testing, setTesting] = useState(false)
 
   useEffect(() => {
     const isSupported = 'serviceWorker' in navigator && 'PushManager' in window
@@ -113,14 +114,34 @@ export default function NotificationToggle() {
   }
 
   return (
-    <button
-      onClick={enabled ? disablePush : enablePush}
-      disabled={loading}
-      className={`inline-flex items-center gap-2 text-xs font-bold px-3 py-1.5 rounded-full border transition-colors ${enabled ? 'bg-emerald-50 text-emerald-700 border-emerald-100' : 'bg-gray-50 text-gray-600 border-gray-200'}`}
-      title={enabled ? 'Desactivar notificaciones' : 'Activar notificaciones'}
-    >
-      {enabled ? <Bell className="h-3.5 w-3.5" /> : <BellOff className="h-3.5 w-3.5" />}
-      {enabled ? 'Notificaciones activas' : 'Activar notificaciones'}
-    </button>
+    <div className="flex items-center gap-2">
+      <button
+        onClick={enabled ? disablePush : enablePush}
+        disabled={loading}
+        className={`inline-flex items-center gap-2 text-xs font-bold px-3 py-1.5 rounded-full border transition-colors ${enabled ? 'bg-emerald-50 text-emerald-700 border-emerald-100' : 'bg-gray-50 text-gray-600 border-gray-200'}`}
+        title={enabled ? 'Desactivar notificaciones' : 'Activar notificaciones'}
+      >
+        {enabled ? <Bell className="h-3.5 w-3.5" /> : <BellOff className="h-3.5 w-3.5" />}
+        {enabled ? 'Notificaciones activas' : 'Activar notificaciones'}
+      </button>
+      {enabled && (
+        <button
+          onClick={async () => {
+            setTesting(true)
+            try {
+              await apiClient.post('/push/test', {})
+            } catch (_) {
+              // ignore
+            } finally {
+              setTesting(false)
+            }
+          }}
+          disabled={testing}
+          className="text-[10px] font-bold px-2.5 py-1 rounded-full border border-gray-200 text-gray-500 hover:text-oxford transition-colors"
+        >
+          {testing ? 'Probando...' : 'Probar'}
+        </button>
+      )}
+    </div>
   )
 }
