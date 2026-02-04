@@ -87,30 +87,52 @@ export async function POST(req: NextRequest) {
       estimatedDeliveryDate: estimatedDelivery || null
     });
 
-    // 4) Crear order_items
+    // 4) Crear order_items + 5) Descontar stock
+    const itemErrors: Array<{ productId: string; step: string; message: string }> = [];
     for (const item of items) {
       const productId = item.productId || item.id;
       const product = productsMap[productId];
 
-      await adminPb.collection("order_items").create({
-        order: order.id,
-        product: product.id,
-        name: product.name,
-        quantity: item.quantity,
-        price: product.price
-      });
+      try {
+        await adminPb.collection("order_items").create({
+          order: order.id,
+          product: product.id,
+          name: product.name,
+          quantity: item.quantity,
+          price: product.price
+        });
+      } catch (err: any) {
+        console.error("ORDER_ITEM_CREATE_ERROR:", err);
+        itemErrors.push({
+          productId,
+          step: "create_order_item",
+          message: err?.message || "Failed to create order item"
+        });
+      }
 
       // 5) Descontar stock SOLO si no es preventa
       if (!product.isPreorder) {
         const newStock = Math.max(0, (product.stock || 0) - item.quantity);
-
-        await adminPb.collection("products").update(product.id, {
-          stock: newStock
-        });
+        try {
+          await adminPb.collection("products").update(product.id, {
+            stock: newStock
+          });
+        } catch (err: any) {
+          console.error("STOCK_UPDATE_ERROR:", err);
+          itemErrors.push({
+            productId,
+            step: "update_stock",
+            message: err?.message || "Failed to update stock"
+          });
+        }
       }
     }
 
-    return NextResponse.json({ success: true, order: { id: order.id } });
+    return NextResponse.json({
+      success: true,
+      order: { id: order.id },
+      warnings: itemErrors.length ? itemErrors : undefined
+    });
   } catch (error: any) {
     console.error("ORDER_ERROR:", error);
     return NextResponse.json(
