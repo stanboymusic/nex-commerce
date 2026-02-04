@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getAdminPocketBase } from "@/lib/admin";
+import { getDefaultStatusMessage, recordOrderStatusEvent } from "@/lib/order-status-events";
 
 export const runtime = "nodejs";
 
@@ -24,6 +25,17 @@ export async function POST(req: NextRequest) {
   if (status === "COMPLETED") {
     // Cambiar estado a PAYMENT_REPORTED
     await pb.collection("orders").update(order.id, { status: "PAYMENT_REPORTED" });
+
+    if (order.status !== "PAYMENT_REPORTED") {
+      await recordOrderStatusEvent({
+        pb,
+        orderId: order.id,
+        status: "PAYMENT_REPORTED",
+        message: getDefaultStatusMessage("PAYMENT_REPORTED"),
+        visibleToUser: true,
+        actorRole: 'SYSTEM'
+      });
+    }
   }
 
   return NextResponse.json({ success: true });

@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { getAdminPocketBase } from "@/lib/admin";
+import { getDefaultStatusMessage, recordOrderStatusEvent } from "@/lib/order-status-events";
 
 const allowedStatuses = new Set([
   "PENDING_PAYMENT",
@@ -42,6 +43,17 @@ export async function POST(req: Request) {
     }
 
     const updated = await pb.collection("orders").update(orderId, { status: newStatus });
+
+    if (newStatus !== order.status) {
+      await recordOrderStatusEvent({
+        pb,
+        orderId,
+        status: newStatus,
+        message: getDefaultStatusMessage(newStatus),
+        visibleToUser: true,
+        actorRole: 'ADMIN'
+      });
+    }
     return NextResponse.json({ success: true, order: updated });
   } catch (error) {
     console.error("Error updating order status:", error);

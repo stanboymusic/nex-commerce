@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { initPocketBase } from '@/lib/pocketbase'
+import { getDefaultStatusMessage, recordOrderStatusEvent } from '@/lib/order-status-events'
 
 export async function PATCH(
   req: NextRequest,
@@ -19,9 +20,22 @@ export async function PATCH(
       return NextResponse.json({ error: 'Status is required' }, { status: 400 })
     }
 
+    const existing = await pb.collection('orders').getOne(id)
     const updatedOrder = await pb.collection('orders').update(id, { status }, {
       expand: 'order_items(order).product,user'
     })
+
+    if (status !== existing.status) {
+      await recordOrderStatusEvent({
+        pb,
+        orderId: id,
+        status,
+        message: getDefaultStatusMessage(status),
+        visibleToUser: true,
+        actorRole: 'ADMIN',
+        actorId: user.id
+      })
+    }
 
     return NextResponse.json(updatedOrder)
   } catch (error: any) {

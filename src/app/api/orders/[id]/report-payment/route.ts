@@ -1,5 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { initPocketBase } from '@/lib/pocketbase'
+import { getAdminPocketBase } from '@/lib/admin'
+import { getDefaultStatusMessage, recordOrderStatusEvent } from '@/lib/order-status-events'
 
 export async function POST(
   req: NextRequest,
@@ -32,7 +34,22 @@ export async function POST(
     formData.append('paymentStatus', 'REPORTED');
     formData.append('paymentReportedAt', new Date().toISOString());
 
-    const result = await pb.collection('orders').update(id, formData);
+    formData.append('status', 'PAYMENT_REPORTED');
+
+    const adminPb = await getAdminPocketBase();
+    const result = await adminPb.collection('orders').update(id, formData);
+
+    if (order.status !== 'PAYMENT_REPORTED') {
+      await recordOrderStatusEvent({
+        pb: adminPb,
+        orderId: id,
+        status: 'PAYMENT_REPORTED',
+        message: getDefaultStatusMessage('PAYMENT_REPORTED'),
+        visibleToUser: true,
+        actorRole: 'USER',
+        actorId: user.id
+      });
+    }
     return NextResponse.json(result)
   } catch (error: any) {
     console.error('Report payment error:', error)

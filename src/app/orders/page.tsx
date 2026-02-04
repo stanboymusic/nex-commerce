@@ -143,6 +143,14 @@ function OrdersContent() {
         <div className="space-y-6">
           {orders.map((order) => {
             const StatusIcon = STATUS_ICONS[order.status] || AlertCircle
+            const history = (order.statusHistory?.length
+              ? order.statusHistory
+              : [{
+                  id: `${order.id}-current`,
+                  status: order.status,
+                  message: STATUS_LABELS[order.status],
+                  createdAt: order.updatedAt || order.createdAt
+                }])
             return (
               <div key={order.id} className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
                 <div className="p-6">
@@ -275,6 +283,39 @@ function OrdersContent() {
                       </div>
                     </div>
                   )}
+
+                  <div className="mb-8">
+                    <h3 className="text-sm font-black text-oxford uppercase tracking-wider mb-4">Seguimiento del pedido</h3>
+                    <div className="space-y-4">
+                      {history.map((event: any, index: number) => {
+                        const Icon = STATUS_ICONS[event.status] || AlertCircle
+                        const isLast = index === history.length - 1
+                        return (
+                          <div key={event.id} className="flex items-start gap-4">
+                            <div className="flex flex-col items-center">
+                              <div className={`h-10 w-10 rounded-full flex items-center justify-center ${STATUS_COLORS[event.status] || 'text-gray-500 bg-gray-100'}`}>
+                                <Icon className="h-5 w-5" />
+                              </div>
+                              {!isLast && <div className="w-px flex-1 bg-gray-200 mt-2" />}
+                            </div>
+                            <div className="flex-1">
+                              <p className="font-bold text-oxford">
+                                {STATUS_LABELS[event.status] || 'Estado actualizado'}
+                              </p>
+                              {event.message && (
+                                <p className="text-sm text-gray-500 mt-1">{event.message}</p>
+                              )}
+                              {event.createdAt && (
+                                <p className="text-xs text-gray-400 mt-2">
+                                  {new Date(event.createdAt).toLocaleString()}
+                                </p>
+                              )}
+                            </div>
+                          </div>
+                        )
+                      })}
+                    </div>
+                  </div>
 
                   <div className="space-y-4">
                     {order.items.map((item: any) => (

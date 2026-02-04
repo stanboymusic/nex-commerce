@@ -96,3 +96,12 @@ export interface StockRequest extends BaseRecord {
     message?: string;
     status: 'PENDING' | 'FULFILLED';
 }
+
+export interface OrderStatusEvent extends BaseRecord {
+    order: string; // Relation ID
+    status: 'PENDING_PAYMENT' | 'PAYMENT_REPORTED' | 'CONFIRMED' | 'PREPARING' | 'SHIPPED' | 'DELIVERED' | 'CANCELLED' | 'REJECTED';
+    message?: string;
+    visibleToUser?: boolean;
+    actorRole?: 'ADMIN' | 'USER' | 'SYSTEM';
+    actorId?: string;
+}

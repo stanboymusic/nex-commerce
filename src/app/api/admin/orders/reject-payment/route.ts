@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { getAdminPocketBase } from "@/lib/admin";
+import { getDefaultStatusMessage, recordOrderStatusEvent } from "@/lib/order-status-events";
 
 export async function POST(req: Request) {
     try {
@@ -28,6 +29,17 @@ export async function POST(req: Request) {
             status: "CANCELLED",
             notes: reason || "Pago rechazado"
         });
+
+        if (order.status !== "CANCELLED") {
+          await recordOrderStatusEvent({
+            pb,
+            orderId,
+            status: "CANCELLED",
+            message: reason || getDefaultStatusMessage("CANCELLED"),
+            visibleToUser: true,
+            actorRole: 'ADMIN'
+          });
+        }
 
         return NextResponse.json({ success: true, order: updated });
     } catch (error) {

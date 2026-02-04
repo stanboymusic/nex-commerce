@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { getAdminPocketBase } from "@/lib/admin";
 import { generateInvoicePDF } from "@/lib/pdf";
 import { sendOrderConfirmationEmail } from "@/lib/email";
+import { getDefaultStatusMessage, recordOrderStatusEvent } from "@/lib/order-status-events";
 
 export const runtime = "nodejs";
 
@@ -20,6 +21,17 @@ export async function POST(req: Request) {
     status: "CONFIRMED",
     paymentStatus: "VERIFIED",
   });
+
+  if (order.status !== "CONFIRMED") {
+    await recordOrderStatusEvent({
+      pb,
+      orderId,
+      status: "CONFIRMED",
+      message: getDefaultStatusMessage("CONFIRMED"),
+      visibleToUser: true,
+      actorRole: 'ADMIN'
+    });
+  }
 
   // 2️⃣ Generar PDF
   const pdfBuffer = await generateInvoicePDF(order);

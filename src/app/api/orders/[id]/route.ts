@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { initPocketBase } from '@/lib/pocketbase';
 import { getAdminPocketBase } from '@/lib/admin';
+import { getDefaultStatusMessage, recordOrderStatusEvent } from '@/lib/order-status-events';
 
 export const runtime = 'nodejs';
 
@@ -57,9 +58,22 @@ export async function PATCH(
 
     const data = await req.json();
     const adminPb = await getAdminPocketBase();
+    const existing = await adminPb.collection('orders').getOne(id);
     const updated = await adminPb.collection('orders').update(id, data, {
-        expand: 'order_items(order).product,user'
+      expand: 'order_items(order).product,user'
     });
+
+    if (data?.status && data.status !== existing.status) {
+      await recordOrderStatusEvent({
+        pb: adminPb,
+        orderId: id,
+        status: data.status,
+        message: data?.statusMessage || getDefaultStatusMessage(data.status),
+        visibleToUser: data?.statusVisible !== false,
+        actorRole: 'ADMIN',
+        actorId: (user as any).id
+      });
+    }
 
     return NextResponse.json(updated);
   } catch (error: any) {

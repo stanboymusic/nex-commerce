@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { initPocketBase } from "@/lib/pocketbase";
 import { getAdminPocketBase } from "@/lib/admin";
+import { getDefaultStatusMessage, recordOrderStatusEvent } from "@/lib/order-status-events";
 
 export const runtime = "nodejs";
 
@@ -90,6 +91,15 @@ export async function POST(req: NextRequest) {
       notes,
       isPreorder,
       estimatedDeliveryDate: estimatedDelivery || null
+    });
+
+    await recordOrderStatusEvent({
+      pb: adminPb,
+      orderId: order.id,
+      status: order.status,
+      message: getDefaultStatusMessage(order.status),
+      visibleToUser: true,
+      actorRole: 'SYSTEM'
     });
 
     // 4) Crear order_items + 5) Descontar stock
@@ -234,6 +244,36 @@ export async function GET(req: NextRequest) {
       expand: 'order_items(order).product,user',
     });
 
+    const orderIds = records.map(r => r.id);
+    let eventsByOrder: Record<string, any[]> = {};
+
+    if (orderIds.length > 0) {
+      const orderFilter = orderIds.map(id => `order = "${id}"`).join(' || ');
+      const visibilityFilter = isAdmin ? '' : 'visibleToUser = true';
+      const combinedFilter = visibilityFilter
+        ? `(${orderFilter}) && ${visibilityFilter}`
+        : orderFilter;
+
+      const eventRecords = await pb.collection('order_status_events').getFullList({
+        filter: combinedFilter,
+        sort: 'created'
+      }).catch(() => []);
+
+      eventsByOrder = eventRecords.reduce((acc: Record<string, any[]>, ev: any) => {
+        if (!acc[ev.order]) acc[ev.order] = [];
+        acc[ev.order].push({
+          id: ev.id,
+          status: ev.status,
+          message: ev.message,
+          visibleToUser: ev.visibleToUser,
+          createdAt: ev.created,
+          actorRole: ev.actorRole,
+          actorId: ev.actorId
+        });
+        return acc;
+      }, {});
+    }
+
     const orders = records.map(r => ({
       id: r.id,
       total: r.total,
@@ -263,6 +303,7 @@ export async function GET(req: NextRequest) {
           phone: r.expand.user.phone,
         }
         : null,
+      statusHistory: eventsByOrder[r.id] || [],
       items:
         r.expand?.['order_items(order)']?.map((oi: any) => ({
           id: oi.id,
