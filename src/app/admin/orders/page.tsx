@@ -44,6 +44,8 @@ export default function AdminOrdersPage() {
   const [orders, setOrders] = useState<Order[]>([])
   const [loading, setLoading] = useState(true)
   const [updatingId, setUpdatingId] = useState<string | null>(null)
+  const [statusMessages, setStatusMessages] = useState<Record<string, string>>({})
+  const [statusVisibility, setStatusVisibility] = useState<Record<string, boolean>>({})
 
   const fetchOrders = useCallback(async () => {
     try {
@@ -70,7 +72,13 @@ export default function AdminOrdersPage() {
   const handleUpdateStatus = async (orderId: string, newStatus: OrderStatus) => {
     setUpdatingId(orderId)
     try {
-      await axios.patch(`/api/orders/${orderId}`, { status: newStatus }, {
+      const message = statusMessages[orderId]
+      const visible = statusVisibility[orderId]
+      await axios.patch(`/api/orders/${orderId}`, {
+        status: newStatus,
+        statusMessage: message,
+        statusVisible: visible !== false
+      }, {
         headers: { Authorization: `Bearer ${token}` }
       })
       // Refresh local state
@@ -168,23 +176,43 @@ export default function AdminOrdersPage() {
                       <StatusBadge status={order.status} />
                     </td>
                     <td className="px-8 py-6 text-right">
-                      <div className="relative inline-block w-full">
-                        <select
-                          value={order.status}
-                          onChange={(e) => handleUpdateStatus(order.id, e.target.value as OrderStatus)}
-                          disabled={updatingId === order.id}
-                          aria-label="Estado del pedido"
-                          className="appearance-none w-full bg-white border border-gray-200 pl-4 pr-10 py-2.5 rounded-xl text-xs font-bold text-oxford outline-none focus:ring-2 focus:ring-purple/20 cursor-pointer disabled:opacity-50 transition-all shadow-sm"
-                        >
-                          <option value="PENDING_PAYMENT">Esperando Pago</option>
-                          <option value="PAYMENT_REPORTED">Pago Reportado</option>
-                          <option value="CONFIRMED">Confirmado</option>
-                          <option value="PREPARING">En Preparación</option>
-                          <option value="SHIPPED">Enviado</option>
-                          <option value="DELIVERED">Entregado</option>
-                          <option value="CANCELLED">Cancelado</option>
-                        </select>
-                        <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400 pointer-events-none" />
+                      <div className="space-y-3">
+                        <div className="relative inline-block w-full">
+                          <select
+                            value={order.status}
+                            onChange={(e) => handleUpdateStatus(order.id, e.target.value as OrderStatus)}
+                            disabled={updatingId === order.id}
+                            aria-label="Estado del pedido"
+                            className="appearance-none w-full bg-white border border-gray-200 pl-4 pr-10 py-2.5 rounded-xl text-xs font-bold text-oxford outline-none focus:ring-2 focus:ring-purple/20 cursor-pointer disabled:opacity-50 transition-all shadow-sm"
+                          >
+                            <option value="PENDING_PAYMENT">Esperando Pago</option>
+                            <option value="PAYMENT_REPORTED">Pago Reportado</option>
+                            <option value="CONFIRMED">Confirmado</option>
+                            <option value="PREPARING">En Preparación</option>
+                            <option value="SHIPPED">Enviado</option>
+                            <option value="DELIVERED">Entregado</option>
+                            <option value="CANCELLED">Cancelado</option>
+                          </select>
+                          <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400 pointer-events-none" />
+                        </div>
+                        <div className="space-y-2">
+                          <input
+                            type="text"
+                            value={statusMessages[order.id] || ''}
+                            onChange={(e) => setStatusMessages(prev => ({ ...prev, [order.id]: e.target.value }))}
+                            placeholder="Mensaje visible para el cliente (opcional)"
+                            className="w-full bg-white border border-gray-200 px-3 py-2 rounded-lg text-xs font-medium text-oxford outline-none focus:ring-2 focus:ring-purple/20 transition-all"
+                          />
+                          <label className="flex items-center gap-2 text-[11px] font-bold text-gray-500 uppercase tracking-wider">
+                            <input
+                              type="checkbox"
+                              checked={statusVisibility[order.id] !== false}
+                              onChange={(e) => setStatusVisibility(prev => ({ ...prev, [order.id]: e.target.checked }))}
+                              className="h-4 w-4 rounded border-gray-300 text-purple focus:ring-purple"
+                            />
+                            Visible para el cliente
+                          </label>
+                        </div>
                       </div>
                     </td>
                   </tr>

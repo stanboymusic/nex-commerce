@@ -29,6 +29,11 @@ export default function Navbar() {
           <Link href="/catalog" className="text-navy hover:text-purple transition-colors">
             Catálogo
           </Link>
+          {user && (
+            <Link href="/orders" className="text-navy hover:text-purple transition-colors">
+              Mis pedidos
+            </Link>
+          )}
           {user?.role === 'ADMIN' && (
             <Link href="/admin/dashboard" className="text-navy hover:text-purple transition-colors">
               Admin
@@ -79,6 +84,11 @@ export default function Navbar() {
           <Link href="/catalog" className="block text-navy font-medium hover:text-purple transition-colors">
             Catálogo
           </Link>
+          {user && (
+            <Link href="/orders" className="block text-navy font-medium hover:text-purple transition-colors">
+              Mis pedidos
+            </Link>
+          )}
           {user?.role === 'ADMIN' && (
             <Link href="/admin/dashboard" className="block text-navy font-medium hover:text-purple transition-colors">
               Admin
