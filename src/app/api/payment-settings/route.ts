@@ -8,19 +8,18 @@ export async function GET() {
     try {
         const pb = await getAdminPocketBase();
         // Use getList(1, 1) to get the single settings record
-        const records = await pb.collection("payment_settings").getList(1, 1);
-
-        if (!records.items.length) {
-            return NextResponse.json(null);
-        }
-
-        const s = records.items[0];
+        const kontigo = await pb.collection("payment_settings").getFirstListItem('method="KONTIGO"').catch(() => null);
+        const binance = await pb.collection("payment_settings").getFirstListItem('method="BINANCE"').catch(() => null);
 
         return NextResponse.json({
-            kontigoQr: s.kontigoQr
-                ? pb.files.getUrl(s, s.kontigoQr)
+            kontigoQr: kontigo?.kontigoQr
+                ? pb.files.getUrl(kontigo, kontigo.kontigoQr)
                 : null,
-            kontigoInstructions: s.kontigoInstructions || ""
+            kontigoInstructions: kontigo?.kontigoInstructions || "",
+            binanceQr: binance?.binanceQr
+                ? pb.files.getUrl(binance, binance.binanceQr)
+                : null,
+            binanceInstructions: binance?.binanceInstructions || ""
         });
     } catch (error) {
         console.error("Error fetching payment settings:", error);

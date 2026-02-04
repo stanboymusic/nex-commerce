@@ -7,14 +7,24 @@ export async function POST(req: Request) {
     const pb = await getAdminPocketBase();
     const form = await req.formData();
 
+    const methodRaw = form.get("method");
+    const method = typeof methodRaw === "string" ? methodRaw.toUpperCase() : "KONTIGO";
+    if (method !== "KONTIGO" && method !== "BINANCE") {
+      return NextResponse.json({ error: "Invalid method" }, { status: 400 });
+    }
+
+    const isKontigo = method === "KONTIGO";
+    const qrField = isKontigo ? "kontigoQr" : "binanceQr";
+    const instructionsField = isKontigo ? "kontigoInstructions" : "binanceInstructions";
+
     // VALIDACIÓN CRÍTICA
     const hasFile =
-      form.get("kontigoQr") instanceof File &&
-      (form.get("kontigoQr") as File).size > 0;
+      form.get(qrField) instanceof File &&
+      (form.get(qrField) as File).size > 0;
 
-    if (!form.get("method")) form.set("method", "KONTIGO");
+    if (!form.get("method")) form.set("method", method);
 
-    const instructions = form.get("kontigoInstructions");
+    const instructions = form.get(instructionsField);
     const hasInstructions =
       typeof instructions === "string" && instructions.trim().length > 0;
 
@@ -26,23 +36,23 @@ export async function POST(req: Request) {
     }
 
     const data = new FormData();
-    data.set("method", "KONTIGO");
-    if (hasInstructions) data.set("kontigoInstructions", String(instructions));
+    data.set("method", method);
+    if (hasInstructions) data.set(instructionsField, String(instructions));
     if (hasFile) {
-      const file = form.get("kontigoQr");
+      const file = form.get(qrField);
       if (file instanceof File) {
-        const name = file.name || "kontigo-qr.png";
+        const name = file.name || `${method.toLowerCase()}-qr.png`;
         const type = file.type || "image/png";
         const buffer = await file.arrayBuffer();
         const safeFile = new File([buffer], name, { type });
-        data.set("kontigoQr", safeFile);
+        data.set(qrField, safeFile);
       }
     }
 
     const existing = await pb
       .collection("payment_settings")
       .getList(1, 1, {
-        filter: `method="KONTIGO"`,
+        filter: `method="${method}"`,
         requestKey: null,
       });
 

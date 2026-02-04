@@ -434,6 +434,12 @@ export default function OrdersPage() {
                               <span className="font-bold text-blue-900 underline">{selected.paymentReference || "N/A"}</span>
                             </div>
                           </div>
+                          {selected.binanceTxHash && (
+                            <div className="text-xs">
+                              <span className="block text-[9px] font-black text-blue-400 uppercase">Hash Binance</span>
+                              <span className="font-bold text-blue-900 break-all">{selected.binanceTxHash}</span>
+                            </div>
+                          )}
 
                           {selected.paymentProof && (
                             <div className="relative group cursor-pointer" onClick={() => setShowProof(true)}>

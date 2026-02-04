@@ -42,7 +42,12 @@ export default function CheckoutPage() {
   const [kontigoReference, setKontigoReference] = useState('')
   const [kontigoProof, setKontigoProof] = useState<File | null>(null)
   const [kontigoProofPreview, setKontigoProofPreview] = useState<string | null>(null)
-  const [kontigoSettings, setKontigoSettings] = useState<{ kontigoQr: string | null, kontigoInstructions: string } | null>(null)
+  const [paymentSettings, setPaymentSettings] = useState<{
+    kontigoQr: string | null
+    kontigoInstructions: string
+    binanceQr: string | null
+    binanceInstructions: string
+  } | null>(null)
 
   useEffect(() => {
     setMounted(true)
@@ -54,9 +59,11 @@ export default function CheckoutPage() {
       try {
         const { data } = await axios.get("/api/settings");
         setRate(data.usdToCopRate || 4000);
-        setKontigoSettings({
+        setPaymentSettings({
           kontigoQr: data.kontigoQR,
-          kontigoInstructions: data.kontigoInstructions || "Reporta tu pago adjuntando el comprobante."
+          kontigoInstructions: data.kontigoInstructions || "Reporta tu pago adjuntando el comprobante.",
+          binanceQr: data.binanceQR,
+          binanceInstructions: data.binanceInstructions || "Escanea el QR, realiza el pago en Binance y reporta el comprobante."
         });
       } catch (err) {
         console.error("Error fetching settings", err);
@@ -67,6 +74,18 @@ export default function CheckoutPage() {
       fetchSettings();
     }
   }, [mounted, user, router])
+
+  useEffect(() => {
+    if (!paymentSettings) return;
+    if (currency === 'USD') {
+      if (paymentMethod === 'KONTIGO' && !paymentSettings.kontigoQr) {
+        setPaymentMethod('CASH_USD')
+      }
+      if (paymentMethod === 'BINANCE' && !paymentSettings.binanceQr) {
+        setPaymentMethod('CASH_USD')
+      }
+    }
+  }, [paymentSettings, currency, paymentMethod])
 
   if (!mounted || !user) return null
   if (items.length === 0) {
@@ -83,6 +102,17 @@ export default function CheckoutPage() {
   const handlePlaceOrder = async () => {
     if (!address) {
       setError('La dirección de envío es obligatoria')
+      return
+    }
+    const kontigoEnabled = !!paymentSettings?.kontigoQr
+    const binanceEnabled = !!paymentSettings?.binanceQr
+
+    if (paymentMethod === 'KONTIGO' && !kontigoEnabled) {
+      setError('El método Kontigo no está disponible en este momento')
+      return
+    }
+    if (paymentMethod === 'BINANCE' && !binanceEnabled) {
+      setError('El método Binance no está disponible en este momento')
       return
     }
     if (paymentMethod === 'KONTIGO' && !kontigoProof) {
@@ -204,57 +234,72 @@ export default function CheckoutPage() {
           </section>
 
 
-          {paymentMethod === 'BINANCE' && (
-            <section>
-              <label htmlFor="binanceTxHash" className="text-xl font-bold text-oxford mb-4 block cursor-pointer">Hash de transacción Binance</label>
-              <input
-                id="binanceTxHash"
-                type="text"
-                value={binanceTxHash}
-                onChange={(e) => setBinanceTxHash(e.target.value)}
-                className="w-full p-4 rounded-xl border border-gray-200 outline-none"
-                placeholder="Ingresa el hash de la transacción..."
-              />
-              <div className="mt-4">
-                <label className="text-sm font-bold text-oxford mb-2 block">Comprobante de pago (obligatorio)</label>
-                <input
-                  type="file"
-                  accept="image/*"
-                  onChange={(e) => {
-                    const file = e.target.files?.[0] || null;
-                    setBinanceProof(file);
-                    setBinanceProofPreview(file ? URL.createObjectURL(file) : null);
-                  }}
-                  className="w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-xl file:border-0 file:text-sm file:font-bold file:bg-purple/10 file:text-purple hover:file:bg-purple/20 transition-all cursor-pointer"
-                />
-                {binanceProofPreview && (
-                  <div className="mt-3 flex justify-center">
-                    <img
-                      src={binanceProofPreview}
-                      alt="Comprobante de Binance"
-                      className="max-w-[220px] rounded-xl border border-gray-200 shadow-sm"
-                    />
-                  </div>
-                )}
+          {paymentMethod === 'BINANCE' && paymentSettings?.binanceQr && (
+            <section className="space-y-4 border-2 border-emerald-100 rounded-xl p-6 bg-emerald-50/40">
+              <h3 className="font-bold text-oxford flex items-center gap-2">
+                <Coins className="text-emerald-600 w-5 h-5" />
+                Instrucciones de Pago Binance
+              </h3>
+
+              <div className="flex justify-center py-4">
+                <img src={paymentSettings.binanceQr} alt="QR Binance" className="max-w-[200px] rounded-xl border border-gray-200 shadow-sm" />
+              </div>
+
+              <p className="text-sm text-gray-600 whitespace-pre-wrap text-center">
+                {paymentSettings.binanceInstructions || "Escanea el QR y reporta tu pago"}
+              </p>
+
+              <div className="pt-4 border-t border-emerald-100 space-y-4">
+                <div>
+                  <label htmlFor="binanceTxHash" className="text-sm font-bold text-oxford mb-2 block cursor-pointer">Hash de transacción Binance</label>
+                  <input
+                    id="binanceTxHash"
+                    type="text"
+                    value={binanceTxHash}
+                    onChange={(e) => setBinanceTxHash(e.target.value)}
+                    className="w-full p-3 rounded-lg border border-gray-200 outline-none bg-white"
+                    placeholder="Ingresa el hash de la transacción..."
+                  />
+                </div>
+                <div>
+                  <label className="text-sm font-bold text-oxford mb-2 block">Comprobante de pago (obligatorio)</label>
+                  <input
+                    type="file"
+                    accept="image/*"
+                    onChange={(e) => {
+                      const file = e.target.files?.[0] || null;
+                      setBinanceProof(file);
+                      setBinanceProofPreview(file ? URL.createObjectURL(file) : null);
+                    }}
+                    className="w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-xl file:border-0 file:text-sm file:font-bold file:bg-emerald-100 file:text-emerald-700 hover:file:bg-emerald-200 transition-all cursor-pointer"
+                  />
+                  {binanceProofPreview && (
+                    <div className="mt-3 flex justify-center">
+                      <img
+                        src={binanceProofPreview}
+                        alt="Comprobante de Binance"
+                        className="max-w-[220px] rounded-xl border border-gray-200 shadow-sm"
+                      />
+                    </div>
+                  )}
+                </div>
               </div>
             </section>
           )}
 
-          {paymentMethod === 'KONTIGO' && kontigoSettings && (
+          {paymentMethod === 'KONTIGO' && paymentSettings?.kontigoQr && (
             <section className="space-y-4 border-2 border-purple/10 rounded-xl p-6 bg-purple/5">
               <h3 className="font-bold text-oxford flex items-center gap-2">
                 <CreditCard className="text-purple w-5 h-5" />
                 Instrucciones de Pago
               </h3>
 
-              {kontigoSettings.kontigoQr && (
-                <div className="flex justify-center py-4">
-                  <img src={kontigoSettings.kontigoQr} alt="QR de pago" className="max-w-[200px] rounded-xl border border-gray-200 shadow-sm" />
-                </div>
-              )}
+              <div className="flex justify-center py-4">
+                <img src={paymentSettings.kontigoQr} alt="QR de pago" className="max-w-[200px] rounded-xl border border-gray-200 shadow-sm" />
+              </div>
 
               <p className="text-sm text-gray-600 whitespace-pre-wrap text-center">
-                {kontigoSettings.kontigoInstructions || "Escanea el QR y reporta el pago"}
+                {paymentSettings.kontigoInstructions || "Escanea el QR y reporta el pago"}
               </p>
 
               <div className="pt-4 border-t border-purple/10">
@@ -319,20 +364,24 @@ export default function CheckoutPage() {
                     onClick={() => setPaymentMethod('CASH_USD')}
                     icon={<Banknote className="w-5 h-5" />}
                   />
-                  <PaymentOption
-                    title="Binance"
-                    description="Paga con USDT de forma segura"
-                    selected={paymentMethod === 'BINANCE'}
-                    onClick={() => setPaymentMethod('BINANCE')}
-                    icon={<Coins className="w-5 h-5" />}
-                  />
-                  <PaymentOption
-                    title="Kontigo"
-                    description="Paga con USDC (equivale a USD)"
-                    selected={paymentMethod === 'KONTIGO'}
-                    onClick={() => setPaymentMethod('KONTIGO')}
-                    icon={<CreditCard className="w-5 h-5" />}
-                  />
+                  {paymentSettings?.binanceQr && (
+                    <PaymentOption
+                      title="Binance"
+                      description="Paga con USDT de forma segura"
+                      selected={paymentMethod === 'BINANCE'}
+                      onClick={() => setPaymentMethod('BINANCE')}
+                      icon={<Coins className="w-5 h-5" />}
+                    />
+                  )}
+                  {paymentSettings?.kontigoQr && (
+                    <PaymentOption
+                      title="Kontigo"
+                      description="Paga con USDC (equivale a USD)"
+                      selected={paymentMethod === 'KONTIGO'}
+                      onClick={() => setPaymentMethod('KONTIGO')}
+                      icon={<CreditCard className="w-5 h-5" />}
+                    />
+                  )}
                 </>
               )}
             </div>

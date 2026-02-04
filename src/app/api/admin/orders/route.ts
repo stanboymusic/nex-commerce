@@ -25,6 +25,7 @@ export async function GET() {
             paymentReference: o.paymentReference,
             paymentProof: o.paymentProof,
             paymentReportedAt: o.paymentReportedAt,
+            binanceTxHash: o.binanceTxHash,
             estimatedDeliveryDate: o.estimatedDeliveryDate,
             isPreorder: o.isPreorder,
             customer: o.expand?.user

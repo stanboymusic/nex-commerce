@@ -12,13 +12,19 @@ export async function GET() {
 
         // Fetch Kontigo settings
         const paymentRecord = await pb.collection("payment_settings").getFirstListItem('method="KONTIGO"').catch(() => null);
+        // Fetch Binance settings
+        const binanceRecord = await pb.collection("payment_settings").getFirstListItem('method="BINANCE"').catch(() => null);
 
         return NextResponse.json({
             usdToCopRate: rateRecord?.rate || 4000,
             kontigoQR: paymentRecord?.kontigoQr
                 ? pb.files.getUrl(paymentRecord, paymentRecord.kontigoQr)
                 : null,
-            kontigoInstructions: paymentRecord?.kontigoInstructions || "Reporta tu pago adjuntando el comprobante."
+            kontigoInstructions: paymentRecord?.kontigoInstructions || "Reporta tu pago adjuntando el comprobante.",
+            binanceQR: binanceRecord?.binanceQr
+                ? pb.files.getUrl(binanceRecord, binanceRecord.binanceQr)
+                : null,
+            binanceInstructions: binanceRecord?.binanceInstructions || "Escanea el QR, realiza el pago en Binance y reporta el comprobante."
         });
     } catch (error) {
         console.error("Error fetching settings:", error);
