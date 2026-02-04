@@ -110,7 +110,7 @@ export default function CheckoutPage() {
         notes,
         binanceTxHash: paymentMethod === 'BINANCE' ? binanceTxHash : undefined,
         kontigoReference: paymentMethod === 'KONTIGO' ? (kontigoReference || 'PENDING') : undefined,
-        estimatedDelivery: estimatedDelivery || undefined
+        estimatedDelivery: !hasPreorder ? (estimatedDelivery || undefined) : undefined
       }, {
         headers: {
           Authorization: `Bearer ${token}`
@@ -360,7 +360,7 @@ export default function CheckoutPage() {
             />
           </section>
 
-          {hasPreorder && (
+          {!hasPreorder && (
             <section>
               <label htmlFor="estimatedDelivery" className="text-xl font-bold text-oxford mb-4 block cursor-pointer">Fecha estimada de entrega (opcional)</label>
               <input

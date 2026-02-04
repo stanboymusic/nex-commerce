@@ -61,7 +61,7 @@ export async function POST(req: NextRequest) {
 
     let estimatedDelivery = null;
     if (isPreorder) {
-      estimatedDelivery = body.estimatedDelivery || null;
+      estimatedDelivery = null;
     }
 
     // 2) Fecha de entrega

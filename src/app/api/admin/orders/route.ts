@@ -7,7 +7,7 @@ export async function GET() {
 
         const orders = await pb.collection("orders").getFullList({
             sort: "-created",
-            expand: "user,order_items(order)"
+            expand: "user,order_items(order).product"
         });
 
         const mapped = orders.map((o: any) => ({
@@ -25,6 +25,8 @@ export async function GET() {
             paymentReference: o.paymentReference,
             paymentProof: o.paymentProof,
             paymentReportedAt: o.paymentReportedAt,
+            estimatedDeliveryDate: o.estimatedDeliveryDate,
+            isPreorder: o.isPreorder,
             customer: o.expand?.user
                 ? { id: o.expand.user.id, name: o.expand.user.name, email: o.expand.user.email }
                 : null,
@@ -33,7 +35,8 @@ export async function GET() {
                 productId: it.product,
                 name: it.name,
                 quantity: it.quantity,
-                price: it.price
+                price: it.price,
+                product: it.expand?.product
             })) || []
         }));
 

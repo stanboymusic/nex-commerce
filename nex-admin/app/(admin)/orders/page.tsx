@@ -19,6 +19,8 @@ export default function OrdersPage() {
   const [loading, setLoading] = useState(true);
   const [showProof, setShowProof] = useState(false);
   const [statusChoice, setStatusChoice] = useState("");
+  const [deliveryDate, setDeliveryDate] = useState("");
+  const [deliveryMessage, setDeliveryMessage] = useState("");
 
   const statusOptions = [
     { value: "PENDING_PAYMENT", label: "Pendiente Pago" },
@@ -58,7 +60,14 @@ export default function OrdersPage() {
     if (selected?.status) {
       setStatusChoice(selected.status);
     }
-  }, [selected?.status]);
+    if (selected?.estimatedDeliveryDate) {
+      setDeliveryDate(selected.estimatedDeliveryDate.slice(0, 10));
+      setDeliveryMessage(`Fecha de entrega asignada para ${new Date(selected.estimatedDeliveryDate).toLocaleDateString()}. Te notificaremos el día correspondiente.`);
+    } else {
+      setDeliveryDate("");
+      setDeliveryMessage("");
+    }
+  }, [selected?.id, selected?.status, selected?.estimatedDeliveryDate]);
 
   const approve = async (id: string) => {
     if (!confirm("¿Aprobar el pago de esta orden?")) return;
@@ -92,6 +101,28 @@ export default function OrdersPage() {
       load();
     } catch (err) {
       alert("Error al actualizar el estado");
+    }
+  };
+
+  const assignDeliveryDate = async () => {
+    if (!selected) return;
+    if (!deliveryDate) return alert("Selecciona una fecha de entrega.");
+
+    const isoDate = new Date(deliveryDate).toISOString();
+    const message = deliveryMessage?.trim()
+      ? deliveryMessage.trim()
+      : `Fecha de entrega asignada para ${new Date(deliveryDate).toLocaleDateString()}. Te notificaremos el día correspondiente.`;
+
+    if (!confirm("¿Asignar esta fecha de entrega y notificar al cliente?")) return;
+    try {
+      await apiClient.patch(`/orders/${selected.id}`, {
+        estimatedDeliveryDate: isoDate,
+        statusMessage: message,
+        statusVisible: true
+      });
+      load();
+    } catch (err) {
+      alert("Error al asignar la fecha de entrega");
     }
   };
 
@@ -278,6 +309,52 @@ export default function OrdersPage() {
                       </div>
                     </div>
                   </div>
+
+                  {selected?.items?.some((it: any) => it.product?.isPreorder) && (
+                    <div className="mb-10 bg-amber-50 border border-amber-100 rounded-[30px] p-6 space-y-4">
+                      <div className="flex items-center gap-3">
+                        <Package className="w-5 h-5 text-amber-600" />
+                        <div>
+                          <h4 className="text-sm font-black text-amber-900">Preventa: asignar fecha de entrega</h4>
+                          <p className="text-xs text-amber-700 font-medium">El cliente solo será notificado cuando asignes la fecha.</p>
+                        </div>
+                      </div>
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 items-end">
+                        <div>
+                          <label className="text-[9px] font-black text-amber-700 uppercase tracking-widest block mb-2">Fecha de entrega</label>
+                          <input
+                            type="date"
+                            value={deliveryDate}
+                            onChange={(e) => setDeliveryDate(e.target.value)}
+                            className="w-full bg-white border border-amber-200 px-4 py-3 rounded-2xl text-sm font-bold text-oxford outline-none focus:ring-4 focus:ring-amber-200/50"
+                          />
+                        </div>
+                        <div>
+                          <label className="text-[9px] font-black text-amber-700 uppercase tracking-widest block mb-2">Mensaje para el cliente</label>
+                          <input
+                            type="text"
+                            value={deliveryMessage}
+                            onChange={(e) => setDeliveryMessage(e.target.value)}
+                            placeholder="Ej: Tu pedido en preventa ya tiene fecha asignada."
+                            className="w-full bg-white border border-amber-200 px-4 py-3 rounded-2xl text-sm font-bold text-oxford outline-none focus:ring-4 focus:ring-amber-200/50"
+                          />
+                        </div>
+                      </div>
+                      <div className="flex justify-end">
+                        <button
+                          onClick={assignDeliveryDate}
+                          className="bg-amber-600 text-white px-6 py-3 rounded-2xl font-black text-xs hover:bg-amber-700 transition-all shadow-lg shadow-amber-900/10"
+                        >
+                          Asignar y notificar
+                        </button>
+                      </div>
+                      {selected?.estimatedDeliveryDate && (
+                        <p className="text-xs text-amber-800 font-medium">
+                          Fecha actual: {new Date(selected.estimatedDeliveryDate).toLocaleDateString()}
+                        </p>
+                      )}
+                    </div>
+                  )}
 
                   <div className="space-y-6 mb-10">
                     <h4 className="text-[10px] font-black text-gray-400 uppercase tracking-widest flex items-center gap-2">

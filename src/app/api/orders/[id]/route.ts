@@ -59,7 +59,8 @@ export async function PATCH(
     const data = await req.json();
     const adminPb = await getAdminPocketBase();
     const existing = await adminPb.collection('orders').getOne(id);
-    const updated = await adminPb.collection('orders').update(id, data, {
+    const { statusMessage, statusVisible, ...updateData } = data || {};
+    const updated = await adminPb.collection('orders').update(id, updateData, {
       expand: 'order_items(order).product,user'
     });
 
@@ -68,8 +69,18 @@ export async function PATCH(
         pb: adminPb,
         orderId: id,
         status: data.status,
-        message: data?.statusMessage || getDefaultStatusMessage(data.status),
-        visibleToUser: data?.statusVisible !== false,
+        message: statusMessage || getDefaultStatusMessage(data.status),
+        visibleToUser: statusVisible !== false,
+        actorRole: 'ADMIN',
+        actorId: (user as any).id
+      });
+    } else if (statusMessage) {
+      await recordOrderStatusEvent({
+        pb: adminPb,
+        orderId: id,
+        status: data?.status || existing.status,
+        message: statusMessage,
+        visibleToUser: statusVisible !== false,
         actorRole: 'ADMIN',
         actorId: (user as any).id
       });
