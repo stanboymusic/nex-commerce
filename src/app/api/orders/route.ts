@@ -148,9 +148,9 @@ export async function POST(req: NextRequest) {
             continue;
           }
           try {
-            await adminPb.collection("products").update(product.id, {
-              stock: Number(newStock)
-            });
+            const stockForm = new FormData();
+            stockForm.set("stock", String(Number(newStock)));
+            await adminPb.collection("products").update(product.id, stockForm);
           } catch (err: any) {
             console.error("STOCK_UPDATE_ERROR:", err?.data || err);
             itemErrors.push({
