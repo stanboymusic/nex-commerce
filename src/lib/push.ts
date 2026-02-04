@@ -32,7 +32,10 @@ export async function sendPushToUser(userId: string, payload: any) {
 
     await Promise.all(subs.map(async (sub: any) => {
       try {
-        await webpush.sendNotification(sub.subscription, JSON.stringify(payload));
+        const subscription = typeof sub.subscription === 'string'
+          ? JSON.parse(sub.subscription)
+          : sub.subscription;
+        await webpush.sendNotification(subscription, JSON.stringify(payload));
       } catch (error: any) {
         const status = error?.statusCode || error?.status;
         if (status === 404 || status === 410) {
@@ -55,7 +58,10 @@ export async function sendPushToRole(role: 'ADMIN' | 'USER', payload: any) {
 
     await Promise.all(subs.map(async (sub: any) => {
       try {
-        await webpush.sendNotification(sub.subscription, JSON.stringify(payload));
+        const subscription = typeof sub.subscription === 'string'
+          ? JSON.parse(sub.subscription)
+          : sub.subscription;
+        await webpush.sendNotification(subscription, JSON.stringify(payload));
       } catch (error: any) {
         const status = error?.statusCode || error?.status;
         if (status === 404 || status === 410) {
