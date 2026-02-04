@@ -26,10 +26,8 @@ export async function POST(req: Request) {
 
     const instructions = form.get(instructionsField);
     const activeRaw = form.get(isKontigo ? "kontigoActive" : "binanceActive");
-    const active =
-      typeof activeRaw === "string"
-        ? activeRaw === "true" || activeRaw === "1"
-        : activeRaw === true;
+    const activeRawString = typeof activeRaw === "string" ? activeRaw : null;
+    const active = activeRawString === "true" || activeRawString === "1";
     const hasInstructions =
       typeof instructions === "string" && instructions.trim().length > 0;
 
