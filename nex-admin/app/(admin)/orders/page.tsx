@@ -19,6 +19,10 @@ export default function OrdersPage() {
   const [loading, setLoading] = useState(true);
   const [showProof, setShowProof] = useState(false);
   const [statusChoice, setStatusChoice] = useState("");
+  const [paymentSettings, setPaymentSettings] = useState<{
+    kontigoQR?: string | null;
+    binanceQR?: string | null;
+  } | null>(null);
   const [deliveryDate, setDeliveryDate] = useState("");
   const [deliveryMessage, setDeliveryMessage] = useState("");
 
@@ -55,7 +59,22 @@ export default function OrdersPage() {
     }
   };
 
-  useEffect(() => { load(); }, []);
+  const loadSettings = async () => {
+    try {
+      const { data } = await apiClient.get("/settings");
+      setPaymentSettings({
+        kontigoQR: data?.kontigoQR || null,
+        binanceQR: data?.binanceQR || null
+      });
+    } catch (error) {
+      console.error("Error loading payment settings", error);
+    }
+  };
+
+  useEffect(() => {
+    load();
+    loadSettings();
+  }, []);
   useEffect(() => {
     if (selected?.status) {
       setStatusChoice(selected.status);
@@ -214,6 +233,16 @@ export default function OrdersPage() {
                       <div className="text-xs text-gray-400 font-medium">
                         {o.items.length} {o.items.length === 1 ? 'producto' : 'productos'}
                       </div>
+                      {o.paymentMethod === "BINANCE" && (
+                        <div className="text-[9px] font-black text-emerald-700 uppercase tracking-widest bg-emerald-50 border border-emerald-100 inline-flex px-2 py-0.5 rounded-full">
+                          Binance
+                        </div>
+                      )}
+                      {o.paymentMethod === "KONTIGO" && (
+                        <div className="text-[9px] font-black text-purple uppercase tracking-widest bg-purple/10 border border-purple/20 inline-flex px-2 py-0.5 rounded-full">
+                          Kontigo
+                        </div>
+                      )}
                     </div>
                     <div className="text-right">
                       <div className="font-black text-oxford text-sm">
@@ -424,16 +453,39 @@ export default function OrdersPage() {
 
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-6 items-center">
                         <div className="space-y-3">
-                          <div className="grid grid-cols-2 gap-4 text-xs">
-                            <div>
-                              <span className="block text-[9px] font-black text-blue-400 uppercase">Método</span>
-                              <span className="font-bold text-blue-900 uppercase">{selected.paymentMethod}</span>
-                            </div>
-                            <div>
-                              <span className="block text-[9px] font-black text-blue-400 uppercase">Referencia</span>
-                              <span className="font-bold text-blue-900 underline">{selected.paymentReference || "N/A"}</span>
-                            </div>
-                          </div>
+                      <div className="grid grid-cols-2 gap-4 text-xs">
+                        <div>
+                          <span className="block text-[9px] font-black text-blue-400 uppercase">Método</span>
+                          <span className="font-bold text-blue-900 uppercase">{selected.paymentMethod}</span>
+                        </div>
+                        <div>
+                          <span className="block text-[9px] font-black text-blue-400 uppercase">Referencia</span>
+                          <span className="font-bold text-blue-900 underline">{selected.paymentReference || "N/A"}</span>
+                        </div>
+                      </div>
+                      {(selected.paymentMethod === "KONTIGO" || selected.paymentMethod === "BINANCE") && (
+                        <div className="mt-4">
+                          <span className="block text-[9px] font-black text-blue-400 uppercase">QR del método</span>
+                          {selected.paymentMethod === "KONTIGO" && paymentSettings?.kontigoQR && (
+                            <img
+                              src={paymentSettings.kontigoQR}
+                              alt="QR Kontigo"
+                              className="mt-2 w-full max-w-[220px] rounded-2xl border border-blue-100"
+                            />
+                          )}
+                          {selected.paymentMethod === "BINANCE" && paymentSettings?.binanceQR && (
+                            <img
+                              src={paymentSettings.binanceQR}
+                              alt="QR Binance"
+                              className="mt-2 w-full max-w-[220px] rounded-2xl border border-blue-100"
+                            />
+                          )}
+                          {((selected.paymentMethod === "KONTIGO" && !paymentSettings?.kontigoQR) ||
+                            (selected.paymentMethod === "BINANCE" && !paymentSettings?.binanceQR)) && (
+                            <p className="text-[10px] text-blue-600 font-bold mt-2">QR no configurado</p>
+                          )}
+                        </div>
+                      )}
                           {selected.binanceTxHash && (
                             <div className="text-xs">
                               <span className="block text-[9px] font-black text-blue-400 uppercase">Hash Binance</span>

@@ -10,10 +10,12 @@ export default function PaymentSettingsPage() {
     const [success, setSuccess] = useState(false);
     const [currentQr, setCurrentQr] = useState<string | null>(null);
     const [instructions, setInstructions] = useState("");
+    const [kontigoActive, setKontigoActive] = useState(true);
     const [qrPreview, setQrPreview] = useState<string | null>(null);
     const [qrFile, setQrFile] = useState<File | null>(null);
     const [binanceQr, setBinanceQr] = useState<string | null>(null);
     const [binanceInstructions, setBinanceInstructions] = useState("");
+    const [binanceActive, setBinanceActive] = useState(true);
     const [binanceQrPreview, setBinanceQrPreview] = useState<string | null>(null);
     const [binanceQrFile, setBinanceQrFile] = useState<File | null>(null);
     const token = useAdminStore((s) => s.token);
@@ -51,8 +53,10 @@ export default function PaymentSettingsPage() {
                 if (data) {
                     setCurrentQr(data.kontigoQR);
                     setInstructions(data.kontigoInstructions);
+                    setKontigoActive(data.kontigoActive !== false);
                     setBinanceQr(data.binanceQR);
                     setBinanceInstructions(data.binanceInstructions || "");
+                    setBinanceActive(data.binanceActive !== false);
                 }
             } catch (err) {
                 console.error("Failed to load settings", err);
@@ -71,6 +75,7 @@ export default function PaymentSettingsPage() {
 
         if (method === "KONTIGO") {
             form.set("kontigoInstructions", instructions);
+            form.set("kontigoActive", String(kontigoActive));
             if (qrFile) {
                 const normalized = normalizeImageFile(qrFile);
                 if (!normalized) {
@@ -82,6 +87,7 @@ export default function PaymentSettingsPage() {
             }
         } else {
             form.set("binanceInstructions", binanceInstructions);
+            form.set("binanceActive", String(binanceActive));
             if (binanceQrFile) {
                 const normalized = normalizeImageFile(binanceQrFile);
                 if (!normalized) {
@@ -108,6 +114,8 @@ export default function PaymentSettingsPage() {
                 if (data) {
                     setCurrentQr(data.kontigoQR);
                     setBinanceQr(data.binanceQR);
+                    setKontigoActive(data.kontigoActive !== false);
+                    setBinanceActive(data.binanceActive !== false);
                 }
                 setTimeout(() => setSuccess(false), 3000);
             } else {
@@ -189,6 +197,17 @@ export default function PaymentSettingsPage() {
                                     </div>
                                 </div>
 
+                                <div className="space-y-3">
+                                    <label className="flex items-center gap-3 text-xs font-black text-gray-400 uppercase tracking-widest">
+                                        <input
+                                            type="checkbox"
+                                            checked={kontigoActive}
+                                            onChange={(e) => setKontigoActive(e.target.checked)}
+                                            className="h-4 w-4 rounded border-gray-300 text-purple focus:ring-purple"
+                                        />
+                                        Kontigo activo
+                                    </label>
+                                </div>
                                 <div className="space-y-3">
                                     <label className="text-xs font-black text-gray-400 uppercase tracking-widest">Instrucciones de Pago</label>
                                     <textarea
@@ -272,6 +291,17 @@ export default function PaymentSettingsPage() {
                                     </div>
                                 </div>
 
+                                <div className="space-y-3">
+                                    <label className="flex items-center gap-3 text-xs font-black text-gray-400 uppercase tracking-widest">
+                                        <input
+                                            type="checkbox"
+                                            checked={binanceActive}
+                                            onChange={(e) => setBinanceActive(e.target.checked)}
+                                            className="h-4 w-4 rounded border-gray-300 text-emerald-600 focus:ring-emerald-500"
+                                        />
+                                        Binance activo
+                                    </label>
+                                </div>
                                 <div className="space-y-3">
                                     <label className="text-xs font-black text-gray-400 uppercase tracking-widest">Instrucciones de Pago</label>
                                     <textarea

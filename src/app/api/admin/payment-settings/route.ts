@@ -25,10 +25,15 @@ export async function POST(req: Request) {
     if (!form.get("method")) form.set("method", method);
 
     const instructions = form.get(instructionsField);
+    const activeRaw = form.get(isKontigo ? "kontigoActive" : "binanceActive");
+    const active =
+      typeof activeRaw === "string"
+        ? activeRaw === "true" || activeRaw === "1"
+        : activeRaw === true;
     const hasInstructions =
       typeof instructions === "string" && instructions.trim().length > 0;
 
-    if (!hasFile && !hasInstructions) {
+    if (!hasFile && !hasInstructions && activeRaw === null) {
       return NextResponse.json(
         { error: "No data provided" },
         { status: 400 }
@@ -38,6 +43,7 @@ export async function POST(req: Request) {
     const data = new FormData();
     data.set("method", method);
     if (hasInstructions) data.set(instructionsField, String(instructions));
+    if (activeRaw !== null) data.set(isKontigo ? "kontigoActive" : "binanceActive", String(active));
     if (hasFile) {
       const file = form.get(qrField);
       if (file instanceof File) {

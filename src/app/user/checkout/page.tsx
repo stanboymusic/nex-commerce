@@ -47,6 +47,8 @@ export default function CheckoutPage() {
     kontigoInstructions: string
     binanceQr: string | null
     binanceInstructions: string
+    kontigoActive?: boolean
+    binanceActive?: boolean
   } | null>(null)
 
   useEffect(() => {
@@ -62,8 +64,10 @@ export default function CheckoutPage() {
         setPaymentSettings({
           kontigoQr: data.kontigoQR,
           kontigoInstructions: data.kontigoInstructions || "Reporta tu pago adjuntando el comprobante.",
+          kontigoActive: data.kontigoActive !== false,
           binanceQr: data.binanceQR,
-          binanceInstructions: data.binanceInstructions || "Escanea el QR, realiza el pago en Binance y reporta el comprobante."
+          binanceInstructions: data.binanceInstructions || "Escanea el QR, realiza el pago en Binance y reporta el comprobante.",
+          binanceActive: data.binanceActive !== false
         });
       } catch (err) {
         console.error("Error fetching settings", err);
@@ -82,6 +86,14 @@ export default function CheckoutPage() {
         setPaymentMethod('CASH_USD')
       }
       if (paymentMethod === 'BINANCE' && !paymentSettings.binanceQr) {
+        setPaymentMethod('CASH_USD')
+      }
+    }
+    if (currency === 'USD') {
+      if (paymentMethod === 'KONTIGO' && paymentSettings.kontigoActive === false) {
+        setPaymentMethod('CASH_USD')
+      }
+      if (paymentMethod === 'BINANCE' && paymentSettings.binanceActive === false) {
         setPaymentMethod('CASH_USD')
       }
     }
@@ -104,8 +116,8 @@ export default function CheckoutPage() {
       setError('La dirección de envío es obligatoria')
       return
     }
-    const kontigoEnabled = !!paymentSettings?.kontigoQr
-    const binanceEnabled = !!paymentSettings?.binanceQr
+    const kontigoEnabled = !!paymentSettings?.kontigoQr && paymentSettings?.kontigoActive !== false
+    const binanceEnabled = !!paymentSettings?.binanceQr && paymentSettings?.binanceActive !== false
 
     if (paymentMethod === 'KONTIGO' && !kontigoEnabled) {
       setError('El método Kontigo no está disponible en este momento')
@@ -234,7 +246,7 @@ export default function CheckoutPage() {
           </section>
 
 
-          {paymentMethod === 'BINANCE' && paymentSettings?.binanceQr && (
+          {paymentMethod === 'BINANCE' && paymentSettings?.binanceQr && paymentSettings?.binanceActive !== false && (
             <section className="space-y-4 border-2 border-emerald-100 rounded-xl p-6 bg-emerald-50/40">
               <h3 className="font-bold text-oxford flex items-center gap-2">
                 <Coins className="text-emerald-600 w-5 h-5" />
@@ -287,7 +299,7 @@ export default function CheckoutPage() {
             </section>
           )}
 
-          {paymentMethod === 'KONTIGO' && paymentSettings?.kontigoQr && (
+          {paymentMethod === 'KONTIGO' && paymentSettings?.kontigoQr && paymentSettings?.kontigoActive !== false && (
             <section className="space-y-4 border-2 border-purple/10 rounded-xl p-6 bg-purple/5">
               <h3 className="font-bold text-oxford flex items-center gap-2">
                 <CreditCard className="text-purple w-5 h-5" />
@@ -364,7 +376,7 @@ export default function CheckoutPage() {
                     onClick={() => setPaymentMethod('CASH_USD')}
                     icon={<Banknote className="w-5 h-5" />}
                   />
-                  {paymentSettings?.binanceQr && (
+                  {paymentSettings?.binanceQr && paymentSettings?.binanceActive !== false && (
                     <PaymentOption
                       title="Binance"
                       description="Paga con USDT de forma segura"
@@ -373,7 +385,7 @@ export default function CheckoutPage() {
                       icon={<Coins className="w-5 h-5" />}
                     />
                   )}
-                  {paymentSettings?.kontigoQr && (
+                  {paymentSettings?.kontigoQr && paymentSettings?.kontigoActive !== false && (
                     <PaymentOption
                       title="Kontigo"
                       description="Paga con USDC (equivale a USD)"

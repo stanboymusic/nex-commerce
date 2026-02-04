@@ -16,10 +16,12 @@ export async function GET() {
                 ? pb.files.getUrl(kontigo, kontigo.kontigoQr)
                 : null,
             kontigoInstructions: kontigo?.kontigoInstructions || "",
+            kontigoActive: kontigo?.kontigoActive !== false,
             binanceQr: binance?.binanceQr
                 ? pb.files.getUrl(binance, binance.binanceQr)
                 : null,
-            binanceInstructions: binance?.binanceInstructions || ""
+            binanceInstructions: binance?.binanceInstructions || "",
+            binanceActive: binance?.binanceActive !== false
         });
     } catch (error) {
         console.error("Error fetching payment settings:", error);

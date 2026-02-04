@@ -21,10 +21,12 @@ export async function GET() {
                 ? pb.files.getUrl(paymentRecord, paymentRecord.kontigoQr)
                 : null,
             kontigoInstructions: paymentRecord?.kontigoInstructions || "Reporta tu pago adjuntando el comprobante.",
+            kontigoActive: paymentRecord?.kontigoActive !== false,
             binanceQR: binanceRecord?.binanceQr
                 ? pb.files.getUrl(binanceRecord, binanceRecord.binanceQr)
                 : null,
-            binanceInstructions: binanceRecord?.binanceInstructions || "Escanea el QR, realiza el pago en Binance y reporta el comprobante."
+            binanceInstructions: binanceRecord?.binanceInstructions || "Escanea el QR, realiza el pago en Binance y reporta el comprobante.",
+            binanceActive: binanceRecord?.binanceActive !== false
         });
     } catch (error) {
         console.error("Error fetching settings:", error);
