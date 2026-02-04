@@ -324,7 +324,7 @@ function OrdersContent() {
                           <Package className="h-6 w-6 text-gray-300" />
                         </div>
                         <div className="flex-grow">
-                          <p className="font-semibold text-oxford">{item.product.name}</p>
+                          <p className="font-semibold text-oxford">{item.product?.name || item.name || 'Producto'}</p>
                           <p className="text-xs text-gray-500">Cantidad: {item.quantity} x ${item.price.toLocaleString()}</p>
                         </div>
                       </div>

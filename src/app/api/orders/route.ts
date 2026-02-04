@@ -274,46 +274,73 @@ export async function GET(req: NextRequest) {
       }, {});
     }
 
-    const orders = records.map(r => ({
-      id: r.id,
-      total: r.total,
-      totalUSD: r.totalUSD,
-      totalLocal: r.totalLocal,
-      exchangeRate: r.exchangeRate,
-      status: r.status,
-      paymentStatus: r.paymentStatus,
-      paymentReference: r.paymentReference,
-      paymentProof: r.paymentProof,
-      paymentReportedAt: r.paymentReportedAt,
-      paymentMethod: r.paymentMethod,
-      currency: r.currency,
-      address: r.address,
-      notes: r.notes,
-      isPreorder: r.isPreorder,
-      estimatedDeliveryDate: r.estimatedDeliveryDate,
-      created: r.created,
-      createdAt: r.created,
-      updatedAt: r.updated,
-      customerName: r.expand?.user?.name || 'N/A',
-      user: r.expand?.user
-        ? {
-          id: r.expand.user.id,
-          name: r.expand.user.name,
-          email: r.expand.user.email,
-          phone: r.expand.user.phone,
+    const adminPb = await getAdminPocketBase();
+    const productCache = new Map<string, any>();
+
+    const orders = [];
+    for (const r of records) {
+      const rawItems = r.expand?.['order_items(order)'] || [];
+      const items = [];
+
+      for (const oi of rawItems) {
+        let product = oi.expand?.product;
+        if (!product && oi.product) {
+          if (productCache.has(oi.product)) {
+            product = productCache.get(oi.product);
+          } else {
+            try {
+              const fetched = await adminPb.collection('products').getOne(oi.product);
+              productCache.set(oi.product, fetched);
+              product = fetched;
+            } catch (e) {
+              productCache.set(oi.product, null);
+            }
+          }
         }
-        : null,
-      statusHistory: eventsByOrder[r.id] || [],
-      items:
-        r.expand?.['order_items(order)']?.map((oi: any) => ({
+
+        items.push({
           id: oi.id,
           productId: oi.product,
           name: oi.name,
           quantity: oi.quantity,
           price: oi.price,
-          product: oi.expand?.product,
-        })) || [],
-    }));
+          product
+        });
+      }
+
+      orders.push({
+        id: r.id,
+        total: r.total,
+        totalUSD: r.totalUSD,
+        totalLocal: r.totalLocal,
+        exchangeRate: r.exchangeRate,
+        status: r.status,
+        paymentStatus: r.paymentStatus,
+        paymentReference: r.paymentReference,
+        paymentProof: r.paymentProof,
+        paymentReportedAt: r.paymentReportedAt,
+        paymentMethod: r.paymentMethod,
+        currency: r.currency,
+        address: r.address,
+        notes: r.notes,
+        isPreorder: r.isPreorder,
+        estimatedDeliveryDate: r.estimatedDeliveryDate,
+        created: r.created,
+        createdAt: r.created,
+        updatedAt: r.updated,
+        customerName: r.expand?.user?.name || 'N/A',
+        user: r.expand?.user
+          ? {
+            id: r.expand.user.id,
+            name: r.expand.user.name,
+            email: r.expand.user.email,
+            phone: r.expand.user.phone,
+          }
+          : null,
+        statusHistory: eventsByOrder[r.id] || [],
+        items,
+      });
+    }
 
     return NextResponse.json(orders);
   } catch (error: any) {
