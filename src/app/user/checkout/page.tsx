@@ -39,6 +39,8 @@ export default function CheckoutPage() {
   const [estimatedDelivery, setEstimatedDelivery] = useState('')
   const [binanceTxHash, setBinanceTxHash] = useState('')
   const [kontigoReference, setKontigoReference] = useState('')
+  const [kontigoProof, setKontigoProof] = useState<File | null>(null)
+  const [kontigoProofPreview, setKontigoProofPreview] = useState<string | null>(null)
   const [kontigoSettings, setKontigoSettings] = useState<{ kontigoQr: string | null, kontigoInstructions: string } | null>(null)
 
   useEffect(() => {
@@ -84,6 +86,10 @@ export default function CheckoutPage() {
       setError('La dirección de envío es obligatoria')
       return
     }
+    if (paymentMethod === 'KONTIGO' && !kontigoProof) {
+      setError('Debes subir el comprobante de pago para continuar')
+      return
+    }
 
     setLoading(true)
     setError(null)
@@ -118,6 +124,17 @@ export default function CheckoutPage() {
         // For cash methods, mark as reported
         await axios.patch(`/api/orders/${orderId}`, {
           paymentStatus: 'REPORTED'
+        });
+      } else if (paymentMethod === 'KONTIGO') {
+        const formData = new FormData();
+        if (kontigoReference) formData.append('reference', kontigoReference);
+        if (kontigoProof) formData.append('paymentProof', kontigoProof);
+
+        await axios.post(`/api/orders/${orderId}/report-payment`, formData, {
+          headers: {
+            Authorization: `Bearer ${token}`
+          },
+          withCredentials: true
         });
       }
 
@@ -222,6 +239,28 @@ export default function CheckoutPage() {
                   className="w-full p-3 rounded-lg border border-gray-200 outline-none bg-white"
                   placeholder="Número de comprobante..."
                 />
+                <div className="mt-3">
+                  <label className="text-sm font-bold text-oxford mb-2 block">Comprobante de pago (opcional)</label>
+                  <input
+                    type="file"
+                    accept="image/*"
+                    onChange={(e) => {
+                      const file = e.target.files?.[0] || null;
+                      setKontigoProof(file);
+                      setKontigoProofPreview(file ? URL.createObjectURL(file) : null);
+                    }}
+                    className="w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-xl file:border-0 file:text-sm file:font-bold file:bg-purple/10 file:text-purple hover:file:bg-purple/20 transition-all cursor-pointer"
+                  />
+                  {kontigoProofPreview && (
+                    <div className="mt-3 flex justify-center">
+                      <img
+                        src={kontigoProofPreview}
+                        alt="Comprobante de pago"
+                        className="max-w-[220px] rounded-xl border border-gray-200 shadow-sm"
+                      />
+                    </div>
+                  )}
+                </div>
               </div>
             </section>
           )}
