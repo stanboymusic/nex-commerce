@@ -156,7 +156,7 @@ function OrdersContent() {
                 <div className="p-6">
                   <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-6 pb-6 border-b border-gray-50">
                     <div>
-                      <p className="text-xs text-gray-500 uppercase font-bold tracking-wider">Orden #{order.id.slice(-8)}</p>
+                      <p className="text-xs text-gray-500 uppercase font-bold tracking-wider">Orden #{order.id.slice(-6).toUpperCase()}</p>
                       <p className="text-sm text-gray-400">{new Date(order.createdAt).toLocaleDateString()}</p>
                     </div>
 
