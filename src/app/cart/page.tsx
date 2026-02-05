@@ -7,6 +7,7 @@ import Image from 'next/image'
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { useAuthStore } from '@/store/auth.store'
+import { useRefreshCurrentUser } from '@/hooks/useRefreshCurrentUser'
 import axios from 'axios'
 
 export default function CartPage() {
@@ -18,6 +19,7 @@ export default function CartPage() {
   const [vipDiscountPercent, setVipDiscountPercent] = useState<number>(0)
   const [vipEnabled, setVipEnabled] = useState<boolean>(true)
   const router = useRouter()
+  useRefreshCurrentUser()
 
   useEffect(() => {
     setMounted(true)

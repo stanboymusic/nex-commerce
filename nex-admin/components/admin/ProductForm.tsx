@@ -112,8 +112,9 @@ export default function ProductForm({ initial = null, onSaved }: any) {
 
       <div className="grid grid-cols-1 gap-4">
         <div>
-          <label className="block text-sm font-medium mb-1">Nombre</label>
+          <label htmlFor="product-name" className="block text-sm font-medium mb-1">Nombre</label>
           <input
+            id="product-name"
             value={name}
             onChange={e => setName(e.target.value)}
             placeholder="Nombre del producto"
@@ -124,8 +125,9 @@ export default function ProductForm({ initial = null, onSaved }: any) {
 
         <div className="grid grid-cols-2 gap-4">
           <div>
-            <label className="block text-sm font-medium mb-1">Precio (USD)</label>
+            <label htmlFor="product-price" className="block text-sm font-medium mb-1">Precio (USD)</label>
             <input
+              id="product-price"
               type="number"
               value={price}
               onChange={e => setPrice(Number(e.target.value))}
@@ -135,8 +137,9 @@ export default function ProductForm({ initial = null, onSaved }: any) {
             />
           </div>
           <div>
-            <label className="block text-sm font-medium mb-1">Stock</label>
+            <label htmlFor="product-stock" className="block text-sm font-medium mb-1">Stock</label>
             <input
+              id="product-stock"
               type="number"
               value={stock}
               onChange={e => setStock(Number(e.target.value))}
@@ -148,8 +151,9 @@ export default function ProductForm({ initial = null, onSaved }: any) {
         </div>
 
         <div>
-          <label className="block text-sm font-medium mb-1">Categoría</label>
+          <label htmlFor="product-category" className="block text-sm font-medium mb-1">Categoría</label>
           <select
+            id="product-category"
             value={categoryId}
             onChange={e => setCategoryId(e.target.value)}
             required
@@ -175,8 +179,9 @@ export default function ProductForm({ initial = null, onSaved }: any) {
 
           {isPreorder && (
             <div className="mt-3">
-              <label className="block text-sm font-medium mb-1">Fecha estimada de llegada</label>
+              <label htmlFor="product-arrival-date" className="block text-sm font-medium mb-1">Fecha estimada de llegada</label>
               <input
+                id="product-arrival-date"
                 type="date"
                 value={estimatedArrivalDate}
                 onChange={e => setEstimatedArrivalDate(e.target.value)}
@@ -187,8 +192,9 @@ export default function ProductForm({ initial = null, onSaved }: any) {
         </div>
 
         <div>
-          <label className="block text-sm font-medium mb-1">Imagen Principal</label>
+          <label htmlFor="product-image" className="block text-sm font-medium mb-1">Imagen Principal</label>
           <input
+            id="product-image"
             type="file"
             accept="image/*"
             onChange={e => setFile(e.target.files?.[0] || null)}
@@ -197,8 +203,9 @@ export default function ProductForm({ initial = null, onSaved }: any) {
         </div>
 
         <div>
-          <label className="block text-sm font-medium mb-1">Galería</label>
+          <label htmlFor="product-gallery" className="block text-sm font-medium mb-1">Galería</label>
           <input
+            id="product-gallery"
             type="file"
             multiple
             accept="image/*"

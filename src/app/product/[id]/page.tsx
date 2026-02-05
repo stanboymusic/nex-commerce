@@ -6,6 +6,7 @@ import { useParams } from 'next/navigation'
 import { ShoppingCart, Plus, Minus, Calendar, Package, AlertCircle, CheckCircle } from 'lucide-react'
 import { useCartStore } from '@/store/cart.store'
 import { useAuthStore } from '@/store/auth.store'
+import { useRefreshCurrentUser } from '@/hooks/useRefreshCurrentUser'
 import axios from 'axios'
 import { formatMoney } from '@/lib/format'
 
@@ -22,6 +23,7 @@ export default function ProductDetailsPage() {
   
   const { addItem } = useCartStore()
   const { user, token } = useAuthStore()
+  useRefreshCurrentUser()
 
   useEffect(() => {
     const fetchProduct = async () => {

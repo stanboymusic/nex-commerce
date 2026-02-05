@@ -2,6 +2,7 @@
 
 import { useCartStore } from '@/store/cart.store'
 import { useAuthStore } from '@/store/auth.store'
+import { useRefreshCurrentUser } from '@/hooks/useRefreshCurrentUser'
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import axios from 'axios'
@@ -25,6 +26,7 @@ export default function CheckoutPage() {
   const { items, getTotal, clearCart } = useCartStore()
   const { token, user } = useAuthStore()
   const router = useRouter()
+  useRefreshCurrentUser()
 
   const [mounted, setMounted] = useState(false)
   const [loading, setLoading] = useState(false)

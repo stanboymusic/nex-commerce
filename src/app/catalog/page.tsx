@@ -5,6 +5,7 @@ import { useState, useEffect, useMemo } from 'react'
 import axios from 'axios'
 import { Loader2 } from 'lucide-react'
 import { useAuthStore } from '@/store/auth.store'
+import { useRefreshCurrentUser } from '@/hooks/useRefreshCurrentUser'
 
 // Define Product interface to match API response
 interface Product {
@@ -29,6 +30,7 @@ export default function CatalogPage() {
   const [vipDiscountPercent, setVipDiscountPercent] = useState<number>(0)
   const [vipEnabled, setVipEnabled] = useState<boolean>(true)
   const { user } = useAuthStore()
+  useRefreshCurrentUser()
 
   const sortProducts = (list: Product[], sort: string) => {
     const sorted = [...list]
