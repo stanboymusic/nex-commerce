@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { apiClient } from "@/lib/apiClient";
 import {
   Search, RefreshCw, ChevronRight, MapPin, User, Clock,
@@ -30,6 +30,9 @@ export default function OrdersPage() {
   const [orderMessages, setOrderMessages] = useState<any[]>([]);
   const [messageInput, setMessageInput] = useState("");
   const [messagesLoading, setMessagesLoading] = useState(false);
+  const [lastSeenMap, setLastSeenMap] = useState<Record<string, string>>({});
+  const [messageSummary, setMessageSummary] = useState<Record<string, any>>({});
+  const lastAlertedRef = useRef<Record<string, string>>({});
 
   const statusOptions = [
     { value: "PENDING_PAYMENT", label: "Pendiente Pago" },
@@ -64,6 +67,16 @@ export default function OrdersPage() {
     }
   };
 
+  const fetchMessageSummary = async (orderIds: string[]) => {
+    if (!orderIds.length) return;
+    try {
+      const res = await apiClient.post('/orders/messages-summary', { orderIds });
+      setMessageSummary(res.data || {});
+    } catch {
+      // ignore
+    }
+  };
+
   const loadSettings = async () => {
     try {
       const { data } = await apiClient.get("/settings");
@@ -79,6 +92,23 @@ export default function OrdersPage() {
   useEffect(() => {
     load();
     loadSettings();
+  }, []);
+  useEffect(() => {
+    if (!orders.length) return;
+    const orderIds = orders.map((o: any) => o.id);
+    fetchMessageSummary(orderIds);
+    const interval = setInterval(() => fetchMessageSummary(orderIds), 15000);
+    return () => clearInterval(interval);
+  }, [orders]);
+  useEffect(() => {
+    try {
+      const stored = localStorage.getItem('orderMessagesLastSeenAdmin');
+      if (stored) {
+        setLastSeenMap(JSON.parse(stored));
+      }
+    } catch {
+      // ignore
+    }
   }, []);
   useEffect(() => {
     if (selected?.status) {
@@ -100,6 +130,7 @@ export default function OrdersPage() {
     }
     if (selected?.id) {
       loadMessages(selected.id);
+      markMessagesSeen(selected.id);
     } else {
       setOrderMessages([]);
     }
@@ -117,6 +148,56 @@ export default function OrdersPage() {
     }
   };
 
+  const markMessagesSeen = (orderId: string) => {
+    const now = new Date().toISOString();
+    const next = { ...lastSeenMap, [orderId]: now };
+    setLastSeenMap(next);
+    try {
+      localStorage.setItem('orderMessagesLastSeenAdmin', JSON.stringify(next));
+    } catch {
+      // ignore
+    }
+  };
+
+  const playNotificationSound = () => {
+    try {
+      const ctx = new (window.AudioContext || (window as any).webkitAudioContext)();
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
+      osc.type = 'sine';
+      osc.frequency.value = 660;
+      gain.gain.value = 0.05;
+      osc.connect(gain);
+      gain.connect(ctx.destination);
+      osc.start();
+      osc.stop(ctx.currentTime + 0.15);
+    } catch {
+      // ignore
+    }
+  };
+
+  useEffect(() => {
+    if (!orders.length) return;
+    let shouldPlay = false;
+    for (const order of orders) {
+      const summary = messageSummary[order.id];
+      if (!summary?.lastMessageAt) continue;
+      const lastSeen = lastSeenMap[order.id] ? new Date(lastSeenMap[order.id]).getTime() : 0;
+      const lastMessageAt = new Date(summary.lastMessageAt).getTime();
+      const isFromUser = summary.lastSenderRole === 'USER';
+      if (isFromUser && lastMessageAt > lastSeen) {
+        const lastAlerted = lastAlertedRef.current[order.id];
+        if (lastAlerted !== summary.lastMessageAt) {
+          lastAlertedRef.current[order.id] = summary.lastMessageAt;
+          shouldPlay = true;
+        }
+      }
+    }
+    if (shouldPlay) {
+      playNotificationSound();
+    }
+  }, [messageSummary, lastSeenMap, orders]);
+
   const sendMessage = async () => {
     if (!selected) return;
     const message = messageInput.trim();
@@ -125,6 +206,7 @@ export default function OrdersPage() {
       await apiClient.post(`/orders/${selected.id}/messages`, { message });
       setMessageInput("");
       loadMessages(selected.id);
+      markMessagesSeen(selected.id);
     } catch (error) {
       alert("Error al enviar el mensaje");
     }
@@ -315,6 +397,17 @@ export default function OrdersPage() {
                       <div className="text-xs text-gray-400 font-medium">
                         {o.items.length} {o.items.length === 1 ? 'producto' : 'productos'}
                       </div>
+                      {(() => {
+                        const summary = messageSummary[o.id];
+                        const lastSeen = lastSeenMap[o.id] ? new Date(lastSeenMap[o.id]).getTime() : 0;
+                        const lastMessageAt = summary?.lastMessageAt ? new Date(summary.lastMessageAt).getTime() : 0;
+                        const isNew = summary?.lastSenderRole === 'USER' && lastMessageAt > lastSeen;
+                        return isNew ? (
+                          <div className="text-[9px] font-black text-purple uppercase tracking-widest bg-purple/10 border border-purple/20 inline-flex px-2 py-0.5 rounded-full animate-pulse">
+                            1 nuevo
+                          </div>
+                        ) : null;
+                      })()}
                       {o.paymentMethod === "BINANCE" && (
                         <div className="text-[9px] font-black text-emerald-700 uppercase tracking-widest bg-emerald-50 border border-emerald-100 inline-flex px-2 py-0.5 rounded-full">
                           Binance
@@ -687,22 +780,32 @@ export default function OrdersPage() {
                       {messagesLoading ? (
                         <p className="text-xs text-slate-500">Cargando mensajes...</p>
                       ) : orderMessages.length ? (
-                        orderMessages.map((msg: any) => (
-                          <div
-                            key={msg.id}
-                            className={`p-3 rounded-2xl text-sm ${
-                              msg.senderRole === "ADMIN"
-                                ? "bg-purple-50 text-purple-900 border border-purple-100"
-                                : "bg-white text-slate-800 border border-slate-200"
-                            }`}
-                          >
-                            <div className="flex justify-between text-[10px] font-black uppercase tracking-widest text-slate-400 mb-1">
-                              <span>{msg.senderRole === "ADMIN" ? "Administrador" : "Cliente"}</span>
-                              <span>{new Date(msg.createdAt).toLocaleString()}</span>
+                        orderMessages.map((msg: any) => {
+                          const lastSeen = lastSeenMap[selected.id] ? new Date(lastSeenMap[selected.id]).getTime() : 0;
+                          const createdAt = new Date(msg.createdAt).getTime();
+                          const isNew = msg.senderRole === "USER" && createdAt > lastSeen;
+                          return (
+                            <div
+                              key={msg.id}
+                              className={`p-3 rounded-2xl text-sm border transition-all ${
+                                msg.senderRole === "ADMIN"
+                                  ? "bg-purple-50 text-purple-900 border-purple-100"
+                                  : "bg-white text-slate-800 border-slate-200"
+                              } ${isNew ? "ring-2 ring-purple/30 shadow-sm" : ""}`}
+                            >
+                              <div className="flex justify-between text-[10px] font-black uppercase tracking-widest text-slate-400 mb-1">
+                                <span className={isNew ? "text-purple-700" : ""}>{msg.senderRole === "ADMIN" ? "Administrador" : "Cliente"}</span>
+                                <span>{new Date(msg.createdAt).toLocaleString()}</span>
+                              </div>
+                            {isNew && (
+                              <span className="inline-flex text-[9px] font-black uppercase tracking-widest bg-purple-100 text-purple-700 px-2 py-0.5 rounded-full mb-2 animate-pulse">
+                                Nuevo
+                              </span>
+                            )}
+                              <p>{msg.message}</p>
                             </div>
-                            <p>{msg.message}</p>
-                          </div>
-                        ))
+                          );
+                        })
                       ) : (
                         <p className="text-xs text-slate-500">Aún no hay mensajes en esta orden.</p>
                       )}
@@ -716,7 +819,10 @@ export default function OrdersPage() {
                         className="flex-1 bg-white border border-slate-200 px-4 py-3 rounded-2xl text-sm font-bold text-oxford outline-none focus:ring-4 focus:ring-slate-200/60"
                       />
                       <button
-                        onClick={sendMessage}
+                        onClick={() => {
+                          if (selected?.id) markMessagesSeen(selected.id);
+                          sendMessage();
+                        }}
                         className="bg-slate-800 text-white px-6 py-3 rounded-2xl font-black text-xs hover:bg-slate-900 transition-all shadow-lg shadow-slate-900/10"
                       >
                         Enviar

@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { useAuthStore } from '@/store/auth.store'
 import axios from 'axios'
 import { Package, Clock, CheckCircle, Truck, XCircle, AlertCircle, ExternalLink, ShoppingBag, Banknote, PartyPopper } from 'lucide-react'
@@ -61,6 +61,9 @@ function OrdersContent() {
   const [messagesByOrder, setMessagesByOrder] = useState<Record<string, any[]>>({})
   const [messageDrafts, setMessageDrafts] = useState<Record<string, string>>({})
   const [messagesLoadingId, setMessagesLoadingId] = useState<string | null>(null)
+  const [lastSeenMap, setLastSeenMap] = useState<Record<string, string>>({})
+  const [messageSummary, setMessageSummary] = useState<Record<string, any>>({})
+  const lastAlertedRef = useRef<Record<string, string>>({})
 
   const fetchOrders = async () => {
     try {
@@ -89,6 +92,17 @@ function OrdersContent() {
 
     fetchOrders()
   }, [user, token, router])
+
+  useEffect(() => {
+    try {
+      const stored = localStorage.getItem('orderMessagesLastSeen')
+      if (stored) {
+        setLastSeenMap(JSON.parse(stored))
+      }
+    } catch {
+      // ignore
+    }
+  }, [])
 
   const filteredOrders = orders.filter((order) => {
     const matchesSearch =
@@ -137,6 +151,39 @@ function OrdersContent() {
     }
   };
 
+  const fetchMessageSummary = async (orderIds: string[]) => {
+    if (!orderIds.length) return;
+    try {
+      const res = await axios.post(
+        '/api/orders/messages-summary',
+        { orderIds },
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+      setMessageSummary(res.data || {});
+    } catch {
+      // ignore
+    }
+  };
+
+  useEffect(() => {
+    if (!orders.length) return;
+    const orderIds = orders.map((o) => o.id);
+    fetchMessageSummary(orderIds);
+    const interval = setInterval(() => fetchMessageSummary(orderIds), 15000);
+    return () => clearInterval(interval);
+  }, [orders, token]);
+
+  const markMessagesSeen = (orderId: string) => {
+    const now = new Date().toISOString()
+    const next = { ...lastSeenMap, [orderId]: now }
+    setLastSeenMap(next)
+    try {
+      localStorage.setItem('orderMessagesLastSeen', JSON.stringify(next))
+    } catch {
+      // ignore
+    }
+  }
+
   const sendMessage = async (orderId: string) => {
     const message = (messageDrafts[orderId] || '').trim();
     if (!message) return;
@@ -146,10 +193,50 @@ function OrdersContent() {
       });
       setMessageDrafts((prev) => ({ ...prev, [orderId]: '' }));
       await loadMessages(orderId);
+      markMessagesSeen(orderId);
     } catch (error) {
       alert('No se pudo enviar el mensaje.');
     }
   };
+
+  const playNotificationSound = () => {
+    try {
+      const ctx = new (window.AudioContext || (window as any).webkitAudioContext)();
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
+      osc.type = 'sine';
+      osc.frequency.value = 880;
+      gain.gain.value = 0.05;
+      osc.connect(gain);
+      gain.connect(ctx.destination);
+      osc.start();
+      osc.stop(ctx.currentTime + 0.15);
+    } catch {
+      // ignore
+    }
+  };
+
+  useEffect(() => {
+    if (!orders.length) return;
+    let shouldPlay = false;
+    for (const order of orders) {
+      const summary = messageSummary[order.id];
+      if (!summary?.lastMessageAt) continue;
+      const lastSeen = lastSeenMap[order.id] ? new Date(lastSeenMap[order.id]).getTime() : 0;
+      const lastMessageAt = new Date(summary.lastMessageAt).getTime();
+      const isFromAdmin = summary.lastSenderRole === 'ADMIN';
+      if (isFromAdmin && lastMessageAt > lastSeen) {
+        const lastAlerted = lastAlertedRef.current[order.id];
+        if (lastAlerted !== summary.lastMessageAt) {
+          lastAlertedRef.current[order.id] = summary.lastMessageAt;
+          shouldPlay = true;
+        }
+      }
+    }
+    if (shouldPlay) {
+      playNotificationSound();
+    }
+  }, [messageSummary, lastSeenMap, orders]);
 
   const handleReportPayment = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -322,6 +409,17 @@ function OrdersContent() {
                         <StatusIcon className="h-4 w-4" />
                         {STATUS_LABELS[order.status]}
                       </div>
+                      {(() => {
+                        const summary = messageSummary[order.id];
+                        const lastSeen = lastSeenMap[order.id] ? new Date(lastSeenMap[order.id]).getTime() : 0;
+                        const lastMessageAt = summary?.lastMessageAt ? new Date(summary.lastMessageAt).getTime() : 0;
+                        const isNew = summary?.lastSenderRole === 'ADMIN' && lastMessageAt > lastSeen;
+                        return isNew ? (
+                          <span className="text-[10px] font-bold uppercase tracking-wider bg-purple-100 text-purple-700 px-3 py-1 rounded-full border border-purple-200 animate-pulse">
+                            1 nuevo
+                          </span>
+                        ) : null;
+                      })()}
                       {typeof order.shippingCost === 'number' && (
                         <span className="text-[10px] font-bold uppercase tracking-wider bg-emerald-50 text-emerald-700 px-3 py-1 rounded-full border border-emerald-100">
                           Envío asignado
@@ -506,6 +604,7 @@ function OrdersContent() {
                           setOpenChatId(next);
                           if (next) {
                             loadMessages(order.id);
+                            markMessagesSeen(order.id);
                           }
                         }}
                         className="text-xs font-bold text-oxford border border-oxford/20 px-3 py-1.5 rounded-full hover:bg-oxford/5 transition-colors"
@@ -520,22 +619,31 @@ function OrdersContent() {
                           {messagesLoadingId === order.id ? (
                             <p className="text-xs text-slate-500">Cargando mensajes...</p>
                           ) : (messagesByOrder[order.id]?.length ? (
-                            messagesByOrder[order.id].map((msg: any) => (
+                            messagesByOrder[order.id].map((msg: any) => {
+                              const lastSeen = lastSeenMap[order.id] ? new Date(lastSeenMap[order.id]).getTime() : 0
+                              const createdAt = new Date(msg.createdAt).getTime()
+                              const isNew = msg.senderRole === 'ADMIN' && createdAt > lastSeen
+                              return (
                               <div
                                 key={msg.id}
-                                className={`p-3 rounded-xl text-sm ${
+                                className={`p-3 rounded-xl text-sm border transition-all ${
                                   msg.senderRole === 'ADMIN'
-                                    ? 'bg-purple-50 text-purple-900'
-                                    : 'bg-white border border-slate-200 text-slate-800'
-                                }`}
+                                    ? 'bg-purple-50 text-purple-900 border-purple-100'
+                                    : 'bg-white text-slate-800 border-slate-200'
+                                } ${isNew ? 'ring-2 ring-purple/30 shadow-sm' : ''}`}
                               >
                                 <div className="flex justify-between items-center text-[10px] font-bold uppercase tracking-widest text-slate-400 mb-1">
-                                  <span>{msg.senderRole === 'ADMIN' ? 'Administrador' : 'Cliente'}</span>
+                                  <span className={isNew ? 'text-purple-700' : ''}>{msg.senderRole === 'ADMIN' ? 'Administrador' : 'Cliente'}</span>
                                   <span>{new Date(msg.createdAt).toLocaleString()}</span>
                                 </div>
+                                {isNew && (
+                                  <span className="inline-flex text-[9px] font-black uppercase tracking-widest bg-purple-100 text-purple-700 px-2 py-0.5 rounded-full mb-2 animate-pulse">
+                                    Nuevo
+                                  </span>
+                                )}
                                 <p>{msg.message}</p>
                               </div>
-                            ))
+                            )})
                           ) : (
                             <p className="text-xs text-slate-500">Aún no hay mensajes en esta orden.</p>
                           ))}
