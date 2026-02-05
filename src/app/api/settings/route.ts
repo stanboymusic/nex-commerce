@@ -14,6 +14,7 @@ export async function GET() {
         const paymentRecord = await pb.collection("payment_settings").getFirstListItem('method="KONTIGO"').catch(() => null);
         // Fetch Binance settings
         const binanceRecord = await pb.collection("payment_settings").getFirstListItem('method="BINANCE"').catch(() => null);
+        const storeSettings = await pb.collection("store_settings").getFirstListItem('').catch(() => null);
 
         return NextResponse.json({
             usdToCopRate: rateRecord?.rate || 4000,
@@ -26,7 +27,9 @@ export async function GET() {
                 ? pb.files.getUrl(binanceRecord, binanceRecord.binanceQr)
                 : null,
             binanceInstructions: binanceRecord?.binanceInstructions || "Escanea el QR, realiza el pago en Binance y reporta el comprobante.",
-            binanceActive: binanceRecord?.binanceActive !== false
+            binanceActive: binanceRecord?.binanceActive !== false,
+            vipDiscountPercent: Number(storeSettings?.vipDiscountPercent ?? 0),
+            vipEnabled: storeSettings?.vipEnabled !== false
         });
     } catch (error) {
         console.error("Error fetching settings:", error);

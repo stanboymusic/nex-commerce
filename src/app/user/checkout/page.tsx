@@ -49,6 +49,8 @@ export default function CheckoutPage() {
     binanceInstructions: string
     kontigoActive?: boolean
     binanceActive?: boolean
+    vipDiscountPercent?: number
+    vipEnabled?: boolean
   } | null>(null)
 
   useEffect(() => {
@@ -67,7 +69,9 @@ export default function CheckoutPage() {
           kontigoActive: data.kontigoActive !== false,
           binanceQr: data.binanceQR,
           binanceInstructions: data.binanceInstructions || "Escanea el QR, realiza el pago en Binance y reporta el comprobante.",
-          binanceActive: data.binanceActive !== false
+          binanceActive: data.binanceActive !== false,
+          vipDiscountPercent: Number(data.vipDiscountPercent ?? 0),
+          vipEnabled: data.vipEnabled !== false
         });
       } catch (err) {
         console.error("Error fetching settings", err);
@@ -107,8 +111,12 @@ export default function CheckoutPage() {
 
   const getConvertedTotal = () => {
     const baseTotal = getTotal(); // USD base
-    if (currency === 'USD') return baseTotal;
-    return baseTotal * rate; // to COP
+    const vipRate = user?.isVip && paymentSettings?.vipEnabled !== false && (paymentSettings?.vipDiscountPercent || 0) > 0
+      ? Math.min(Math.max(Number(paymentSettings?.vipDiscountPercent || 0), 0), 90) / 100
+      : 0;
+    const discountedTotal = baseTotal * (1 - vipRate);
+    if (currency === 'USD') return discountedTotal;
+    return discountedTotal * rate; // to COP
   }
 
   const handlePlaceOrder = async () => {
@@ -441,10 +449,34 @@ export default function CheckoutPage() {
                 <span>Subtotal</span>
                 <span>
                   {currency === 'USD' ? '$' : ''}
-                  {getConvertedTotal().toLocaleString(undefined, { minimumFractionDigits: currency === 'COP' ? 0 : 2, maximumFractionDigits: currency === 'COP' ? 0 : 2 })}
+                  {(() => {
+                    const discountedTotal = getTotal();
+                    const vipRate = user?.isVip && paymentSettings?.vipEnabled !== false && (paymentSettings?.vipDiscountPercent || 0) > 0
+                      ? Math.min(Math.max(Number(paymentSettings?.vipDiscountPercent || 0), 0), 90) / 100
+                      : 0;
+                    const originalTotal = vipRate ? discountedTotal / (1 - vipRate) : discountedTotal;
+                    const subtotal = currency === 'USD' ? originalTotal : originalTotal * rate;
+                    return subtotal.toLocaleString(undefined, { minimumFractionDigits: currency === 'COP' ? 0 : 2, maximumFractionDigits: currency === 'COP' ? 0 : 2 });
+                  })()}
                   <span className="ml-1 text-[10px]">{currency}</span>
                 </span>
               </div>
+              {user?.isVip && paymentSettings?.vipEnabled !== false && (paymentSettings?.vipDiscountPercent || 0) > 0 && (
+                <div className="flex justify-between text-emerald-600 font-semibold">
+                  <span>Descuento VIP (-{paymentSettings?.vipDiscountPercent}%)</span>
+                  <span>
+                    {currency === 'USD' ? '$' : ''}
+                    {(() => {
+                      const discountedTotal = getTotal();
+                      const vipRate = Math.min(Math.max(Number(paymentSettings?.vipDiscountPercent || 0), 0), 90) / 100;
+                      const originalTotal = vipRate ? discountedTotal / (1 - vipRate) : discountedTotal;
+                      const discount = originalTotal * vipRate;
+                      const converted = currency === 'USD' ? discount : discount * rate;
+                      return converted.toLocaleString(undefined, { minimumFractionDigits: currency === 'COP' ? 0 : 2, maximumFractionDigits: currency === 'COP' ? 0 : 2 });
+                    })()}
+                  </span>
+                </div>
+              )}
               <div className="flex justify-between text-gray-500">
                 <span>Envío</span>
                 <span className="text-gray-400 font-bold uppercase text-xs">Por definir</span>

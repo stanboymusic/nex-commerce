@@ -54,7 +54,18 @@ export async function POST(req: NextRequest) {
 
     const exchangeRate = rateRecord.rate;
 
+    // VIP discount settings
+    const storeSettings = await adminPb.collection("store_settings").getFirstListItem('').catch(() => null);
+    const vipDiscountPercent = Number(storeSettings?.vipDiscountPercent ?? 0);
+    const vipEnabled = storeSettings?.vipEnabled !== false;
+    const userRecord = await adminPb.collection("users").getOne(user.id).catch(() => null);
+    const isVip = !!userRecord?.isVip && vipEnabled && vipDiscountPercent > 0;
+    const vipRate = isVip ? Math.min(Math.max(vipDiscountPercent, 0), 90) / 100 : 0;
+
     const totalLocal = totalUSD * exchangeRate;
+    const vipDiscountAmountUSD = vipRate ? totalUSD * vipRate : 0;
+    const discountedTotalUSD = totalUSD - vipDiscountAmountUSD;
+    const discountedTotalLocal = discountedTotalUSD * exchangeRate;
 
     // 1.6) Lógica preorder
     const isPreorder = items.some((i: any) => i.isPreorder);
@@ -74,9 +85,9 @@ export async function POST(req: NextRequest) {
       user: user.id,
       currency,
       paymentMethod,
-      total: currency === "USD" ? totalUSD : totalLocal,
-      totalUSD,
-      totalLocal,
+      total: currency === "USD" ? discountedTotalUSD : discountedTotalLocal,
+      totalUSD: discountedTotalUSD,
+      totalLocal: discountedTotalLocal,
       exchangeRate,
       status: paymentMethod === "KONTIGO" || paymentMethod?.startsWith("CASH") || paymentMethod === "BINANCE"
         ? "PAYMENT_REPORTED"
@@ -90,7 +101,9 @@ export async function POST(req: NextRequest) {
       address,
       notes,
       isPreorder,
-      estimatedDeliveryDate: estimatedDelivery || null
+      estimatedDeliveryDate: estimatedDelivery || null,
+      vipDiscountPercent: vipRate ? vipDiscountPercent : 0,
+      vipDiscountAmount: vipRate ? vipDiscountAmountUSD : 0
     });
 
     await recordOrderStatusEvent({
@@ -112,12 +125,13 @@ export async function POST(req: NextRequest) {
       );
 
       try {
+        const unitPrice = vipRate ? Number(product.price) * (1 - vipRate) : Number(product.price);
         await adminPb.collection("order_items").create({
           order: order.id,
           product: product.id,
           name: product.name,
           quantity,
-          price: product.price
+          price: Number(unitPrice.toFixed(2))
         });
       } catch (err: any) {
         console.error("ORDER_ITEM_CREATE_ERROR:", err);
@@ -318,10 +332,12 @@ export async function GET(req: NextRequest) {
         paymentStatus: r.paymentStatus,
         paymentReference: r.paymentReference,
         paymentProof: r.paymentProof,
-      paymentReportedAt: r.paymentReportedAt,
+        paymentReportedAt: r.paymentReportedAt,
       paymentMethod: r.paymentMethod,
       binanceTxHash: r.binanceTxHash,
       shippingCost: r.shippingCost,
+      vipDiscountPercent: r.vipDiscountPercent,
+      vipDiscountAmount: r.vipDiscountAmount,
       currency: r.currency,
         address: r.address,
         notes: r.notes,

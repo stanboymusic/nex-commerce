@@ -15,6 +15,7 @@ export async function GET(req: NextRequest) {
       name: r.name,
       email: r.email,
       role: r.role,
+      isVip: !!r.isVip,
       created: r.created,
     }));
 

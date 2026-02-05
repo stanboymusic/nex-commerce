@@ -15,10 +15,25 @@ export default function CartPage() {
   const [mounted, setMounted] = useState(false)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const [vipDiscountPercent, setVipDiscountPercent] = useState<number>(0)
+  const [vipEnabled, setVipEnabled] = useState<boolean>(true)
   const router = useRouter()
 
   useEffect(() => {
     setMounted(true)
+  }, [])
+
+  useEffect(() => {
+    const fetchSettings = async () => {
+      try {
+        const { data } = await axios.get('/api/settings')
+        setVipDiscountPercent(Number(data?.vipDiscountPercent ?? 0))
+        setVipEnabled(data?.vipEnabled !== false)
+      } catch {
+        // ignore
+      }
+    }
+    fetchSettings()
   }, [])
 
   const handleGoToCheckout = () => {
@@ -48,6 +63,12 @@ export default function CartPage() {
       </div>
     )
   }
+
+  const isVip = !!user?.isVip && vipEnabled && vipDiscountPercent > 0
+  const vipRate = isVip ? Math.min(Math.max(vipDiscountPercent, 0), 90) / 100 : 0
+  const discountedTotal = getTotal()
+  const originalTotal = vipRate ? discountedTotal / (1 - vipRate) : discountedTotal
+  const vipSavings = vipRate ? originalTotal - discountedTotal : 0
 
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
@@ -86,9 +107,16 @@ export default function CartPage() {
                 </div>
 
                 <div className="mt-4 flex items-center justify-between">
-                  <span className="text-xl font-bold text-oxford">
-                    ${(item.price * item.quantity).toLocaleString()}
-                  </span>
+                  <div className="flex items-center gap-3">
+                    <span className="text-xl font-bold text-oxford">
+                      ${(item.price * item.quantity).toLocaleString()}
+                    </span>
+                    {vipRate > 0 && (
+                      <span className="text-xs text-gray-400 line-through font-bold">
+                        ${((item.price * item.quantity) / (1 - vipRate)).toLocaleString()}
+                      </span>
+                    )}
+                  </div>
 
                   <div className="flex items-center border border-gray-200 rounded-lg overflow-hidden h-10">
                     <button
@@ -130,15 +158,21 @@ export default function CartPage() {
             <div className="space-y-4 mb-8">
               <div className="flex justify-between text-gray-300">
                 <span>Subtotal</span>
-                <span>${getTotal().toLocaleString()}</span>
+                <span>${originalTotal.toLocaleString()}</span>
               </div>
+              {vipRate > 0 && (
+                <div className="flex justify-between text-emerald-300 font-semibold">
+                  <span>Descuento VIP (-{vipDiscountPercent}%)</span>
+                  <span>- ${vipSavings.toLocaleString()}</span>
+                </div>
+              )}
               <div className="flex justify-between text-gray-300">
                 <span>Envío</span>
                 <span className="text-green-400 font-medium">Gratis</span>
               </div>
               <div className="pt-4 border-t border-white/10 flex justify-between text-xl font-bold">
                 <span>Total</span>
-                <span className="text-almond">${getTotal().toLocaleString()}</span>
+                <span className="text-almond">${discountedTotal.toLocaleString()}</span>
               </div>
             </div>
 

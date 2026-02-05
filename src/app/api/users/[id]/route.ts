@@ -25,6 +25,7 @@ export async function GET(
         name: record.name,
         email: record.email,
         role: record.role,
+        isVip: !!record.isVip,
         created: record.created,
         updated: record.updated,
       };
@@ -71,6 +72,7 @@ export async function PATCH(
       name: updatedRecord.name,
       email: updatedRecord.email,
       role: updatedRecord.role,
+      isVip: !!updatedRecord.isVip,
       updated: updatedRecord.updated,
     };
 

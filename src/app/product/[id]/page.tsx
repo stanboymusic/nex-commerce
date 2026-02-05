@@ -17,6 +17,8 @@ export default function ProductDetailsPage() {
   const [requestingStock, setRequestingStock] = useState(false)
   const [requested, setRequested] = useState(false)
   const [activeImage, setActiveImage] = useState(0)
+  const [vipDiscountPercent, setVipDiscountPercent] = useState<number>(0)
+  const [vipEnabled, setVipEnabled] = useState<boolean>(true)
   
   const { addItem } = useCartStore()
   const { user, token } = useAuthStore()
@@ -24,8 +26,13 @@ export default function ProductDetailsPage() {
   useEffect(() => {
     const fetchProduct = async () => {
       try {
-        const response = await axios.get(`/api/products/${id}`)
-        setProduct(response.data)
+        const [productRes, settingsRes] = await Promise.all([
+          axios.get(`/api/products/${id}`),
+          axios.get('/api/settings')
+        ])
+        setProduct(productRes.data)
+        setVipDiscountPercent(Number(settingsRes.data?.vipDiscountPercent ?? 0))
+        setVipEnabled(settingsRes.data?.vipEnabled !== false)
       } catch (error) {
         console.error('Error fetching product:', error)
       } finally {
@@ -51,11 +58,15 @@ export default function ProductDetailsPage() {
     }
   }
 
+  const isVip = !!user?.isVip && vipEnabled && vipDiscountPercent > 0
+  const vipRate = isVip ? Math.min(Math.max(vipDiscountPercent, 0), 90) / 100 : 0
+  const discountedPrice = vipRate ? Number((product.price * (1 - vipRate)).toFixed(2)) : product.price
+
   const handleAddToCart = () => {
     addItem({
       id: product.id,
       name: product.name,
-      price: product.price,
+      price: discountedPrice,
       stock: product.stock,
       isPreorder: product.isPreorder,
       quantity
@@ -131,7 +142,17 @@ export default function ProductDetailsPage() {
           </p>
 
           <div className="mb-8">
-            <span className="text-3xl font-bold text-oxford">{formatMoney(product.price)}</span>
+            <div className="flex items-baseline gap-3">
+              <span className="text-3xl font-bold text-oxford">{formatMoney(discountedPrice)}</span>
+              {vipRate > 0 && (
+                <>
+                  <span className="text-sm text-gray-400 line-through font-bold">{formatMoney(product.price)}</span>
+                  <span className="text-[10px] font-black uppercase tracking-widest text-emerald-700 bg-emerald-50 px-2 py-1 rounded-full">
+                    -{vipDiscountPercent}%
+                  </span>
+                </>
+              )}
+            </div>
           </div>
 
           <div className="space-y-6 mb-10">

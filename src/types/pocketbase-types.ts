@@ -16,6 +16,7 @@ export interface User extends BaseRecord {
     email: string;
     avatar?: string;
     role?: 'ADMIN' | 'USER'; // Assuming role field exists or will be added, otherwise accessible via authStore
+    isVip?: boolean;
 }
 
 export interface Category extends BaseRecord {
@@ -53,6 +54,8 @@ export interface Order extends BaseRecord {
     paymentReportedAt?: string;
     binanceTxHash?: string;
     shippingCost?: number;
+    vipDiscountPercent?: number;
+    vipDiscountAmount?: number;
     expand?: {
         user?: User;
         'order_items(order)'?: OrderItem[]; // Reverse relation

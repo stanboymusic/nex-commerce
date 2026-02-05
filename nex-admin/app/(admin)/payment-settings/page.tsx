@@ -18,6 +18,8 @@ export default function PaymentSettingsPage() {
     const [binanceActive, setBinanceActive] = useState(true);
     const [binanceQrPreview, setBinanceQrPreview] = useState<string | null>(null);
     const [binanceQrFile, setBinanceQrFile] = useState<File | null>(null);
+    const [vipDiscountPercent, setVipDiscountPercent] = useState<number>(0);
+    const [vipEnabled, setVipEnabled] = useState(true);
     const token = useAdminStore((s) => s.token);
     const API_URL = process.env.NEXT_PUBLIC_API_URL || "https://nex-users.vercel.app/api";
     const allowedMimeTypes = new Set([
@@ -57,6 +59,8 @@ export default function PaymentSettingsPage() {
                     setBinanceQr(data.binanceQR);
                     setBinanceInstructions(data.binanceInstructions || "");
                     setBinanceActive(data.binanceActive !== false);
+                    setVipDiscountPercent(Number(data.vipDiscountPercent ?? 0));
+                    setVipEnabled(data.vipEnabled !== false);
                 }
             } catch (err) {
                 console.error("Failed to load settings", err);
@@ -121,6 +125,45 @@ export default function PaymentSettingsPage() {
             } else {
                 const data = await res.json().catch(() => null);
                 alert(data?.error || "Error al guardar la configuración");
+            }
+        } catch (err: any) {
+            console.error(err);
+            const message = err?.response?.data?.error || "Error al conectar con el servidor";
+            alert(message);
+        } finally {
+            setLoading(false);
+        }
+    }
+
+    async function handleVipSubmit(e: React.FormEvent<HTMLFormElement>) {
+        e.preventDefault();
+        setLoading(true);
+        setSuccess(false);
+
+        try {
+            const res = await fetch(`${API_URL}/admin/store-settings`, {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                    ...(token ? { Authorization: `Bearer ${token}` } : {})
+                },
+                body: JSON.stringify({
+                    vipDiscountPercent: Number(vipDiscountPercent) || 0,
+                    vipEnabled
+                })
+            });
+
+            if (res.ok) {
+                setSuccess(true);
+                const { data } = await apiClient.get("/settings");
+                if (data) {
+                    setVipDiscountPercent(Number(data.vipDiscountPercent ?? 0));
+                    setVipEnabled(data.vipEnabled !== false);
+                }
+                setTimeout(() => setSuccess(false), 3000);
+            } else {
+                const data = await res.json().catch(() => null);
+                alert(data?.error || "Error al guardar el descuento VIP");
             }
         } catch (err: any) {
             console.error(err);
@@ -337,6 +380,60 @@ export default function PaymentSettingsPage() {
                 </div>
 
                 <div className="space-y-6">
+                    <div className="bg-white p-8 rounded-3xl shadow-sm border border-gray-100">
+                        <form onSubmit={handleVipSubmit} className="space-y-6">
+                            <div>
+                                <h2 className="text-2xl font-black text-oxford tracking-tight">Clientes VIP</h2>
+                                <p className="text-text-medium text-sm mt-1">
+                                    Define el descuento global que se aplicará automáticamente a todos los clientes marcados como VIP.
+                                </p>
+                            </div>
+
+                            <div className="flex items-center gap-4">
+                                <label className="flex items-center gap-3 text-xs font-black text-gray-400 uppercase tracking-widest">
+                                    <input
+                                        type="checkbox"
+                                        checked={vipEnabled}
+                                        onChange={(e) => setVipEnabled(e.target.checked)}
+                                        className="h-4 w-4 rounded border-gray-300 text-purple focus:ring-purple"
+                                    />
+                                    Descuento VIP activo
+                                </label>
+                            </div>
+
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 items-end">
+                                <div>
+                                    <label className="text-xs font-black text-gray-400 uppercase tracking-widest block mb-2">
+                                        Porcentaje de descuento
+                                    </label>
+                                    <input
+                                        type="number"
+                                        min="0"
+                                        max="90"
+                                        value={vipDiscountPercent}
+                                        onChange={(e) => setVipDiscountPercent(Number(e.target.value))}
+                                        className="w-full p-4 bg-gray-50 border border-gray-100 rounded-2xl outline-none focus:ring-4 focus:ring-purple/10 focus:border-purple transition-all text-sm font-bold text-oxford"
+                                        placeholder="Ej: 30"
+                                    />
+                                </div>
+                                <div className="text-xs text-gray-500 leading-relaxed">
+                                    El descuento se aplica en catálogo, carrito y checkout. Se guarda en la orden para auditoría.
+                                </div>
+                            </div>
+
+                            <div className="flex items-center justify-between pt-6 border-t border-gray-50">
+                                <p className="text-[10px] text-gray-400 font-bold uppercase">Configuración VIP</p>
+                                <button
+                                    type="submit"
+                                    disabled={loading}
+                                    className="px-8 py-3 bg-oxford text-white rounded-2xl font-black text-sm flex items-center gap-3 hover:bg-navy transition-all active:scale-95 disabled:opacity-50 shadow-xl shadow-oxford/10"
+                                >
+                                    {loading ? <RefreshCw className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
+                                    {loading ? "Guardando..." : "Guardar VIP"}
+                                </button>
+                            </div>
+                        </form>
+                    </div>
                     <div className="bg-amber-50 border border-amber-100 p-6 rounded-3xl">
                         <div className="flex items-center gap-2 text-amber-800 font-bold mb-3 uppercase text-xs tracking-widest">
                             <AlertCircle className="w-4 h-4" />

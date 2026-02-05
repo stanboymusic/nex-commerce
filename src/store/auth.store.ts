@@ -6,7 +6,8 @@ interface User {
   name: string
   email?: string
   phone?: string
-  role: 'ADMIN' | 'CLIENT'
+  role: 'ADMIN' | 'USER' | 'CLIENT'
+  isVip?: boolean
 }
 
 interface AuthState {

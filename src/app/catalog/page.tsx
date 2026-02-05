@@ -4,6 +4,7 @@ import ProductCard from '@/components/cards/ProductCard'
 import { useState, useEffect, useMemo } from 'react'
 import axios from 'axios'
 import { Loader2 } from 'lucide-react'
+import { useAuthStore } from '@/store/auth.store'
 
 // Define Product interface to match API response
 interface Product {
@@ -25,6 +26,9 @@ export default function CatalogPage() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [searchTerm, setSearchTerm] = useState("")
+  const [vipDiscountPercent, setVipDiscountPercent] = useState<number>(0)
+  const [vipEnabled, setVipEnabled] = useState<boolean>(true)
+  const { user } = useAuthStore()
 
   const sortProducts = (list: Product[], sort: string) => {
     const sorted = [...list]
@@ -42,12 +46,15 @@ export default function CatalogPage() {
   useEffect(() => {
     const fetchInitialData = async () => {
       try {
-        const [productsRes, categoriesRes] = await Promise.all([
+        const [productsRes, categoriesRes, settingsRes] = await Promise.all([
           axios.get('/api/products'),
-          axios.get('/api/categories')
+          axios.get('/api/categories'),
+          axios.get('/api/settings')
         ])
         setProducts(sortProducts(productsRes.data, sortBy))
         setCategories(categoriesRes.data)
+        setVipDiscountPercent(Number(settingsRes.data?.vipDiscountPercent ?? 0))
+        setVipEnabled(settingsRes.data?.vipEnabled !== false)
       } catch (err) {
         console.error('Failed to fetch initial data:', err)
         setError('Error al cargar la información')
@@ -164,20 +171,26 @@ export default function CatalogPage() {
         </div>
       ) : (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-          {visibleProducts.map((p) => (
+          {visibleProducts.map((p) => {
+            const isVip = !!user?.isVip && vipEnabled && vipDiscountPercent > 0
+            const discountRate = isVip ? Math.min(Math.max(vipDiscountPercent, 0), 90) / 100 : 0
+            const discountedPrice = discountRate ? p.price * (1 - discountRate) : p.price
+            return (
             <ProductCard
               key={p.id}
               id={p.id}
               name={p.name}
               slug={p.slug}
-              price={p.price}
+              price={Number(discountedPrice.toFixed(2))}
+              originalPrice={discountRate ? p.price : undefined}
+              discountPercent={discountRate ? vipDiscountPercent : undefined}
               stock={p.stock}
               isPreorder={p.isPreorder}
               estimatedArrivalDate={p.estimatedArrivalDate}
               categoryName={(p as any).category?.name}
               image={p.images?.[0]?.url || ''} // Use first image url if available
             />
-          ))}
+          )})}
         </div>
       )}
     </div>

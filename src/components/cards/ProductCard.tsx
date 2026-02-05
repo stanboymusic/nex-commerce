@@ -13,6 +13,8 @@ interface ProductCardProps {
   name: string;
   slug: string; // OBLIGATORIO
   price: number;
+  originalPrice?: number;
+  discountPercent?: number;
   stock: number;
   isPreorder: boolean;
   estimatedArrivalDate?: string;
@@ -20,7 +22,7 @@ interface ProductCardProps {
   image?: string;
 }
 
-export default function ProductCard({ id, name, slug, price, image, stock, isPreorder, estimatedArrivalDate, categoryName }: ProductCardProps) {
+export default function ProductCard({ id, name, slug, price, originalPrice, discountPercent, image, stock, isPreorder, estimatedArrivalDate, categoryName }: ProductCardProps) {
   const { addItem } = useCartStore()
 
   const handleAddToCart = () => {
@@ -81,6 +83,16 @@ export default function ProductCard({ id, name, slug, price, image, stock, isPre
             <span className="text-2xl font-black text-oxford">
               {formatMoney(price)}
             </span>
+            {typeof originalPrice === 'number' && originalPrice > price && (
+              <span className="text-sm text-gray-400 line-through font-bold">
+                {formatMoney(originalPrice)}
+              </span>
+            )}
+            {typeof discountPercent === 'number' && discountPercent > 0 && (
+              <span className="text-[10px] font-black uppercase tracking-widest text-emerald-700 bg-emerald-50 px-2 py-1 rounded-full">
+                -{discountPercent}%
+              </span>
+            )}
           </div>
 
           <div className="mt-3">
