@@ -62,11 +62,14 @@ function OrdersContent() {
   const [messageDrafts, setMessageDrafts] = useState<Record<string, string>>({})
   const [messagesLoadingId, setMessagesLoadingId] = useState<string | null>(null)
   const [lastSeenMap, setLastSeenMap] = useState<Record<string, string>>({})
+  const [lastSeenStatusMap, setLastSeenStatusMap] = useState<Record<string, string>>({})
   const [messageSummary, setMessageSummary] = useState<Record<string, any>>({})
   const lastAlertedRef = useRef<Record<string, string>>({})
+  const [expandedOrderId, setExpandedOrderId] = useState<string | null>(null)
 
-  const fetchOrders = async () => {
+  const fetchOrders = async (silent = false) => {
     try {
+      if (!silent) setLoading(true)
       const response = await axios.get('/api/orders', {
         headers: { Authorization: `Bearer ${token}` }
       })
@@ -74,7 +77,7 @@ function OrdersContent() {
     } catch (error) {
       console.error('Error fetching orders:', error)
     } finally {
-      setLoading(false)
+      if (!silent) setLoading(false)
     }
   }
 
@@ -98,6 +101,17 @@ function OrdersContent() {
       const stored = localStorage.getItem('orderMessagesLastSeen')
       if (stored) {
         setLastSeenMap(JSON.parse(stored))
+      }
+    } catch {
+      // ignore
+    }
+  }, [])
+
+  useEffect(() => {
+    try {
+      const stored = localStorage.getItem('orderStatusLastSeen')
+      if (stored) {
+        setLastSeenStatusMap(JSON.parse(stored))
       }
     } catch {
       // ignore
@@ -173,12 +187,29 @@ function OrdersContent() {
     return () => clearInterval(interval);
   }, [orders, token]);
 
+  useEffect(() => {
+    if (!orders.length) return;
+    const interval = setInterval(() => fetchOrders(true), 20000);
+    return () => clearInterval(interval);
+  }, [orders.length, token]);
+
   const markMessagesSeen = (orderId: string) => {
     const now = new Date().toISOString()
     const next = { ...lastSeenMap, [orderId]: now }
     setLastSeenMap(next)
     try {
       localStorage.setItem('orderMessagesLastSeen', JSON.stringify(next))
+    } catch {
+      // ignore
+    }
+  }
+
+  const markStatusSeen = (orderId: string) => {
+    const now = new Date().toISOString()
+    const next = { ...lastSeenStatusMap, [orderId]: now }
+    setLastSeenStatusMap(next)
+    try {
+      localStorage.setItem('orderStatusLastSeen', JSON.stringify(next))
     } catch {
       // ignore
     }
@@ -237,6 +268,35 @@ function OrdersContent() {
       playNotificationSound();
     }
   }, [messageSummary, lastSeenMap, orders]);
+
+  useEffect(() => {
+    if (!orders.length) return;
+    let hasAttention = false;
+    for (const order of orders) {
+      const summary = messageSummary[order.id];
+      const lastSeenMessage = lastSeenMap[order.id] ? new Date(lastSeenMap[order.id]).getTime() : 0;
+      const lastMessageAt = summary?.lastMessageAt ? new Date(summary.lastMessageAt).getTime() : 0;
+      const hasNewMessage = summary?.lastSenderRole === 'ADMIN' && lastMessageAt > lastSeenMessage;
+
+      const history = order.statusHistory?.length ? order.statusHistory : [];
+      const lastStatusAt = history.length
+        ? new Date(history[history.length - 1].createdAt || history[history.length - 1].created).getTime()
+        : new Date(order.updatedAt || order.createdAt || order.created).getTime();
+      const lastSeenStatus = lastSeenStatusMap[order.id] ? new Date(lastSeenStatusMap[order.id]).getTime() : 0;
+      const hasNewStatus = lastStatusAt > lastSeenStatus;
+
+      if (hasNewMessage || hasNewStatus) {
+        hasAttention = true;
+        break;
+      }
+    }
+    try {
+      localStorage.setItem('ordersAttention', hasAttention ? '1' : '0');
+      window.dispatchEvent(new Event('ordersAttentionUpdate'));
+    } catch {
+      // ignore
+    }
+  }, [orders, messageSummary, lastSeenMap, lastSeenStatusMap]);
 
   const handleReportPayment = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -394,10 +454,42 @@ function OrdersContent() {
             const lastSeen = lastSeenMap[order.id] ? new Date(lastSeenMap[order.id]).getTime() : 0;
             const lastMessageAt = summary?.lastMessageAt ? new Date(summary.lastMessageAt).getTime() : 0;
             const hasNewMessage = summary?.lastSenderRole === 'ADMIN' && lastMessageAt > lastSeen;
+            const lastStatusAt = history.length
+              ? new Date(history[history.length - 1].createdAt || history[history.length - 1].created).getTime()
+              : new Date(order.updatedAt || order.createdAt || order.created).getTime();
+            const lastSeenStatus = lastSeenStatusMap[order.id] ? new Date(lastSeenStatusMap[order.id]).getTime() : 0;
+            const hasNewStatus = lastStatusAt > lastSeenStatus;
+            const hasAttention = hasNewMessage || hasNewStatus;
+            const isExpanded = expandedOrderId === order.id;
             return (
-              <div key={order.id} className={`bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden ${hasNewMessage ? 'order-new-highlight' : ''}`}>
+              <div key={order.id} className={`bg-white rounded-xl border border-gray-100 overflow-hidden transition-shadow ${hasAttention ? 'order-new-highlight' : ''} ${isExpanded ? 'shadow-sm' : 'shadow-md hover:shadow-lg'}`}>
                 <div className="p-6">
-                  <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-6 pb-6 border-b border-gray-50">
+                  <div
+                    role="button"
+                    tabIndex={0}
+                    onClick={() => {
+                      const next = isExpanded ? null : order.id;
+                      setExpandedOrderId(next);
+                      if (!isExpanded) {
+                        markStatusSeen(order.id);
+                        if (hasNewMessage) markMessagesSeen(order.id);
+                      }
+                    }}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter' || e.key === ' ') {
+                        e.preventDefault();
+                        const next = isExpanded ? null : order.id;
+                        setExpandedOrderId(next);
+                        if (!isExpanded) {
+                          markStatusSeen(order.id);
+                          if (hasNewMessage) markMessagesSeen(order.id);
+                        }
+                      }
+                    }}
+                    className="w-full text-left cursor-pointer"
+                    aria-expanded={isExpanded}
+                  >
+                  <div className={`flex flex-col md:flex-row md:items-center justify-between gap-4 ${isExpanded ? 'mb-6 pb-6 border-b border-gray-50' : ''}`}>
                     <div>
                       <p className="text-xs text-gray-500 uppercase font-bold tracking-wider">Orden #{order.id.slice(-6).toUpperCase()}</p>
                       <p className="text-sm text-gray-400">{new Date(order.createdAt).toLocaleDateString()}</p>
@@ -413,9 +505,9 @@ function OrdersContent() {
                         <StatusIcon className="h-4 w-4" />
                         {STATUS_LABELS[order.status]}
                       </div>
-                      {hasNewMessage ? (
+                      {hasAttention ? (
                         <span className="text-[10px] font-bold uppercase tracking-wider bg-purple-100 text-purple-700 px-3 py-1 rounded-full border border-purple-200 animate-pulse">
-                          1 nuevo
+                          Novedad
                         </span>
                       ) : null}
                       {typeof order.shippingCost === 'number' && (
@@ -424,7 +516,10 @@ function OrdersContent() {
                         </span>
                       )}
                       <button
-                        onClick={() => handleDownloadReceipt(order.id)}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleDownloadReceipt(order.id);
+                        }}
                         className="text-xs font-bold text-oxford border border-oxford/20 px-3 py-1.5 rounded-full hover:bg-oxford/5 transition-colors"
                       >
                         Descargar PDF
@@ -450,8 +545,9 @@ function OrdersContent() {
                       </div>
                     </div>
                   </div>
+                  </div>
 
-                  {order.status === 'PENDING_PAYMENT' && (
+                  {isExpanded && order.status === 'PENDING_PAYMENT' && (
                     <div className="mb-6 p-4 bg-amber-50 rounded-xl border border-amber-100">
                       {reportingId === order.id ? (
                         <form onSubmit={handleReportPayment} className="space-y-4">
@@ -514,7 +610,7 @@ function OrdersContent() {
                     </div>
                   )}
 
-                  {order.status === 'PAYMENT_REPORTED' && (
+                  {isExpanded && order.status === 'PAYMENT_REPORTED' && (
                     <div className="mb-6 p-4 bg-blue-50 rounded-xl border border-blue-100 space-y-2">
                       <div className="flex items-center gap-2 text-blue-800">
                         <CheckCircle className="h-5 w-5" />
@@ -537,7 +633,7 @@ function OrdersContent() {
                     </div>
                   )}
 
-                  {order.status === 'REJECTED' && (
+                  {isExpanded && order.status === 'REJECTED' && (
                     <div className="mb-6 p-4 bg-red-50 rounded-xl border border-red-100">
                       <div className="flex items-center justify-between gap-4">
                         <div className="flex items-center gap-2 text-red-800">
@@ -557,6 +653,7 @@ function OrdersContent() {
                     </div>
                   )}
 
+                  {isExpanded && (
                   <div className="mb-8">
                     <h3 className="text-sm font-black text-oxford uppercase tracking-wider mb-4">Seguimiento del pedido</h3>
                     <div className="space-y-4">
@@ -589,7 +686,9 @@ function OrdersContent() {
                       })}
                     </div>
                   </div>
+                  )}
 
+                  {isExpanded && (
                   <div className="mb-8 bg-slate-50 border border-slate-100 rounded-2xl p-6">
                     <div className="flex items-center justify-between mb-4">
                       <div>
@@ -665,7 +764,9 @@ function OrdersContent() {
                       </div>
                     )}
                   </div>
+                  )}
 
+                  {isExpanded && (
                   <div className="space-y-4">
                     {order.items.map((item: any) => (
                       <div key={item.id} className="flex items-center gap-4">
@@ -679,6 +780,7 @@ function OrdersContent() {
                       </div>
                     ))}
                   </div>
+                  )}
                 </div>
               </div>
             )

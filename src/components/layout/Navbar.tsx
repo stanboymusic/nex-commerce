@@ -11,9 +11,34 @@ export default function Navbar() {
   const { getItemCount } = useCartStore()
   const [isMenuOpen, setIsMenuOpen] = useState(false)
   const [mounted, setMounted] = useState(false)
+  const [ordersAttention, setOrdersAttention] = useState(false)
 
   useEffect(() => {
     setMounted(true)
+  }, [])
+
+  useEffect(() => {
+    const syncAttention = () => {
+      try {
+        const value = localStorage.getItem('ordersAttention')
+        setOrdersAttention(value === '1')
+      } catch {
+        // ignore
+      }
+    }
+    syncAttention()
+    const onStorage = (e: StorageEvent) => {
+      if (e.key === 'ordersAttention') {
+        syncAttention()
+      }
+    }
+    const onCustom = () => syncAttention()
+    window.addEventListener('storage', onStorage)
+    window.addEventListener('ordersAttentionUpdate', onCustom)
+    return () => {
+      window.removeEventListener('storage', onStorage)
+      window.removeEventListener('ordersAttentionUpdate', onCustom)
+    }
   }, [])
 
   const cartCount = mounted ? getItemCount() : 0
@@ -30,7 +55,10 @@ export default function Navbar() {
             Catálogo
           </Link>
           {user && (
-            <Link href="/orders" className="text-navy hover:text-purple transition-colors">
+            <Link
+              href="/orders"
+              className={`text-navy hover:text-purple transition-colors ${ordersAttention ? 'animate-pulse text-purple' : ''}`}
+            >
               Mis pedidos
             </Link>
           )}
@@ -85,7 +113,10 @@ export default function Navbar() {
             Catálogo
           </Link>
           {user && (
-            <Link href="/orders" className="block text-navy font-medium hover:text-purple transition-colors">
+            <Link
+              href="/orders"
+              className={`block text-navy font-medium hover:text-purple transition-colors ${ordersAttention ? 'animate-pulse text-purple' : ''}`}
+            >
               Mis pedidos
             </Link>
           )}
