@@ -390,8 +390,12 @@ function OrdersContent() {
                   message: STATUS_LABELS[order.status],
                   createdAt: order.updatedAt || order.createdAt
                 }])
+            const summary = messageSummary[order.id];
+            const lastSeen = lastSeenMap[order.id] ? new Date(lastSeenMap[order.id]).getTime() : 0;
+            const lastMessageAt = summary?.lastMessageAt ? new Date(summary.lastMessageAt).getTime() : 0;
+            const hasNewMessage = summary?.lastSenderRole === 'ADMIN' && lastMessageAt > lastSeen;
             return (
-              <div key={order.id} className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
+              <div key={order.id} className={`bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden ${hasNewMessage ? 'order-new-highlight' : ''}`}>
                 <div className="p-6">
                   <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-6 pb-6 border-b border-gray-50">
                     <div>
@@ -409,17 +413,11 @@ function OrdersContent() {
                         <StatusIcon className="h-4 w-4" />
                         {STATUS_LABELS[order.status]}
                       </div>
-                      {(() => {
-                        const summary = messageSummary[order.id];
-                        const lastSeen = lastSeenMap[order.id] ? new Date(lastSeenMap[order.id]).getTime() : 0;
-                        const lastMessageAt = summary?.lastMessageAt ? new Date(summary.lastMessageAt).getTime() : 0;
-                        const isNew = summary?.lastSenderRole === 'ADMIN' && lastMessageAt > lastSeen;
-                        return isNew ? (
-                          <span className="text-[10px] font-bold uppercase tracking-wider bg-purple-100 text-purple-700 px-3 py-1 rounded-full border border-purple-200 animate-pulse">
-                            1 nuevo
-                          </span>
-                        ) : null;
-                      })()}
+                      {hasNewMessage ? (
+                        <span className="text-[10px] font-bold uppercase tracking-wider bg-purple-100 text-purple-700 px-3 py-1 rounded-full border border-purple-200 animate-pulse">
+                          1 nuevo
+                        </span>
+                      ) : null}
                       {typeof order.shippingCost === 'number' && (
                         <span className="text-[10px] font-bold uppercase tracking-wider bg-emerald-50 text-emerald-700 px-3 py-1 rounded-full border border-emerald-100">
                           Envío asignado
@@ -607,7 +605,7 @@ function OrdersContent() {
                             markMessagesSeen(order.id);
                           }
                         }}
-                        className="text-xs font-bold text-oxford border border-oxford/20 px-3 py-1.5 rounded-full hover:bg-oxford/5 transition-colors"
+                        className={`text-xs font-bold text-oxford border border-oxford/20 px-3 py-1.5 rounded-full hover:bg-oxford/5 transition-colors ${hasNewMessage ? 'animate-pulse' : ''}`}
                       >
                         {openChatId === order.id ? 'Ocultar' : 'Ver mensajes'}
                       </button>

@@ -375,11 +375,19 @@ export default function OrdersPage() {
                 <p className="text-sm font-medium">No se encontraron pedidos</p>
               </div>
             ) : (
-              filteredOrders.map(o => (
+              filteredOrders.map(o => {
+                const summary = messageSummary[o.id];
+                const lastSeen = lastSeenMap[o.id] ? new Date(lastSeenMap[o.id]).getTime() : 0;
+                const lastMessageAt = summary?.lastMessageAt ? new Date(summary.lastMessageAt).getTime() : 0;
+                const hasNewMessage = summary?.lastSenderRole === 'USER' && lastMessageAt > lastSeen;
+                return (
                 <div
                   key={o.id}
-                  onClick={() => setSelected(o)}
-                  className={`p-6 cursor-pointer group transition-all relative ${selected?.id === o.id ? "bg-purple/[0.03]" : "hover:bg-gray-50"}`}
+                  onClick={() => {
+                    setSelected(o);
+                    if (hasNewMessage) markMessagesSeen(o.id);
+                  }}
+                  className={`p-6 cursor-pointer group transition-all relative ${selected?.id === o.id ? "bg-purple/[0.03]" : "hover:bg-gray-50"} ${hasNewMessage ? "order-new-highlight" : ""}`}
                 >
                   <div className="flex justify-between items-start mb-3">
                     <div className="flex flex-col">
@@ -397,17 +405,11 @@ export default function OrdersPage() {
                       <div className="text-xs text-gray-400 font-medium">
                         {o.items.length} {o.items.length === 1 ? 'producto' : 'productos'}
                       </div>
-                      {(() => {
-                        const summary = messageSummary[o.id];
-                        const lastSeen = lastSeenMap[o.id] ? new Date(lastSeenMap[o.id]).getTime() : 0;
-                        const lastMessageAt = summary?.lastMessageAt ? new Date(summary.lastMessageAt).getTime() : 0;
-                        const isNew = summary?.lastSenderRole === 'USER' && lastMessageAt > lastSeen;
-                        return isNew ? (
-                          <div className="text-[9px] font-black text-purple uppercase tracking-widest bg-purple/10 border border-purple/20 inline-flex px-2 py-0.5 rounded-full animate-pulse">
-                            1 nuevo
-                          </div>
-                        ) : null;
-                      })()}
+                      {hasNewMessage ? (
+                        <div className="text-[9px] font-black text-purple uppercase tracking-widest bg-purple/10 border border-purple/20 inline-flex px-2 py-0.5 rounded-full animate-pulse">
+                          1 nuevo
+                        </div>
+                      ) : null}
                       {o.paymentMethod === "BINANCE" && (
                         <div className="text-[9px] font-black text-emerald-700 uppercase tracking-widest bg-emerald-50 border border-emerald-100 inline-flex px-2 py-0.5 rounded-full">
                           Binance
@@ -432,7 +434,7 @@ export default function OrdersPage() {
                   )}
                   <ChevronRight className={`absolute right-4 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-200 transition-all ${selected?.id === o.id ? "translate-x-0 opacity-100" : "-translate-x-2 opacity-0"}`} />
                 </div>
-              ))
+              )})
             )}
           </div>
         </div>

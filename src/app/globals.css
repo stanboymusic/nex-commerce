@@ -68,3 +68,22 @@ body {
   white-space: nowrap;
   border: 0;
 }
+
+@keyframes orderGlowPulse {
+  0%, 100% {
+    box-shadow: 0 0 0 1px rgba(91, 45, 139, 0.15), 0 10px 28px rgba(91, 45, 139, 0.12);
+  }
+  50% {
+    box-shadow: 0 0 0 2px rgba(91, 45, 139, 0.25), 0 14px 34px rgba(91, 45, 139, 0.18);
+  }
+}
+
+@keyframes orderCardBounce {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-3px); }
+}
+
+.order-new-highlight {
+  background: linear-gradient(135deg, rgba(91, 45, 139, 0.08), rgba(10, 37, 64, 0.06));
+  animation: orderGlowPulse 2.2s ease-in-out infinite, orderCardBounce 2.8s ease-in-out infinite;
+}
