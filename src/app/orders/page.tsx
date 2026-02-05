@@ -57,6 +57,10 @@ function OrdersContent() {
   const [methodFilter, setMethodFilter] = useState('ALL')
   const [dateFrom, setDateFrom] = useState('')
   const [dateTo, setDateTo] = useState('')
+  const [openChatId, setOpenChatId] = useState<string | null>(null)
+  const [messagesByOrder, setMessagesByOrder] = useState<Record<string, any[]>>({})
+  const [messageDrafts, setMessageDrafts] = useState<Record<string, string>>({})
+  const [messagesLoadingId, setMessagesLoadingId] = useState<string | null>(null)
 
   const fetchOrders = async () => {
     try {
@@ -116,6 +120,34 @@ function OrdersContent() {
       window.URL.revokeObjectURL(url);
     } catch (error) {
       alert('No se pudo descargar el comprobante.');
+    }
+  };
+
+  const loadMessages = async (orderId: string) => {
+    try {
+      setMessagesLoadingId(orderId);
+      const res = await axios.get(`/api/orders/${orderId}/messages`, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      setMessagesByOrder((prev) => ({ ...prev, [orderId]: res.data || [] }));
+    } catch (error) {
+      alert('No se pudieron cargar los mensajes.');
+    } finally {
+      setMessagesLoadingId(null);
+    }
+  };
+
+  const sendMessage = async (orderId: string) => {
+    const message = (messageDrafts[orderId] || '').trim();
+    if (!message) return;
+    try {
+      await axios.post(`/api/orders/${orderId}/messages`, { message }, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      setMessageDrafts((prev) => ({ ...prev, [orderId]: '' }));
+      await loadMessages(orderId);
+    } catch (error) {
+      alert('No se pudo enviar el mensaje.');
     }
   };
 
@@ -290,6 +322,11 @@ function OrdersContent() {
                         <StatusIcon className="h-4 w-4" />
                         {STATUS_LABELS[order.status]}
                       </div>
+                      {typeof order.shippingCost === 'number' && (
+                        <span className="text-[10px] font-bold uppercase tracking-wider bg-emerald-50 text-emerald-700 px-3 py-1 rounded-full border border-emerald-100">
+                          Envío asignado
+                        </span>
+                      )}
                       <button
                         onClick={() => handleDownloadReceipt(order.id)}
                         className="text-xs font-bold text-oxford border border-oxford/20 px-3 py-1.5 rounded-full hover:bg-oxford/5 transition-colors"
@@ -455,6 +492,72 @@ function OrdersContent() {
                         )
                       })}
                     </div>
+                  </div>
+
+                  <div className="mb-8 bg-slate-50 border border-slate-100 rounded-2xl p-6">
+                    <div className="flex items-center justify-between mb-4">
+                      <div>
+                        <h3 className="text-sm font-black text-oxford uppercase tracking-wider">Mensajería de la orden</h3>
+                        <p className="text-xs text-slate-500">Comunicación directa con el administrador.</p>
+                      </div>
+                      <button
+                        onClick={() => {
+                          const next = openChatId === order.id ? null : order.id;
+                          setOpenChatId(next);
+                          if (next) {
+                            loadMessages(order.id);
+                          }
+                        }}
+                        className="text-xs font-bold text-oxford border border-oxford/20 px-3 py-1.5 rounded-full hover:bg-oxford/5 transition-colors"
+                      >
+                        {openChatId === order.id ? 'Ocultar' : 'Ver mensajes'}
+                      </button>
+                    </div>
+
+                    {openChatId === order.id && (
+                      <div className="space-y-4">
+                        <div className="max-h-60 overflow-y-auto space-y-3 pr-2">
+                          {messagesLoadingId === order.id ? (
+                            <p className="text-xs text-slate-500">Cargando mensajes...</p>
+                          ) : (messagesByOrder[order.id]?.length ? (
+                            messagesByOrder[order.id].map((msg: any) => (
+                              <div
+                                key={msg.id}
+                                className={`p-3 rounded-xl text-sm ${
+                                  msg.senderRole === 'ADMIN'
+                                    ? 'bg-purple-50 text-purple-900'
+                                    : 'bg-white border border-slate-200 text-slate-800'
+                                }`}
+                              >
+                                <div className="flex justify-between items-center text-[10px] font-bold uppercase tracking-widest text-slate-400 mb-1">
+                                  <span>{msg.senderRole === 'ADMIN' ? 'Administrador' : 'Cliente'}</span>
+                                  <span>{new Date(msg.createdAt).toLocaleString()}</span>
+                                </div>
+                                <p>{msg.message}</p>
+                              </div>
+                            ))
+                          ) : (
+                            <p className="text-xs text-slate-500">Aún no hay mensajes en esta orden.</p>
+                          ))}
+                        </div>
+
+                        <div className="flex gap-3">
+                          <input
+                            type="text"
+                            value={messageDrafts[order.id] || ''}
+                            onChange={(e) => setMessageDrafts((prev) => ({ ...prev, [order.id]: e.target.value }))}
+                            placeholder="Escribe tu mensaje..."
+                            className="flex-1 bg-white border border-slate-200 px-4 py-3 rounded-xl text-sm font-medium text-oxford outline-none focus:ring-4 focus:ring-slate-200/60"
+                          />
+                          <button
+                            onClick={() => sendMessage(order.id)}
+                            className="bg-oxford text-white px-5 py-3 rounded-xl text-xs font-black uppercase tracking-widest hover:bg-navy transition-colors"
+                          >
+                            Enviar
+                          </button>
+                        </div>
+                      </div>
+                    )}
                   </div>
 
                   <div className="space-y-4">

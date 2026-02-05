@@ -27,6 +27,9 @@ export default function OrdersPage() {
   const [deliveryMessage, setDeliveryMessage] = useState("");
   const [shippingCost, setShippingCost] = useState("");
   const [shippingMessage, setShippingMessage] = useState("");
+  const [orderMessages, setOrderMessages] = useState<any[]>([]);
+  const [messageInput, setMessageInput] = useState("");
+  const [messagesLoading, setMessagesLoading] = useState(false);
 
   const statusOptions = [
     { value: "PENDING_PAYMENT", label: "Pendiente Pago" },
@@ -95,7 +98,37 @@ export default function OrdersPage() {
       setShippingCost("");
       setShippingMessage("");
     }
+    if (selected?.id) {
+      loadMessages(selected.id);
+    } else {
+      setOrderMessages([]);
+    }
   }, [selected?.id, selected?.status, selected?.estimatedDeliveryDate, selected?.shippingCost, selected?.currency]);
+
+  const loadMessages = async (orderId: string) => {
+    try {
+      setMessagesLoading(true);
+      const res = await apiClient.get(`/orders/${orderId}/messages`);
+      setOrderMessages(res.data || []);
+    } catch (error) {
+      console.error("Error loading order messages", error);
+    } finally {
+      setMessagesLoading(false);
+    }
+  };
+
+  const sendMessage = async () => {
+    if (!selected) return;
+    const message = messageInput.trim();
+    if (!message) return;
+    try {
+      await apiClient.post(`/orders/${selected.id}/messages`, { message });
+      setMessageInput("");
+      loadMessages(selected.id);
+    } catch (error) {
+      alert("Error al enviar el mensaje");
+    }
+  };
 
   const approve = async (id: string) => {
     if (!confirm("¿Aprobar el pago de esta orden?")) return;
@@ -176,6 +209,21 @@ export default function OrdersPage() {
       load();
     } catch (err) {
       alert("Error al asignar el costo de envío");
+    }
+  };
+
+  const clearShippingCost = async () => {
+    if (!selected) return;
+    if (!confirm("¿Quitar el costo de envío y notificar al cliente?")) return;
+    try {
+      await apiClient.patch(`/orders/${selected.id}`, {
+        shippingCost: null,
+        statusMessage: "El costo de envío ha sido retirado. Te notificaremos si se asigna uno nuevo.",
+        statusVisible: true
+      });
+      load();
+    } catch (err) {
+      alert("Error al quitar el costo de envío");
     }
   };
 
@@ -404,13 +452,21 @@ export default function OrdersPage() {
                         />
                       </div>
                     </div>
-                    <div className="flex justify-end">
+                    <div className="flex justify-end gap-3">
                       <button
                         onClick={assignShippingCost}
                         className="bg-slate-800 text-white px-6 py-3 rounded-2xl font-black text-xs hover:bg-slate-900 transition-all shadow-lg shadow-slate-900/10"
                       >
                         Asignar y notificar
                       </button>
+                      {typeof selected?.shippingCost === "number" && (
+                        <button
+                          onClick={clearShippingCost}
+                          className="bg-white text-slate-700 border border-slate-200 px-6 py-3 rounded-2xl font-black text-xs hover:bg-slate-50 transition-all"
+                        >
+                          Quitar costo
+                        </button>
+                      )}
                     </div>
                     {typeof selected?.shippingCost === "number" && (
                       <p className="text-xs text-slate-600 font-medium">
@@ -618,6 +674,55 @@ export default function OrdersPage() {
                       </div>
                     </motion.div>
                   )}
+
+                  <div className="mb-10 bg-slate-50 border border-slate-100 rounded-[30px] p-6 space-y-4">
+                    <div className="flex items-center gap-3">
+                      <FileText className="w-5 h-5 text-slate-600" />
+                      <div>
+                        <h4 className="text-sm font-black text-slate-900">Mensajería de la orden</h4>
+                        <p className="text-xs text-slate-600 font-medium">Conversación directa con el cliente.</p>
+                      </div>
+                    </div>
+                    <div className="space-y-3 max-h-64 overflow-y-auto pr-2">
+                      {messagesLoading ? (
+                        <p className="text-xs text-slate-500">Cargando mensajes...</p>
+                      ) : orderMessages.length ? (
+                        orderMessages.map((msg: any) => (
+                          <div
+                            key={msg.id}
+                            className={`p-3 rounded-2xl text-sm ${
+                              msg.senderRole === "ADMIN"
+                                ? "bg-purple-50 text-purple-900 border border-purple-100"
+                                : "bg-white text-slate-800 border border-slate-200"
+                            }`}
+                          >
+                            <div className="flex justify-between text-[10px] font-black uppercase tracking-widest text-slate-400 mb-1">
+                              <span>{msg.senderRole === "ADMIN" ? "Administrador" : "Cliente"}</span>
+                              <span>{new Date(msg.createdAt).toLocaleString()}</span>
+                            </div>
+                            <p>{msg.message}</p>
+                          </div>
+                        ))
+                      ) : (
+                        <p className="text-xs text-slate-500">Aún no hay mensajes en esta orden.</p>
+                      )}
+                    </div>
+                    <div className="flex gap-3">
+                      <input
+                        type="text"
+                        value={messageInput}
+                        onChange={(e) => setMessageInput(e.target.value)}
+                        placeholder="Escribe un mensaje para el cliente..."
+                        className="flex-1 bg-white border border-slate-200 px-4 py-3 rounded-2xl text-sm font-bold text-oxford outline-none focus:ring-4 focus:ring-slate-200/60"
+                      />
+                      <button
+                        onClick={sendMessage}
+                        className="bg-slate-800 text-white px-6 py-3 rounded-2xl font-black text-xs hover:bg-slate-900 transition-all shadow-lg shadow-slate-900/10"
+                      >
+                        Enviar
+                      </button>
+                    </div>
+                  </div>
                 </div>
 
                 {/* Fixed Footer Actions */}

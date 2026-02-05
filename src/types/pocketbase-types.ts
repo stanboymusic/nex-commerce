@@ -107,3 +107,13 @@ export interface OrderStatusEvent extends BaseRecord {
     actorRole?: 'ADMIN' | 'USER' | 'SYSTEM';
     actorId?: string;
 }
+
+export interface OrderMessage extends BaseRecord {
+    order: string; // Relation ID
+    sender: string; // Relation ID
+    senderRole?: 'ADMIN' | 'USER';
+    message: string;
+    expand?: {
+        sender?: User;
+    };
+}

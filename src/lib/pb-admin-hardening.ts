@@ -25,9 +25,18 @@ const ORDER_STATUS_EVENTS_RULES = {
   deleteRule: "@request.auth.role = 'ADMIN'"
 };
 
+const ORDER_MESSAGES_RULES = {
+  listRule: "@request.auth.role = 'ADMIN' || @request.auth.id = order.user",
+  viewRule: "@request.auth.role = 'ADMIN' || @request.auth.id = order.user",
+  createRule: "@request.auth.role = 'ADMIN' || @request.auth.id = order.user",
+  updateRule: "@request.auth.role = 'ADMIN'",
+  deleteRule: "@request.auth.role = 'ADMIN'"
+};
+
 // Aplicar reglas (ejecutar una vez)
 export async function applyHardeningRules(pb: any) {
   await pb.collection("orders").updateRules(ORDERS_RULES);
   await pb.collection("exchange_rates").updateRules(EXCHANGE_RULES);
   await pb.collection("order_status_events").updateRules(ORDER_STATUS_EVENTS_RULES);
+  await pb.collection("order_messages").updateRules(ORDER_MESSAGES_RULES);
 }
