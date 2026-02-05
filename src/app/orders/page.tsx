@@ -52,6 +52,11 @@ function OrdersContent() {
   const router = useRouter()
   const searchParams = useSearchParams()
   const [showSuccess, setShowSuccess] = useState(false)
+  const [searchQuery, setSearchQuery] = useState('')
+  const [statusFilter, setStatusFilter] = useState('ALL')
+  const [methodFilter, setMethodFilter] = useState('ALL')
+  const [dateFrom, setDateFrom] = useState('')
+  const [dateTo, setDateTo] = useState('')
 
   const fetchOrders = async () => {
     try {
@@ -80,6 +85,39 @@ function OrdersContent() {
 
     fetchOrders()
   }, [user, token, router])
+
+  const filteredOrders = orders.filter((order) => {
+    const matchesSearch =
+      !searchQuery ||
+      order.id?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      order.id?.slice(-6)?.toLowerCase().includes(searchQuery.toLowerCase());
+    const matchesStatus = statusFilter === 'ALL' || order.status === statusFilter;
+    const matchesMethod = methodFilter === 'ALL' || order.paymentMethod === methodFilter;
+    const orderDate = new Date(order.createdAt || order.created);
+    const fromOk = !dateFrom || orderDate >= new Date(dateFrom);
+    const toOk = !dateTo || orderDate <= new Date(`${dateTo}T23:59:59`);
+    return matchesSearch && matchesStatus && matchesMethod && fromOk && toOk;
+  });
+
+  const handleDownloadReceipt = async (orderId: string) => {
+    try {
+      const response = await axios.get(`/api/orders/${orderId}/receipt`, {
+        responseType: 'blob',
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      const blob = new Blob([response.data], { type: 'application/pdf' });
+      const url = window.URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = `orden-${orderId}.pdf`;
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      window.URL.revokeObjectURL(url);
+    } catch (error) {
+      alert('No se pudo descargar el comprobante.');
+    }
+  };
 
   const handleReportPayment = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -132,16 +170,98 @@ function OrdersContent() {
         </div>
       )}
       <h1 className="text-3xl font-bold text-oxford mb-8">Mis Pedidos</h1>
+      <div className="bg-white border border-gray-100 rounded-2xl p-4 mb-8 shadow-sm">
+        <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
+          <div className="md:col-span-2">
+            <label className="text-xs font-bold text-gray-500 uppercase">Buscar orden</label>
+            <input
+              type="text"
+              placeholder="Código o ID"
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="mt-1 w-full px-3 py-2 border border-gray-200 rounded-lg text-sm"
+            />
+          </div>
+          <div>
+            <label className="text-xs font-bold text-gray-500 uppercase">Estado</label>
+            <select
+              value={statusFilter}
+              onChange={(e) => setStatusFilter(e.target.value)}
+              className="mt-1 w-full px-3 py-2 border border-gray-200 rounded-lg text-sm"
+            >
+              <option value="ALL">Todos</option>
+              {Object.keys(STATUS_LABELS).map((key) => (
+                <option key={key} value={key}>{STATUS_LABELS[key]}</option>
+              ))}
+            </select>
+          </div>
+          <div>
+            <label className="text-xs font-bold text-gray-500 uppercase">Método</label>
+            <select
+              value={methodFilter}
+              onChange={(e) => setMethodFilter(e.target.value)}
+              className="mt-1 w-full px-3 py-2 border border-gray-200 rounded-lg text-sm"
+            >
+              <option value="ALL">Todos</option>
+              <option value="KONTIGO">Kontigo</option>
+              <option value="BINANCE">Binance</option>
+              <option value="CASH_COP">Efectivo COP</option>
+              <option value="CASH_USD">Efectivo USD</option>
+            </select>
+          </div>
+          <div>
+            <label className="text-xs font-bold text-gray-500 uppercase">Desde</label>
+            <input
+              type="date"
+              value={dateFrom}
+              onChange={(e) => setDateFrom(e.target.value)}
+              className="mt-1 w-full px-3 py-2 border border-gray-200 rounded-lg text-sm"
+            />
+          </div>
+          <div>
+            <label className="text-xs font-bold text-gray-500 uppercase">Hasta</label>
+            <input
+              type="date"
+              value={dateTo}
+              onChange={(e) => setDateTo(e.target.value)}
+              className="mt-1 w-full px-3 py-2 border border-gray-200 rounded-lg text-sm"
+            />
+          </div>
+        </div>
+        <div className="mt-4 flex justify-between items-center">
+          <p className="text-xs text-gray-500">
+            Mostrando {filteredOrders.length} de {orders.length} pedidos
+          </p>
+          <button
+            onClick={() => {
+              setSearchQuery('');
+              setStatusFilter('ALL');
+              setMethodFilter('ALL');
+              setDateFrom('');
+              setDateTo('');
+            }}
+            className="text-xs font-bold text-oxford hover:text-purple transition-colors"
+          >
+            Limpiar filtros
+          </button>
+        </div>
+      </div>
 
-      {orders.length === 0 ? (
+      {filteredOrders.length === 0 ? (
         <div className="bg-white p-12 rounded-2xl shadow-sm text-center border border-gray-100">
           <Package className="h-16 w-16 text-gray-300 mx-auto mb-4" />
-          <h2 className="text-xl font-bold text-oxford mb-2">No tienes pedidos aún</h2>
-          <p className="text-gray-500 mb-6">Cuando realices un pedido, aparecerá aquí.</p>
+          <h2 className="text-xl font-bold text-oxford mb-2">
+            {orders.length === 0 ? 'No tienes pedidos aún' : 'Sin resultados'}
+          </h2>
+          <p className="text-gray-500 mb-6">
+            {orders.length === 0
+              ? 'Cuando realices un pedido, aparecerá aquí.'
+              : 'No hay pedidos que coincidan con los filtros.'}
+          </p>
         </div>
       ) : (
         <div className="space-y-6">
-          {orders.map((order) => {
+          {filteredOrders.map((order) => {
             const StatusIcon = STATUS_ICONS[order.status] || AlertCircle
             const history = (order.statusHistory?.length
               ? order.statusHistory
@@ -170,6 +290,12 @@ function OrdersContent() {
                         <StatusIcon className="h-4 w-4" />
                         {STATUS_LABELS[order.status]}
                       </div>
+                      <button
+                        onClick={() => handleDownloadReceipt(order.id)}
+                        className="text-xs font-bold text-oxford border border-oxford/20 px-3 py-1.5 rounded-full hover:bg-oxford/5 transition-colors"
+                      >
+                        Descargar PDF
+                      </button>
                       <div className="text-right">
                         <span className="block text-xl font-bold text-oxford">
                           ${order.totalUSD?.toLocaleString()} USD
