@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { initPocketBase } from '@/lib/pocketbase';
+import { getAdminPocketBase } from '@/lib/admin';
 
 export async function GET(
   req: NextRequest,
@@ -65,7 +66,8 @@ export async function PATCH(
     // Safety check: don't allow non-admins to change roles via this API if we opened it to users
     // But since it's already ADMIN-only, it's fine.
 
-    const updatedRecord = await pb.collection('users').update(id, data);
+    const adminPb = await getAdminPocketBase();
+    const updatedRecord = await adminPb.collection('users').update(id, data);
 
     const user = {
       id: updatedRecord.id,
@@ -104,7 +106,8 @@ export async function DELETE(
       return NextResponse.json({ error: 'Cannot delete yourself' }, { status: 400 });
     }
 
-    await pb.collection('users').delete(id);
+    const adminPb = await getAdminPocketBase();
+    await adminPb.collection('users').delete(id);
 
     return new NextResponse(null, { status: 204 });
   } catch (error: any) {
