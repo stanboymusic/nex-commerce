@@ -84,6 +84,6 @@ body {
 }
 
 .order-new-highlight {
-  background: linear-gradient(135deg, rgba(91, 45, 139, 0.08), rgba(10, 37, 64, 0.06));
+  background: linear-gradient(135deg, rgba(91, 45, 139, 0.08), rgba(37, 99, 235, 0.18));
   animation: orderGlowPulse 2.2s ease-in-out infinite, orderCardBounce 2.8s ease-in-out infinite;
 }
