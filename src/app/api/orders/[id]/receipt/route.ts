@@ -54,7 +54,8 @@ export async function GET(
     );
 
     const filename = `orden-${order.id}.pdf`;
-    return new NextResponse(pdfBytes, {
+    const body = Buffer.from(pdfBytes);
+    return new NextResponse(body, {
       headers: {
         'Content-Type': 'application/pdf',
         'Content-Disposition': `attachment; filename="${filename}"`
