@@ -42,6 +42,12 @@ export async function GET(
       ? `${pbUrl}/api/files/orders/${order.id}/${order.paymentProof}`
       : undefined;
 
+    const origin = new URL(req.url).origin;
+    const logoUrl =
+      process.env.PDF_LOGO_URL ||
+      process.env.NEXT_PUBLIC_PDF_LOGO_URL ||
+      (process.env.NEXT_PUBLIC_SITE_URL ? `${process.env.NEXT_PUBLIC_SITE_URL}/logo.png` : `${origin}/logo.png`);
+
     const pdfBytes = await generateOrderReceiptPDF(
       {
         ...order,
@@ -50,7 +56,7 @@ export async function GET(
         customerEmail: order.expand?.user?.email || 'N/A',
         createdAt: order.created
       },
-      { paymentProofUrl }
+      { paymentProofUrl, logoUrl }
     );
 
     const filename = `orden-${order.id}.pdf`;
