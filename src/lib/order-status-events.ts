@@ -1,6 +1,3 @@
-import { sendPushToRole, sendPushToUser } from './push';
-import { sendOneSignalToRole, sendOneSignalToUser } from './onesignal';
-
 export type OrderStatus =
   | 'PENDING_PAYMENT'
   | 'PAYMENT_REPORTED'
@@ -34,8 +31,6 @@ type RecordStatusEventInput = {
   visibleToUser?: boolean;
   actorRole?: 'ADMIN' | 'USER' | 'SYSTEM';
   actorId?: string | null;
-  notifyUserId?: string | null;
-  notifyAdmins?: boolean;
 };
 
 export async function recordOrderStatusEvent({
@@ -45,9 +40,7 @@ export async function recordOrderStatusEvent({
   message,
   visibleToUser = true,
   actorRole = 'SYSTEM',
-  actorId = null,
-  notifyUserId = null,
-  notifyAdmins = true
+  actorId = null
 }: RecordStatusEventInput) {
   try {
     await pb.collection('order_status_events').create({
@@ -58,31 +51,6 @@ export async function recordOrderStatusEvent({
       actorRole,
       actorId
     });
-    const text = message || getDefaultStatusMessage(status);
-    if (notifyUserId && visibleToUser) {
-      await sendPushToUser(notifyUserId, {
-        title: 'Actualización de pedido',
-        body: text,
-        data: { orderId, url: '/orders' }
-      });
-      await sendOneSignalToUser(notifyUserId, {
-        title: 'Actualización de pedido',
-        body: text,
-        url: '/orders'
-      });
-    }
-    if (notifyAdmins) {
-      await sendPushToRole('ADMIN', {
-        title: 'Actualización de pedido',
-        body: text,
-        data: { orderId, url: '/orders' }
-      });
-      await sendOneSignalToRole('ADMIN', {
-        title: 'Actualización de pedido',
-        body: text,
-        url: '/orders'
-      });
-    }
   } catch (error) {
     console.error('ORDER_STATUS_EVENT_CREATE_ERROR:', error);
   }

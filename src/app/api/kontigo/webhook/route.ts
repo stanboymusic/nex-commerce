@@ -33,8 +33,7 @@ export async function POST(req: NextRequest) {
         status: "PAYMENT_REPORTED",
         message: getDefaultStatusMessage("PAYMENT_REPORTED"),
         visibleToUser: true,
-        actorRole: 'SYSTEM',
-        notifyUserId: order.user
+        actorRole: 'SYSTEM'
       });
     }
   }

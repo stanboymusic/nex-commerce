@@ -55,8 +55,7 @@ export async function POST(
         message: getDefaultStatusMessage('PAYMENT_REPORTED'),
         visibleToUser: true,
         actorRole: 'USER',
-        actorId: user.id,
-        notifyUserId: order.user
+        actorId: user.id
       });
     }
     return NextResponse.json(result)

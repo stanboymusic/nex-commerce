@@ -37,8 +37,7 @@ export async function POST(req: NextRequest) {
                 message: getDefaultStatusMessage("PAYMENT_REPORTED"),
                 visibleToUser: true,
                 actorRole: 'USER',
-                actorId: pb.authStore.model?.id,
-                notifyUserId: existing.user
+                actorId: pb.authStore.model?.id
             });
         }
 

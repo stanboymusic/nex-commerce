@@ -99,8 +99,7 @@ export async function POST(req: NextRequest) {
       status: order.status,
       message: getDefaultStatusMessage(order.status),
       visibleToUser: true,
-      actorRole: 'SYSTEM',
-      notifyUserId: user.id
+      actorRole: 'SYSTEM'
     });
 
     // 4) Crear order_items + 5) Descontar stock

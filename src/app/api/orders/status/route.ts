@@ -17,8 +17,7 @@ export async function PUT(req: NextRequest) {
         status,
         message: getDefaultStatusMessage(status),
         visibleToUser: true,
-        actorRole: 'SYSTEM',
-        notifyUserId: existing.user
+        actorRole: 'SYSTEM'
       });
     }
 

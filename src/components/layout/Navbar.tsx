@@ -5,7 +5,6 @@ import { useAuthStore } from "@/store/auth.store";
 import { useCartStore } from "@/store/cart.store";
 import { useState, useEffect } from "react";
 import { ShoppingCart, LogOut, Menu } from "lucide-react";
-import NotificationToggle from "@/components/notifications/NotificationToggle";
 
 export default function Navbar() {
   const { user, logout } = useAuthStore()
@@ -43,11 +42,6 @@ export default function Navbar() {
         </div>
 
         <div className="flex items-center gap-6">
-          {user && (
-            <div className="hidden md:block">
-              <NotificationToggle />
-            </div>
-          )}
           <Link href="/cart" className="relative p-2 text-navy hover:text-purple transition-colors" aria-label="Ir al carrito">
             <ShoppingCart className="h-5 w-5" />
             {cartCount > 0 && (
@@ -87,11 +81,6 @@ export default function Navbar() {
       {/* Mobile menu */}
       {isMenuOpen && (
         <div className="md:hidden bg-white border-t border-gray-100 px-6 py-4 space-y-4 shadow-lg">
-          {user && (
-            <div>
-              <NotificationToggle />
-            </div>
-          )}
           <Link href="/catalog" className="block text-navy font-medium hover:text-purple transition-colors">
             Catálogo
           </Link>

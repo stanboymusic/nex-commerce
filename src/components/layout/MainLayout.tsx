@@ -1,8 +1,6 @@
 import Navbar from "./Navbar";
 import Footer from "./Footer";
 import RealtimeNotifications from "@/components/notifications/RealtimeNotifications";
-import PushSubscriptionManager from "@/components/notifications/PushSubscriptionManager";
-import OneSignalUserSync from "@/components/notifications/OneSignalUserSync";
 
 export default function MainLayout({
   children,
@@ -17,8 +15,6 @@ export default function MainLayout({
       </main>
       <Footer />
       <RealtimeNotifications />
-      <PushSubscriptionManager />
-      <OneSignalUserSync />
     </div>
   );
 }

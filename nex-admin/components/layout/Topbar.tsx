@@ -3,7 +3,6 @@
 import React from 'react';
 import { useAdminStore } from '@/store/admin.store';
 import { User, Menu } from 'lucide-react';
-import NotificationToggle from '@/components/notifications/NotificationToggle';
 
 export const Topbar = () => {
     const admin = useAdminStore((state) => state.admin);
@@ -18,9 +17,6 @@ export const Topbar = () => {
             </div>
 
             <div className="flex items-center gap-4">
-                <div className="hidden md:block">
-                    <NotificationToggle />
-                </div>
                 <div className="flex items-center gap-3 pl-4 border-l border-border">
                     <div className="text-right hidden sm:block">
                         <p className="text-sm font-bold text-text-dark">{admin?.name || 'Administrador'}</p>

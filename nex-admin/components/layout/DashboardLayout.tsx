@@ -2,8 +2,6 @@ import React from 'react';
 import { Sidebar } from './Sidebar';
 import { Topbar } from './Topbar';
 import RealtimeNotifications from '@/components/notifications/RealtimeNotifications';
-import PushSubscriptionManager from '@/components/notifications/PushSubscriptionManager';
-import OneSignalUserSync from '@/components/notifications/OneSignalUserSync';
 
 interface DashboardLayoutProps {
     children: React.ReactNode;
@@ -18,8 +16,6 @@ export const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children }) =>
                 {children}
             </main>
             <RealtimeNotifications />
-            <PushSubscriptionManager />
-            <OneSignalUserSync />
         </div>
     );
 };
