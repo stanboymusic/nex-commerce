@@ -47,5 +47,14 @@ export async function applyHardeningRules(pb: any) {
   await pb.collection("exchange_rates").updateRules(EXCHANGE_RULES);
   await pb.collection("order_status_events").updateRules(ORDER_STATUS_EVENTS_RULES);
   await pb.collection("order_messages").updateRules(ORDER_MESSAGES_RULES);
-  await pb.collection("store_settings").updateRules(STORE_SETTINGS_RULES);
+  try {
+    await pb.collection("store_settings").updateRules(STORE_SETTINGS_RULES);
+  } catch (_) {
+    // ignore if collection doesn't exist
+  }
+  try {
+    await pb.collection("store_settings_").updateRules(STORE_SETTINGS_RULES);
+  } catch (_) {
+    // ignore if collection doesn't exist
+  }
 }

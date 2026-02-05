@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { getPocketBase } from "@/lib/pocketbase";
+import { getStoreSettingsRecord } from "@/lib/store-settings";
 
 export const dynamic = 'force-dynamic';
 
@@ -14,7 +15,7 @@ export async function GET() {
         const paymentRecord = await pb.collection("payment_settings").getFirstListItem('method="KONTIGO"').catch(() => null);
         // Fetch Binance settings
         const binanceRecord = await pb.collection("payment_settings").getFirstListItem('method="BINANCE"').catch(() => null);
-        const storeSettings = await pb.collection("store_settings").getFirstListItem('').catch(() => null);
+        const { record: storeSettings } = await getStoreSettingsRecord(pb);
 
         return NextResponse.json({
             usdToCopRate: rateRecord?.rate || 4000,

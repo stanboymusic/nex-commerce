@@ -142,7 +142,7 @@ export default function UsersPage() {
                                             <button
                                                 onClick={() => toggleVip(user)}
                                                 disabled={vipUpdating === user.id}
-                                                className={`p-3 rounded-2xl transition-all active:scale-90 ${user.isVip
+                                                className={`flex items-center gap-2 px-4 py-3 rounded-2xl transition-all active:scale-90 ${user.isVip
                                                         ? 'bg-emerald-50 text-emerald-600 hover:bg-emerald-100'
                                                         : 'bg-gray-100 text-gray-500 hover:bg-gray-200'
                                                     }`}
@@ -153,6 +153,7 @@ export default function UsersPage() {
                                                 ) : (
                                                     <ShieldCheck className="w-5 h-5" />
                                                 )}
+                                                <span className="text-[10px] font-black uppercase tracking-widest">VIP</span>
                                             </button>
                                             <button
                                                 onClick={() => toggleRole(user)}

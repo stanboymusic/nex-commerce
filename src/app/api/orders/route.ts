@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { initPocketBase } from "@/lib/pocketbase";
 import { getAdminPocketBase } from "@/lib/admin";
 import { getDefaultStatusMessage, recordOrderStatusEvent } from "@/lib/order-status-events";
+import { getStoreSettingsRecord } from "@/lib/store-settings";
 
 export const runtime = "nodejs";
 
@@ -55,7 +56,7 @@ export async function POST(req: NextRequest) {
     const exchangeRate = rateRecord.rate;
 
     // VIP discount settings
-    const storeSettings = await adminPb.collection("store_settings").getFirstListItem('').catch(() => null);
+    const { record: storeSettings } = await getStoreSettingsRecord(adminPb);
     const vipDiscountPercent = Number(storeSettings?.vipDiscountPercent ?? 0);
     const vipEnabled = storeSettings?.vipEnabled !== false;
     const userRecord = await adminPb.collection("users").getOne(user.id).catch(() => null);
