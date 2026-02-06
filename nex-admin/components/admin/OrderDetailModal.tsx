@@ -29,6 +29,18 @@ export const OrderDetailModal = ({ order, isOpen, onClose, onUpdate }: OrderDeta
     const [isConfirming, setIsConfirming] = useState(false);
     const [estimatedDate, setEstimatedDate] = useState('');
 
+    const formatMoney = (value: number, currency: string) => {
+        const safe = Number(value);
+        if (!Number.isFinite(safe)) {
+            return currency === "USD" ? "$0.00" : "0";
+        }
+        const formatted = safe.toLocaleString(undefined, currency === "USD"
+            ? { minimumFractionDigits: 2, maximumFractionDigits: 2 }
+            : { maximumFractionDigits: 0 }
+        );
+        return currency === "USD" ? `$${formatted}` : formatted;
+    };
+
     const formatLocalDate = (dateStr: string) => {
         if (!dateStr) return 'N/A';
         // If it's a date-only string (YYYY-MM-DD), append T12:00:00 to avoid TZ shift
@@ -51,6 +63,11 @@ export const OrderDetailModal = ({ order, isOpen, onClose, onUpdate }: OrderDeta
     }, [isOpen, order]);
 
     if (!order) return null;
+
+    const vipPercent = Number(order?.vipDiscountPercent || 0);
+    const vipRate = vipPercent > 0 ? vipPercent / 100 : 0;
+    const rateRaw = order?.currency === "USD" ? 1 : Number(order?.exchangeRate || 1);
+    const exchangeRate = Number.isFinite(rateRaw) && rateRaw > 0 ? rateRaw : 1;
 
     const handleConfirmOrder = async () => {
         if (!isConfirming) {
@@ -168,28 +185,44 @@ export const OrderDetailModal = ({ order, isOpen, onClose, onUpdate }: OrderDeta
                                 <tr>
                                     <th className="px-4 py-3">Producto</th>
                                     <th className="px-4 py-3 text-center">Cant.</th>
-                                    <th className="px-4 py-3 text-right">Precio Unit.</th>
+                                    <th className="px-4 py-3 text-right">Precio sin desc.</th>
+                                    <th className="px-4 py-3 text-right">Descuento</th>
+                                    <th className="px-4 py-3 text-right">Precio con desc.</th>
                                     <th className="px-4 py-3 text-right">Subtotal</th>
                                 </tr>
                             </thead>
                             <tbody className="divide-y divide-border">
                                 {order.items && order.items.length > 0 ? (
-                                    order.items.map((item: any) => (
-                                        <tr key={item.id} className="text-sm">
-                                            <td className="px-4 py-3 font-medium text-oxford">
-                                                {item.name}
-                                                {item.product?.isPreorder && (
-                                                    <Badge variant="warning" className="ml-2 scale-75 origin-left">PRE-VENTA</Badge>
-                                                )}
-                                            </td>
-                                            <td className="px-4 py-3 text-center">{item.quantity}</td>
-                                            <td className="px-4 py-3 text-right">${item.price?.toLocaleString()}</td>
-                                            <td className="px-4 py-3 text-right font-bold text-oxford">${(item.price * item.quantity).toLocaleString()}</td>
-                                        </tr>
-                                    ))
+                                    order.items.map((item: any) => {
+                                        const unitWithDiscount = Number(item.price || 0) * exchangeRate;
+                                        const unitWithoutDiscount = vipRate
+                                            ? Number((unitWithDiscount / (1 - vipRate)).toFixed(2))
+                                            : unitWithDiscount;
+                                        const unitDiscount = Math.max(0, unitWithoutDiscount - unitWithDiscount);
+                                        const lineTotal = unitWithDiscount * Number(item.quantity || 0);
+                                        return (
+                                            <tr key={item.id} className="text-sm">
+                                                <td className="px-4 py-3 font-medium text-oxford">
+                                                    {item.name}
+                                                    {item.product?.isPreorder && (
+                                                        <Badge variant="warning" className="ml-2 scale-75 origin-left">PRE-VENTA</Badge>
+                                                    )}
+                                                </td>
+                                                <td className="px-4 py-3 text-center">{item.quantity}</td>
+                                                <td className="px-4 py-3 text-right">{formatMoney(unitWithoutDiscount, order.currency)}</td>
+                                                <td className="px-4 py-3 text-right text-emerald-700">
+                                                    {vipPercent > 0
+                                                        ? `-${vipPercent}% (${formatMoney(unitDiscount, order.currency)})`
+                                                        : formatMoney(0, order.currency)}
+                                                </td>
+                                                <td className="px-4 py-3 text-right">{formatMoney(unitWithDiscount, order.currency)}</td>
+                                                <td className="px-4 py-3 text-right font-bold text-oxford">{formatMoney(lineTotal, order.currency)}</td>
+                                            </tr>
+                                        );
+                                    })
                                 ) : (
                                     <tr>
-                                        <td colSpan={4} className="px-4 py-8 text-center text-text-medium italic">
+                                        <td colSpan={6} className="px-4 py-8 text-center text-text-medium italic">
                                             No hay productos registrados en esta orden.
                                         </td>
                                     </tr>
@@ -197,8 +230,8 @@ export const OrderDetailModal = ({ order, isOpen, onClose, onUpdate }: OrderDeta
                             </tbody>
                             <tfoot className="bg-muted/30">
                                 <tr>
-                                    <td colSpan={3} className="px-4 py-4 text-right font-bold text-oxford">Total ({order.currency})</td>
-                                    <td className="px-4 py-4 text-right font-black text-purple text-lg">${order.total?.toLocaleString()}</td>
+                                    <td colSpan={5} className="px-4 py-4 text-right font-bold text-oxford">Total ({order.currency})</td>
+                                    <td className="px-4 py-4 text-right font-black text-purple text-lg">{formatMoney(order.total, order.currency)}</td>
                                 </tr>
                             </tfoot>
                         </table>

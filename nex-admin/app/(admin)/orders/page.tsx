@@ -339,6 +339,43 @@ export default function OrdersPage() {
     return Number.isFinite(pct) && pct > 0 ? pct : 0;
   };
 
+  const formatMoney = (value: number, currency: string) => {
+    const safe = Number(value);
+    if (!Number.isFinite(safe)) {
+      return currency === "USD" ? "$0.00" : "0";
+    }
+    const formatted = safe.toLocaleString(undefined, currency === "USD"
+      ? { minimumFractionDigits: 2, maximumFractionDigits: 2 }
+      : { maximumFractionDigits: 0 }
+    );
+    return currency === "USD" ? `$${formatted}` : formatted;
+  };
+
+  const selectedVipPercent = getVipPercent(selected);
+  const selectedVipRate = selectedVipPercent > 0 ? selectedVipPercent / 100 : 0;
+  const selectedRateRaw = selected?.currency === "USD" ? 1 : Number(selected?.exchangeRate || 1);
+  const selectedRate = Number.isFinite(selectedRateRaw) && selectedRateRaw > 0 ? selectedRateRaw : 1;
+  const selectedItemPricing = selected?.items?.map((item: any) => {
+    const unitWithDiscount = Number(item?.price || 0) * selectedRate;
+    const unitWithoutDiscount = selectedVipRate
+      ? Number(((unitWithDiscount / (1 - selectedVipRate))).toFixed(2))
+      : unitWithDiscount;
+    const unitDiscount = Math.max(0, unitWithoutDiscount - unitWithDiscount);
+    const quantity = Number(item?.quantity || 0);
+    return {
+      id: item?.id,
+      unitWithDiscount,
+      unitWithoutDiscount,
+      unitDiscount,
+      totalWithDiscount: unitWithDiscount * quantity,
+      totalWithoutDiscount: unitWithoutDiscount * quantity,
+      totalDiscount: unitDiscount * quantity,
+    };
+  }) || [];
+  const selectedSubtotalBase = selectedItemPricing.reduce((sum: number, row: any) => sum + row.totalWithoutDiscount, 0);
+  const selectedDiscountTotal = selectedItemPricing.reduce((sum: number, row: any) => sum + row.totalDiscount, 0);
+  const selectedNetTotal = selectedItemPricing.reduce((sum: number, row: any) => sum + row.totalWithDiscount, 0);
+
   const pbUrl = process.env.NEXT_PUBLIC_POCKETBASE_URL || "https://nex-pb.fly.dev";
 
   return (
@@ -672,12 +709,21 @@ export default function OrdersPage() {
                           <tr>
                             <th className="p-5 text-left text-[10px] font-black text-gray-400 uppercase tracking-widest">Producto</th>
                             <th className="p-5 text-center text-[10px] font-black text-gray-400 uppercase tracking-widest">Cant.</th>
-                            <th className="p-5 text-right text-[10px] font-black text-gray-400 uppercase tracking-widest">P. Unitario</th>
+                            <th className="p-5 text-right text-[10px] font-black text-gray-400 uppercase tracking-widest">Precio sin desc.</th>
+                            <th className="p-5 text-right text-[10px] font-black text-gray-400 uppercase tracking-widest">Descuento</th>
+                            <th className="p-5 text-right text-[10px] font-black text-gray-400 uppercase tracking-widest">Precio con desc.</th>
                             <th className="p-5 text-right text-[10px] font-black text-gray-400 uppercase tracking-widest">Total</th>
                           </tr>
                         </thead>
                         <tbody className="divide-y divide-gray-50">
-                          {selected.items.map((it: any) => (
+                          {selected.items.map((it: any) => {
+                            const unitWithDiscount = Number(it.price || 0) * selectedRate;
+                            const unitWithoutDiscount = selectedVipRate
+                              ? Number((unitWithDiscount / (1 - selectedVipRate)).toFixed(2))
+                              : unitWithDiscount;
+                            const unitDiscount = Math.max(0, unitWithoutDiscount - unitWithDiscount);
+                            const lineTotal = unitWithDiscount * Number(it.quantity || 0);
+                            return (
                             <tr key={it.id} className="group hover:bg-gray-50/50 transition-colors">
                               <td className="p-5">
                                 <span className="font-black text-oxford text-sm">{it.name}</span>
@@ -686,15 +732,29 @@ export default function OrdersPage() {
                               <td className="p-5 text-center">
                                 <span className="bg-purple/5 px-2 py-1 rounded-lg text-purple font-black text-xs">{it.quantity}</span>
                               </td>
-                              <td className="p-5 text-right text-gray-500 font-bold text-sm">${it.price.toLocaleString()}</td>
-                              <td className="p-5 text-right font-black text-oxford text-sm">${(it.quantity * it.price).toLocaleString()}</td>
+                              <td className="p-5 text-right text-gray-500 font-bold text-sm">{formatMoney(unitWithoutDiscount, selected.currency)}</td>
+                              <td className="p-5 text-right text-emerald-700 font-bold text-sm">
+                                {selectedVipPercent > 0
+                                  ? `-${selectedVipPercent}% (${formatMoney(unitDiscount, selected.currency)})`
+                                  : formatMoney(0, selected.currency)}
+                              </td>
+                              <td className="p-5 text-right text-gray-700 font-bold text-sm">{formatMoney(unitWithDiscount, selected.currency)}</td>
+                              <td className="p-5 text-right font-black text-oxford text-sm">{formatMoney(lineTotal, selected.currency)}</td>
                             </tr>
-                          ))}
+                          )})}
                         </tbody>
                         <tfoot className="bg-gray-50/50">
                           <tr>
-                            <td colSpan={3} className="p-5 text-right text-xs font-black text-gray-400 uppercase tracking-widest">Subtotal Bruto</td>
-                            <td className="p-5 text-right font-black text-oxford">${selected.totalUSD.toLocaleString()} USD</td>
+                            <td colSpan={5} className="p-5 text-right text-xs font-black text-gray-400 uppercase tracking-widest">Subtotal sin descuento</td>
+                            <td className="p-5 text-right font-black text-oxford">{formatMoney(selectedSubtotalBase, selected.currency)} {selected.currency}</td>
+                          </tr>
+                          <tr>
+                            <td colSpan={5} className="p-5 text-right text-xs font-black text-gray-400 uppercase tracking-widest">Descuento total</td>
+                            <td className="p-5 text-right font-black text-emerald-700">-{formatMoney(selectedDiscountTotal, selected.currency)} {selected.currency}</td>
+                          </tr>
+                          <tr>
+                            <td colSpan={5} className="p-5 text-right text-xs font-black text-gray-400 uppercase tracking-widest">Total con descuento</td>
+                            <td className="p-5 text-right font-black text-purple text-lg">{formatMoney(selectedNetTotal, selected.currency)} {selected.currency}</td>
                           </tr>
                         </tfoot>
                       </table>
