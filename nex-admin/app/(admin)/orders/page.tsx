@@ -323,6 +323,22 @@ export default function OrdersPage() {
     }
   };
 
+  const formatVipAmount = (order: any) => {
+    const base = Number(order?.vipDiscountAmount || 0);
+    if (!Number.isFinite(base) || base <= 0) return null;
+    if (order?.currency === "USD") {
+      return `$${base.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })} USD`;
+    }
+    const rate = Number(order?.exchangeRate || 0);
+    const converted = Number.isFinite(rate) && rate > 0 ? base * rate : base;
+    return `${converted.toLocaleString()} ${order?.currency || "COP"}`;
+  };
+
+  const getVipPercent = (order: any) => {
+    const pct = Number(order?.vipDiscountPercent || 0);
+    return Number.isFinite(pct) && pct > 0 ? pct : 0;
+  };
+
   const pbUrl = process.env.NEXT_PUBLIC_POCKETBASE_URL || "https://nex-pb.fly.dev";
 
   return (
@@ -380,6 +396,7 @@ export default function OrdersPage() {
                 const lastSeen = lastSeenMap[o.id] ? new Date(lastSeenMap[o.id]).getTime() : 0;
                 const lastMessageAt = summary?.lastMessageAt ? new Date(summary.lastMessageAt).getTime() : 0;
                 const hasNewMessage = summary?.lastSenderRole === 'USER' && lastMessageAt > lastSeen;
+                const vipPercent = getVipPercent(o);
                 return (
                 <div
                   key={o.id}
@@ -410,6 +427,11 @@ export default function OrdersPage() {
                           1 nuevo
                         </div>
                       ) : null}
+                      {vipPercent > 0 && (
+                        <div className="text-[9px] font-black text-emerald-700 uppercase tracking-widest bg-emerald-50 border border-emerald-100 inline-flex px-2 py-0.5 rounded-full">
+                          VIP -{vipPercent}%
+                        </div>
+                      )}
                       {o.paymentMethod === "BINANCE" && (
                         <div className="text-[9px] font-black text-emerald-700 uppercase tracking-widest bg-emerald-50 border border-emerald-100 inline-flex px-2 py-0.5 rounded-full">
                           Binance
@@ -472,12 +494,22 @@ export default function OrdersPage() {
                       </p>
                     </div>
 
-                    <div className="bg-gray-50 p-6 rounded-3xl text-right min-w-[200px]">
+                    <div className="bg-gray-50 p-6 rounded-3xl text-right min-w-[220px]">
                       <div className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1">Total del Pedido</div>
                       <div className="text-3xl font-black text-oxford">
                         {selected.currency === 'USD' ? '$' : ''}{selected.currency === 'USD' ? selected.totalUSD : selected.totalLocal.toLocaleString()}
                         <span className="text-sm text-gray-400 font-bold ml-1 uppercase">{selected.currency}</span>
                       </div>
+                      {getVipPercent(selected) > 0 && (
+                        <div className="mt-3 text-[10px] font-black uppercase tracking-widest text-emerald-700 bg-emerald-50 border border-emerald-100 inline-flex px-2 py-1 rounded-full">
+                          Cliente VIP · -{getVipPercent(selected)}%
+                        </div>
+                      )}
+                      {getVipPercent(selected) > 0 && formatVipAmount(selected) && (
+                        <div className="mt-2 text-[10px] font-bold text-emerald-700">
+                          Descuento aplicado: {formatVipAmount(selected)}
+                        </div>
+                      )}
                       {selected.currency !== 'USD' && (
                         <div className="text-[10px] font-bold text-gray-400 mt-1 uppercase italic">
                           Tasa: {selected.exchangeRate} | Ref: ${selected.totalUSD} USD
@@ -496,6 +528,11 @@ export default function OrdersPage() {
                         <div className="text-sm text-gray-500 font-medium mt-1">{selected.customer?.email}</div>
                         {selected.customer?.phone && (
                           <div className="text-xs text-gray-400 mt-2 font-bold tracking-tight">{selected.customer.phone}</div>
+                        )}
+                        {getVipPercent(selected) > 0 && (
+                          <div className="mt-4 inline-flex items-center gap-2 text-[10px] font-black uppercase tracking-widest text-emerald-700 bg-emerald-50 border border-emerald-100 px-3 py-1 rounded-full">
+                            Cliente VIP · -{getVipPercent(selected)}%
+                          </div>
                         )}
                       </div>
                     </div>
