@@ -145,7 +145,7 @@ export const useCartStore = create<CartState>()(
       }
     }),
     {
-      name: 'cart-storage-v2', // Changed version to clear old ghost items
+      name: 'cart-storage-v3', // Bump to clear previously discounted items
     }
   )
 )

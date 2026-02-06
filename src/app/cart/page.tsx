@@ -68,9 +68,10 @@ export default function CartPage() {
 
   const isVip = !!user?.isVip && vipEnabled && vipDiscountPercent > 0
   const vipRate = isVip ? Math.min(Math.max(vipDiscountPercent, 0), 90) / 100 : 0
-  const discountedTotal = getTotal()
-  const originalTotal = vipRate ? discountedTotal / (1 - vipRate) : discountedTotal
-  const vipSavings = vipRate ? originalTotal - discountedTotal : 0
+  const baseTotal = getTotal()
+  const discountedTotal = baseTotal * (1 - vipRate)
+  const originalTotal = baseTotal
+  const vipSavings = baseTotal - discountedTotal
 
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
@@ -111,11 +112,11 @@ export default function CartPage() {
                 <div className="mt-4 flex items-center justify-between">
                   <div className="flex items-center gap-3">
                     <span className="text-xl font-bold text-oxford">
-                      ${(item.price * item.quantity).toLocaleString()}
+                      ${((item.price * item.quantity) * (1 - vipRate)).toLocaleString()}
                     </span>
                     {vipRate > 0 && (
                       <span className="text-xs text-gray-400 line-through font-bold">
-                        ${((item.price * item.quantity) / (1 - vipRate)).toLocaleString()}
+                        ${(item.price * item.quantity).toLocaleString()}
                       </span>
                     )}
                   </div>

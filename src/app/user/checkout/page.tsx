@@ -429,7 +429,12 @@ export default function CheckoutPage() {
             <h2 className="text-xl font-bold text-oxford mb-6 border-b pb-4">Tu Pedido</h2>
             <div className="space-y-4 mb-6 max-h-[300px] overflow-y-auto pr-2">
               {items.map((item) => {
-                const convertedItemTotal = currency === 'COP' ? (item.price * item.quantity) : (item.price * item.quantity) / rate;
+                const vipRate = user?.isVip && paymentSettings?.vipEnabled !== false && (paymentSettings?.vipDiscountPercent || 0) > 0
+                  ? Math.min(Math.max(Number(paymentSettings?.vipDiscountPercent || 0), 0), 90) / 100
+                  : 0;
+                const baseItemTotal = item.price * item.quantity;
+                const discountedItemTotal = baseItemTotal * (1 - vipRate);
+                const convertedItemTotal = currency === 'COP' ? discountedItemTotal * rate : discountedItemTotal;
 
                 return (
                   <div key={item.id} className="flex justify-between items-center text-sm">
@@ -452,12 +457,8 @@ export default function CheckoutPage() {
                 <span>
                   {currency === 'USD' ? '$' : ''}
                   {(() => {
-                    const discountedTotal = getTotal();
-                    const vipRate = user?.isVip && paymentSettings?.vipEnabled !== false && (paymentSettings?.vipDiscountPercent || 0) > 0
-                      ? Math.min(Math.max(Number(paymentSettings?.vipDiscountPercent || 0), 0), 90) / 100
-                      : 0;
-                    const originalTotal = vipRate ? discountedTotal / (1 - vipRate) : discountedTotal;
-                    const subtotal = currency === 'USD' ? originalTotal : originalTotal * rate;
+                    const baseTotal = getTotal();
+                    const subtotal = currency === 'USD' ? baseTotal : baseTotal * rate;
                     return subtotal.toLocaleString(undefined, { minimumFractionDigits: currency === 'COP' ? 0 : 2, maximumFractionDigits: currency === 'COP' ? 0 : 2 });
                   })()}
                   <span className="ml-1 text-[10px]">{currency}</span>
@@ -469,10 +470,9 @@ export default function CheckoutPage() {
                   <span>
                     {currency === 'USD' ? '$' : ''}
                     {(() => {
-                      const discountedTotal = getTotal();
+                      const baseTotal = getTotal();
                       const vipRate = Math.min(Math.max(Number(paymentSettings?.vipDiscountPercent || 0), 0), 90) / 100;
-                      const originalTotal = vipRate ? discountedTotal / (1 - vipRate) : discountedTotal;
-                      const discount = originalTotal * vipRate;
+                      const discount = baseTotal * vipRate;
                       const converted = currency === 'USD' ? discount : discount * rate;
                       return converted.toLocaleString(undefined, { minimumFractionDigits: currency === 'COP' ? 0 : 2, maximumFractionDigits: currency === 'COP' ? 0 : 2 });
                     })()}

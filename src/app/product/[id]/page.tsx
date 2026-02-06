@@ -68,7 +68,7 @@ export default function ProductDetailsPage() {
     addItem({
       id: product.id,
       name: product.name,
-      price: discountedPrice,
+      price: product.price,
       stock: product.stock,
       isPreorder: product.isPreorder,
       quantity

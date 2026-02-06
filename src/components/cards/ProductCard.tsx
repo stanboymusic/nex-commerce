@@ -26,10 +26,11 @@ export default function ProductCard({ id, name, slug, price, originalPrice, disc
   const { addItem } = useCartStore()
 
   const handleAddToCart = () => {
+    const basePrice = typeof originalPrice === 'number' ? originalPrice : price
     addItem({
       id,
       name,
-      price,
+      price: basePrice,
       image: image || '',
       stock,
       isPreorder,
