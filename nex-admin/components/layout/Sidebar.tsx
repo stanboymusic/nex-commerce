@@ -11,7 +11,8 @@ import {
     Bell,
     LogOut,
     RefreshCw,
-    CreditCard
+    CreditCard,
+    Percent
 } from 'lucide-react';
 import { useAdminStore } from '@/store/admin.store';
 import { useRouter } from 'next/navigation';
@@ -21,6 +22,7 @@ const NAV_ITEMS = [
     { label: 'Productos', href: '/products', icon: ShoppingBag },
     { label: 'Órdenes', href: '/orders', icon: ShoppingCart },
     { label: 'Pagos', href: '/payment-settings', icon: CreditCard },
+    { label: 'Suscripción', href: '/billing', icon: Percent },
     { label: 'Usuarios', href: '/users', icon: Users },
     { label: 'Alertas', href: '/notifications', icon: Bell },
     { label: 'Tasas de Cambio', href: '/exchange-rates', icon: RefreshCw },

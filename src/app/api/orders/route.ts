@@ -3,6 +3,7 @@ import { initPocketBase } from "@/lib/pocketbase";
 import { getAdminPocketBase } from "@/lib/admin";
 import { getDefaultStatusMessage, recordOrderStatusEvent } from "@/lib/order-status-events";
 import { getStoreSettingsRecord } from "@/lib/store-settings";
+import { addDaysUTC, formatPeriodUTC, getBillingConfigFromEnv, upsertMonthlyInvoice } from "@/lib/billing";
 
 export const runtime = "nodejs";
 
@@ -26,6 +27,38 @@ export async function POST(req: NextRequest) {
 
     const adminPb = await getAdminPocketBase();
 
+    // --- Platform billing guard (1% monthly fee) ---
+    // Blocks new sales if the previous month's invoice is unpaid after the grace window.
+    const billingConfig = getBillingConfigFromEnv();
+    if (billingConfig.enabled && billingConfig.feePercent > 0 && billingConfig.graceDays >= 0) {
+      const now = new Date();
+      const currentMonthStart = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), 1, 0, 0, 0, 0));
+      const graceEndsAt = addDaysUTC(currentMonthStart, billingConfig.graceDays);
+
+      if (now.getTime() >= graceEndsAt.getTime()) {
+        const prevMonthStart = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth() - 1, 1, 0, 0, 0, 0));
+        const prevPeriod = formatPeriodUTC(prevMonthStart);
+        const { invoice } = await upsertMonthlyInvoice(adminPb, prevPeriod, billingConfig);
+
+        const feeAmount = Number(invoice?.feeAmount || 0);
+        const status = String(invoice?.status || "").toUpperCase();
+        if (invoice && feeAmount > 0 && status !== "PAID") {
+          return NextResponse.json(
+            {
+              error: `Cuenta bloqueada: comisión NexCommerce (${billingConfig.feePercent}%) pendiente del período ${prevPeriod}.`,
+              billing: {
+                period: prevPeriod,
+                amount: feeAmount,
+                currency: invoice?.currency || billingConfig.currency,
+                invoiceId: invoice?.id,
+              },
+            },
+            { status: 402 }
+          );
+        }
+      }
+    }
+
     let totalUSD = 0;
 
     // 1) Validar productos y calcular total base (COP)
@@ -48,12 +81,32 @@ export async function POST(req: NextRequest) {
     }
 
     // 1.5) Obtener tasa de cambio activa desde EXCHANGE_RATES
-    const rateRecord = await adminPb
-      .collection("exchange_rates")
-      .getFirstListItem('targetCurrency="COP" && active=true')
-      .catch(() => ({ rate: 4000 })); // Default
+    // - Base currency for products is USD.
+    // - exchangeRate represents: 1 USD = X {currency}
+    const currencyCode = String(currency || "COP").toUpperCase();
+    let exchangeRate = 1;
 
-    const exchangeRate = rateRecord.rate;
+    if (currencyCode !== "USD") {
+      const fetchRate = async (filter: string) => {
+        const r = await adminPb.collection("exchange_rates").getFirstListItem(filter).catch(() => null);
+        const rate = Number((r as any)?.rate ?? 0);
+        return Number.isFinite(rate) && rate > 0 ? rate : null;
+      };
+
+      exchangeRate =
+        (await fetchRate(`baseCurrency="USD" && targetCurrency="${currencyCode}" && active=true`)) ??
+        (await fetchRate(`targetCurrency="${currencyCode}" && active=true`)) ??
+        (await fetchRate(`from="USD" && to="${currencyCode}"`)) ??
+        (await fetchRate(`to="${currencyCode}"`)) ??
+        (currencyCode === "COP" ? 4000 : 0);
+
+      if (!exchangeRate || exchangeRate <= 0) {
+        return NextResponse.json(
+          { error: `No hay tasa de cambio activa para USD -> ${currencyCode}.` },
+          { status: 400 }
+        );
+      }
+    }
 
     // VIP discount settings
     const { record: storeSettings } = await getStoreSettingsRecord(adminPb);

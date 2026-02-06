@@ -33,6 +33,14 @@ const STORE_SETTINGS_RULES = {
   deleteRule: "@request.auth.role = 'ADMIN'"
 };
 
+const BILLING_INVOICES_RULES = {
+  listRule: "@request.auth.role = 'ADMIN'",
+  viewRule: "@request.auth.role = 'ADMIN'",
+  createRule: "@request.auth.role = 'ADMIN'",
+  updateRule: "@request.auth.role = 'ADMIN'",
+  deleteRule: "@request.auth.role = 'ADMIN'"
+};
+
 const ORDER_MESSAGES_RULES = {
   listRule: "@request.auth.role = 'ADMIN' || @request.auth.id = order.user",
   viewRule: "@request.auth.role = 'ADMIN' || @request.auth.id = order.user",
@@ -54,6 +62,11 @@ export async function applyHardeningRules(pb: any) {
   }
   try {
     await pb.collection("store_settings_").updateRules(STORE_SETTINGS_RULES);
+  } catch (_) {
+    // ignore if collection doesn't exist
+  }
+  try {
+    await pb.collection("billing_invoices").updateRules(BILLING_INVOICES_RULES);
   } catch (_) {
     // ignore if collection doesn't exist
   }

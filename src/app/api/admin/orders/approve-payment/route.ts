@@ -8,10 +8,33 @@ export async function POST(req: Request) {
         const pb = await getAdminPocketBase();
 
         const existing = await pb.collection("orders").getOne(orderId);
-        const updated = await pb.collection("orders").update(orderId, {
-            paymentStatus: "VERIFIED",
-            status: "CONFIRMED"
-        });
+
+        const baseUpdate: any = {
+          paymentStatus: "VERIFIED",
+          status: "CONFIRMED"
+        };
+
+        // Best effort: record when the payment was verified (used for monthly billing).
+        let updated: any = null;
+        try {
+          updated = await pb.collection("orders").update(orderId, {
+            ...baseUpdate,
+            paymentVerifiedAt: new Date().toISOString()
+          });
+        } catch (err: any) {
+          const msg = String(err?.message || "");
+          const unknownField =
+            !!err?.data?.data?.paymentVerifiedAt ||
+            msg.toLowerCase().includes("paymentverifiedat") ||
+            msg.toLowerCase().includes("unknown field");
+
+          if (!unknownField) {
+            throw err;
+          }
+
+          // Field is not yet present in PocketBase schema; fallback to original update.
+          updated = await pb.collection("orders").update(orderId, baseUpdate);
+        }
 
         if (existing.status !== "CONFIRMED") {
           await recordOrderStatusEvent({

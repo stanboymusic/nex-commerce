@@ -12,11 +12,11 @@ export async function GET() {
         // Map to simple format expected by UI
         const rates = records.map((r: any) => ({
             id: r.id,
-            from: r.baseCurrency,
-            to: r.targetCurrency,
+            from: r.baseCurrency || r.from,
+            to: r.targetCurrency || r.to,
             rate: r.rate,
             updated: r.updated,
-            active: r.active
+            active: typeof r.active === "boolean" ? r.active : true
         }));
 
         return NextResponse.json(rates);
@@ -42,29 +42,53 @@ export async function POST(req: Request) {
         // or just create new. The UI logic suggests creating defaults.
         // We'll update if exists, or create if not.
 
-        const existing = await pb.collection("exchange_rates").getList(1, 1, {
-            filter: `baseCurrency = "${body.from}" && targetCurrency = "${body.to}"`
-        });
+        const from = String(body.from).toUpperCase().trim();
+        const to = String(body.to).toUpperCase().trim();
+
+        let existing: any = null;
+        try {
+            existing = await pb.collection("exchange_rates").getList(1, 1, {
+                filter: `baseCurrency = "${from}" && targetCurrency = "${to}"`
+            });
+        } catch (_) {
+            existing = await pb.collection("exchange_rates").getList(1, 1, {
+                filter: `from = "${from}" && to = "${to}"`
+            });
+        }
 
         let record;
         if (existing.items.length > 0) {
-            record = await pb.collection("exchange_rates").update(existing.items[0].id, {
-                rate: body.rate,
-                active: true
-            });
+            try {
+                record = await pb.collection("exchange_rates").update(existing.items[0].id, {
+                    rate: body.rate,
+                    active: true
+                });
+            } catch (_) {
+                record = await pb.collection("exchange_rates").update(existing.items[0].id, {
+                    rate: body.rate
+                });
+            }
         } else {
-            record = await pb.collection("exchange_rates").create({
-                baseCurrency: body.from,
-                targetCurrency: body.to,
-                rate: body.rate,
-                active: true
-            });
+            try {
+                record = await pb.collection("exchange_rates").create({
+                    baseCurrency: from,
+                    targetCurrency: to,
+                    rate: body.rate,
+                    active: true
+                });
+            } catch (_) {
+                record = await pb.collection("exchange_rates").create({
+                    from,
+                    to,
+                    rate: body.rate
+                });
+            }
         }
 
         return NextResponse.json({
             id: record.id,
-            from: record.baseCurrency,
-            to: record.targetCurrency,
+            from: record.baseCurrency || record.from,
+            to: record.targetCurrency || record.to,
             rate: record.rate,
             updated: record.updated
         });

@@ -9,6 +9,7 @@
     "lint": "eslint",
     "pocketbase": "cd pocketbase && pocketbase.exe serve",
     "pocketbase:setup": "node scripts/setup-pocketbase.js",
+    "pocketbase:billing": "node scripts/setup-billing-pocketbase.js",
     "dev:all": "concurrently \"npm run pocketbase\" \"npm run dev\""
   },
   "dependencies": {

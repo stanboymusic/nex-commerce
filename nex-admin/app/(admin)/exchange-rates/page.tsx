@@ -18,6 +18,10 @@ export default function ExchangeRatesPage() {
     const [loading, setLoading] = useState(true);
     const [saving, setSaving] = useState<string | null>(null);
     const [error, setError] = useState<string | null>(null);
+    const [newFrom, setNewFrom] = useState<string>('USD');
+    const [newTo, setNewTo] = useState<string>('EUR');
+    const [newRate, setNewRate] = useState<string>('');
+    const [creating, setCreating] = useState(false);
 
     const fetchRates = async () => {
         setLoading(true);
@@ -67,6 +71,28 @@ export default function ExchangeRatesPage() {
             console.error(err);
             alert("Error al inicializar");
             setLoading(false);
+        }
+    };
+
+    const handleCreateRate = async () => {
+        const from = newFrom.trim().toUpperCase();
+        const to = newTo.trim().toUpperCase();
+        const rateValue = Number(newRate);
+
+        if (!from || !to) return alert("Selecciona las monedas.");
+        if (from === to) return alert("La moneda base y destino no pueden ser iguales.");
+        if (!Number.isFinite(rateValue) || rateValue <= 0) return alert("Ingresa una tasa válida.");
+
+        setCreating(true);
+        try {
+            await apiClient.post('/admin/exchange-rates', { from, to, rate: rateValue });
+            setNewRate('');
+            fetchRates();
+        } catch (err) {
+            console.error(err);
+            alert("Error al crear la tasa");
+        } finally {
+            setCreating(false);
         }
     };
 
@@ -177,6 +203,65 @@ export default function ExchangeRatesPage() {
                         </div>
                     ))
                 )}
+            </div>
+
+            <div className="bg-white border border-gray-100 rounded-[35px] shadow-sm p-8 space-y-6">
+                <div>
+                    <h3 className="text-xl font-black text-oxford tracking-tight">Agregar Nueva Tasa</h3>
+                    <p className="text-sm text-gray-500 font-medium mt-1">
+                        Crea pares como <span className="font-black text-oxford">USD → EUR</span>, <span className="font-black text-oxford">USD → ARS</span>,{" "}
+                        <span className="font-black text-oxford">USD → CLP</span>, <span className="font-black text-oxford">USD → CAD</span>, etc.
+                    </p>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-4 gap-4 items-end">
+                    <div>
+                        <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest block mb-2">Base</label>
+                        <select
+                            value={newFrom}
+                            onChange={(e) => setNewFrom(e.target.value)}
+                            className="w-full bg-gray-50 border border-gray-100 px-4 py-3 rounded-2xl text-sm font-black text-oxford outline-none focus:ring-4 focus:ring-purple/5 focus:border-purple transition-all"
+                        >
+                            {['USD', 'EUR', 'COP', 'ARS', 'CLP', 'CAD', 'VES'].map((c) => (
+                                <option key={c} value={c}>{c}</option>
+                            ))}
+                        </select>
+                    </div>
+                    <div>
+                        <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest block mb-2">Destino</label>
+                        <select
+                            value={newTo}
+                            onChange={(e) => setNewTo(e.target.value)}
+                            className="w-full bg-gray-50 border border-gray-100 px-4 py-3 rounded-2xl text-sm font-black text-oxford outline-none focus:ring-4 focus:ring-purple/5 focus:border-purple transition-all"
+                        >
+                            {['EUR', 'COP', 'ARS', 'CLP', 'CAD', 'VES', 'USD'].map((c) => (
+                                <option key={c} value={c}>{c}</option>
+                            ))}
+                        </select>
+                    </div>
+                    <div className="md:col-span-1">
+                        <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest block mb-2">Tasa</label>
+                        <input
+                            type="number"
+                            value={newRate}
+                            onChange={(e) => setNewRate(e.target.value)}
+                            className="w-full bg-gray-50 border border-gray-100 px-4 py-3 rounded-2xl text-sm font-black text-oxford outline-none focus:ring-4 focus:ring-purple/5 focus:border-purple transition-all"
+                            placeholder="Ej: 4200"
+                            step="any"
+                            min="0"
+                        />
+                    </div>
+                    <div>
+                        <button
+                            onClick={handleCreateRate}
+                            disabled={creating}
+                            className="w-full bg-purple text-white px-6 py-3 rounded-2xl font-black text-sm hover:bg-purple/90 transition-all shadow-lg shadow-purple/10 disabled:opacity-50 flex items-center justify-center gap-2"
+                        >
+                            {creating ? <Loader2 className="w-4 h-4 animate-spin" /> : <Plus className="w-4 h-4" />}
+                            {creating ? "Creando..." : "Agregar"}
+                        </button>
+                    </div>
+                </div>
             </div>
 
             <div className="bg-purple/5 p-8 rounded-[40px] border border-purple/10 flex gap-6 items-center">
