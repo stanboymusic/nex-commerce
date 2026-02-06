@@ -17,6 +17,7 @@ export async function GET() {
             paymentStatus: o.paymentStatus,
             paymentMethod: o.paymentMethod,
             currency: o.currency,
+            total: o.total,
             totalUSD: o.totalUSD,
             totalLocal: o.totalLocal,
             exchangeRate: o.exchangeRate,
@@ -27,6 +28,8 @@ export async function GET() {
             paymentReportedAt: o.paymentReportedAt,
             binanceTxHash: o.binanceTxHash,
             shippingCost: o.shippingCost,
+            vipDiscountPercent: o.vipDiscountPercent,
+            vipDiscountAmount: o.vipDiscountAmount,
             estimatedDeliveryDate: o.estimatedDeliveryDate,
             isPreorder: o.isPreorder,
             customer: o.expand?.user

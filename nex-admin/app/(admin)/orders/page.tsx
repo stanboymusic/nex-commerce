@@ -336,7 +336,17 @@ export default function OrdersPage() {
 
   const getVipPercent = (order: any) => {
     const pct = Number(order?.vipDiscountPercent || 0);
-    return Number.isFinite(pct) && pct > 0 ? pct : 0;
+    if (Number.isFinite(pct) && pct > 0) return pct;
+
+    // Fallback: infer percent from stored discount amount (USD) + discounted total (USD)
+    const discountUSD = Number(order?.vipDiscountAmount || 0);
+    const totalUSD = Number(order?.totalUSD || 0);
+    if (!Number.isFinite(discountUSD) || discountUSD <= 0) return 0;
+    if (!Number.isFinite(totalUSD) || totalUSD <= 0) return 0;
+    const baseUSD = totalUSD + discountUSD;
+    if (baseUSD <= 0) return 0;
+    const inferred = (discountUSD / baseUSD) * 100;
+    return Number.isFinite(inferred) && inferred > 0 ? Number(inferred.toFixed(2)) : 0;
   };
 
   const formatMoney = (value: number, currency: string) => {

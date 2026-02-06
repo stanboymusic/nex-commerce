@@ -64,7 +64,15 @@ export const OrderDetailModal = ({ order, isOpen, onClose, onUpdate }: OrderDeta
 
     if (!order) return null;
 
-    const vipPercent = Number(order?.vipDiscountPercent || 0);
+    const vipPercentDirect = Number(order?.vipDiscountPercent || 0);
+    const vipAmountUSD = Number(order?.vipDiscountAmount || 0);
+    const totalUSD = Number(order?.totalUSD || 0);
+    const vipPercentInferred = vipAmountUSD > 0 && totalUSD > 0
+        ? (vipAmountUSD / (vipAmountUSD + totalUSD)) * 100
+        : 0;
+    const vipPercent = vipPercentDirect > 0
+        ? vipPercentDirect
+        : (Number.isFinite(vipPercentInferred) && vipPercentInferred > 0 ? Number(vipPercentInferred.toFixed(2)) : 0);
     const vipRate = vipPercent > 0 ? vipPercent / 100 : 0;
     const rateRaw = order?.currency === "USD" ? 1 : Number(order?.exchangeRate || 1);
     const exchangeRate = Number.isFinite(rateRaw) && rateRaw > 0 ? rateRaw : 1;
