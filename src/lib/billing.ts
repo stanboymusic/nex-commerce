@@ -2,7 +2,7 @@ import type PocketBase from "pocketbase";
 
 export type BillingConfig = {
   enabled: boolean;
-  feePercent: number; // 1 => 1%
+  feePercent: number; // Example: 0.4 => 0.4%
   graceDays: number; // days after period end
   currency: string; // ISO code, eg: USD, COP, EUR, ARS, CLP, CAD
 };
@@ -11,7 +11,7 @@ export type BillingInvoiceStatus = "UNPAID" | "PAID";
 
 const DEFAULT_BILLING_CONFIG: BillingConfig = {
   enabled: true,
-  feePercent: 1,
+  feePercent: 0.4,
   graceDays: 10,
   currency: "USD",
 };

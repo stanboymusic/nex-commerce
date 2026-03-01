@@ -153,7 +153,7 @@ export default function BillingPage() {
         <div>
           <h1 className="text-4xl font-black text-oxford tracking-tight">Suscripción NexCommerce</h1>
           <p className="text-text-medium font-medium mt-1">
-            Comisión automática del <span className="font-black text-oxford">{data?.config?.feePercent ?? 1}%</span> sobre ventas verificadas del mes (sin envío).
+            Comisión automática del <span className="font-black text-oxford">{data?.config?.feePercent ?? 0.4}%</span> sobre ventas verificadas del mes (sin envío).
           </p>
         </div>
 
@@ -349,4 +349,3 @@ export default function BillingPage() {
     </div>
   );
 }
-

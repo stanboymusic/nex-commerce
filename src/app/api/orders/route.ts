@@ -27,7 +27,7 @@ export async function POST(req: NextRequest) {
 
     const adminPb = await getAdminPocketBase();
 
-    // --- Platform billing guard (1% monthly fee) ---
+    // --- Platform billing guard (monthly fee over verified sales; default 0.4%) ---
     // Blocks new sales if the previous month's invoice is unpaid after the grace window.
     const billingConfig = getBillingConfigFromEnv();
     if (billingConfig.enabled && billingConfig.feePercent > 0 && billingConfig.graceDays >= 0) {
