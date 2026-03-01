@@ -94,16 +94,17 @@ export default async function HomePage() {
     console.error("HOME_PRODUCTS_ERROR:", error);
   }
 
-  const activeProducts = products.filter((p) => p.active !== false);
-  const offers = activeProducts
+  const hasAnyActiveTrue = products.some((p) => p.active === true);
+  const storefrontProducts = hasAnyActiveTrue ? products.filter((p) => p.active === true) : products;
+  const offers = storefrontProducts
     .filter((p) => !p.isPreorder && Number(p.stock || 0) > 0)
     .sort((a, b) => Number(a.price || 0) - Number(b.price || 0))
     .slice(0, 6);
-  const preorders = activeProducts
+  const preorders = storefrontProducts
     .filter((p) => p.isPreorder)
     .sort((a, b) => toTime(a.estimatedArrivalDate) - toTime(b.estimatedArrivalDate))
     .slice(0, 6);
-  const latest = [...activeProducts].sort((a, b) => toTime(b.createdAt) - toTime(a.createdAt)).slice(0, 4);
+  const latest = [...storefrontProducts].sort((a, b) => toTime(b.createdAt) - toTime(a.createdAt)).slice(0, 4);
 
   return (
     <div className="space-y-10 pb-4">
@@ -142,7 +143,7 @@ export default async function HomePage() {
       <section className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
         <div className="rounded-2xl border border-gray-100 bg-white p-5 shadow-sm">
           <p className="text-xs font-bold uppercase tracking-widest text-gray-400">Activos</p>
-          <p className="mt-2 text-3xl font-black text-oxford">{activeProducts.length}</p>
+          <p className="mt-2 text-3xl font-black text-oxford">{storefrontProducts.length}</p>
           <p className="mt-1 text-sm text-gray-500">Productos visibles para tus clientes.</p>
         </div>
         <div className="rounded-2xl border border-emerald-100 bg-emerald-50/60 p-5 shadow-sm">

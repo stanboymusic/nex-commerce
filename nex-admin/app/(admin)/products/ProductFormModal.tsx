@@ -44,6 +44,7 @@ export default function ProductFormModal({ product, categories, onSave, onClose 
         price: product?.price || 0,
         stock: product?.stock || 0,
         category: product?.category || "",
+        active: product?.active ?? product?.Active ?? true,
         isPreorder: product?.isPreorder || false,
         estimatedArrivalDate: product?.estimatedArrivalDate ? new Date(product.estimatedArrivalDate).toISOString().split('T')[0] : "",
     });
@@ -79,6 +80,7 @@ export default function ProductFormModal({ product, categories, onSave, onClose 
         formData.append("price", String(form.price));
         formData.append("stock", String(form.stock));
         formData.append("category", form.category);
+        formData.append("Active", String(form.active));
         formData.append("isPreorder", String(form.isPreorder));
         if (form.estimatedArrivalDate) {
             formData.append("estimatedArrivalDate", form.estimatedArrivalDate);
@@ -179,6 +181,19 @@ export default function ProductFormModal({ product, categories, onSave, onClose 
                     </div>
 
                     <div className="bg-gray-50 p-6 rounded-2xl space-y-4">
+                        <div className="flex items-center gap-2">
+                            <input
+                                type="checkbox"
+                                id="activeProduct"
+                                checked={form.active}
+                                onChange={e => setForm({ ...form, active: e.target.checked })}
+                                className="w-4 h-4 text-purple rounded border-gray-300 focus:ring-purple"
+                            />
+                            <label htmlFor="activeProduct" className="text-sm font-bold text-oxford select-none">
+                                Visible en Nex Users
+                            </label>
+                        </div>
+
                         <div className="flex items-center gap-2">
                             <input
                                 type="checkbox"

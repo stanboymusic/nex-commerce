@@ -16,6 +16,7 @@ export async function getProducts() {
             name: r.name,
             price: r.price,
             stock: r.stock,
+            active: r.Active !== false,
             category: r.category,
             categoryName: r.expand?.category?.name || "S/N",
             isPreorder: r.isPreorder,

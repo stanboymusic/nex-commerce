@@ -15,7 +15,7 @@ export async function GET(req: NextRequest) {
       filter: safeCategory ? `category="${safeCategory}"` : undefined,
     });
 
-    const products = records
+    const mappedProducts = records
       .map((r) => {
       const record = r as Record<string, unknown>;
       const imageFiles = Array.isArray(r.image)
@@ -53,8 +53,18 @@ export async function GET(req: NextRequest) {
       images,
       gallery: images.slice(1).map((img: { id: string; url: string }) => img.url)
     };
-    })
-      .filter((p) => includeInactive || p.active !== false);
+    });
+
+    // Compatibility mode:
+    // If the store still has no product explicitly marked as Active=true,
+    // we return all products to avoid an empty storefront.
+    // Once at least one product is marked as Active=true, only active items are shown (unless includeInactive=true).
+    const hasAnyActiveTrue = mappedProducts.some((p) => p.active === true);
+    const products = includeInactive
+      ? mappedProducts
+      : hasAnyActiveTrue
+        ? mappedProducts.filter((p) => p.active === true)
+        : mappedProducts;
 
     return NextResponse.json(products);
   } catch (e: unknown) {

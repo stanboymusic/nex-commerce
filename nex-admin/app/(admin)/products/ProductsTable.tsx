@@ -7,6 +7,7 @@ interface Product {
     name: string;
     price: number;
     stock: number;
+    active?: boolean;
     categoryName: string;
     isPreorder: boolean;
     estimatedArrivalDate: string;
@@ -31,6 +32,7 @@ export default function ProductsTable({ products, onEdit, onDelete }: Props) {
                             <th className="px-6 py-4 font-bold text-oxford uppercase tracking-wider">Categoría</th>
                             <th className="px-6 py-4 font-bold text-oxford uppercase tracking-wider">Precio</th>
                             <th className="px-6 py-4 font-bold text-oxford uppercase tracking-wider text-center">Stock</th>
+                            <th className="px-6 py-4 font-bold text-oxford uppercase tracking-wider text-center">Visible</th>
                             <th className="px-6 py-4 font-bold text-oxford uppercase tracking-wider text-center">Preventa</th>
                             <th className="px-6 py-4 font-bold text-oxford uppercase tracking-wider text-right">Acciones</th>
                         </tr>
@@ -68,6 +70,13 @@ export default function ProductsTable({ products, onEdit, onDelete }: Props) {
                                         <Package className="w-3 h-3" />
                                         {p.stock}
                                     </span>
+                                </td>
+                                <td className="px-6 py-4 text-center">
+                                    {p.active === false ? (
+                                        <span className="bg-gray-100 text-gray-500 px-2 py-0.5 rounded text-[10px] font-bold uppercase">No</span>
+                                    ) : (
+                                        <span className="bg-emerald-100 text-emerald-700 px-2 py-0.5 rounded text-[10px] font-bold uppercase">Sí</span>
+                                    )}
                                 </td>
                                 <td className="px-6 py-4 text-center">
                                     {p.isPreorder ? (

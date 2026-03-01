@@ -12,10 +12,16 @@ export async function POST(req: Request) {
       form.set("slug", name.toLowerCase().trim().replace(/\s+/g, "-").replace(/[^\w-]/g, ""));
     }
 
+    // New products are visible in Nex Users by default unless admin disables them.
+    if (!form.has("Active")) {
+      form.set("Active", "true");
+    }
+
     const created = await pb.collection("products").create(form);
     return NextResponse.json(created);
-  } catch (e: any) {
-    console.error("[POST /api/admin/products]", e?.data || e?.message || e);
-    return NextResponse.json({ error: e?.data?.message || e?.message || "Create failed" }, { status: 500 });
+  } catch (e: unknown) {
+    const err = e as { data?: { message?: string }; message?: string };
+    console.error("[POST /api/admin/products]", err?.data || err?.message || e);
+    return NextResponse.json({ error: err?.data?.message || err?.message || "Create failed" }, { status: 500 });
   }
 }
