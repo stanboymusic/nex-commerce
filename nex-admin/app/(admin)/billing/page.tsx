@@ -341,8 +341,9 @@ export default function BillingPage() {
       <div className="bg-purple/5 p-6 rounded-[30px] border border-purple/10 space-y-2">
         <p className="text-xs font-black text-oxford uppercase tracking-widest">Reglas</p>
         <p className="text-sm text-gray-600 font-medium leading-relaxed">
-          Solo se toman en cuenta órdenes con <span className="font-black text-oxford">paymentStatus = VERIFIED</span>. El envío no
-          se incluye en el cálculo. Si la factura del mes anterior no se paga luego de{" "}
+          Se toman en cuenta ventas efectivas: órdenes con <span className="font-black text-oxford">paymentStatus = VERIFIED</span> o ya{" "}
+          <span className="font-black text-oxford">ENTREGADAS</span> (excepto rechazadas/canceladas). El envío no se incluye en el cálculo.
+          Si la factura del mes anterior no se paga luego de{" "}
           <span className="font-black text-oxford">{data?.config?.graceDays ?? 10}</span> días de gracia, se bloquea la creación de nuevas órdenes.
         </p>
       </div>

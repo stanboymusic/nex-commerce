@@ -42,7 +42,40 @@ export async function POST(req: Request) {
       }
     }
 
-    const updated = await pb.collection("orders").update(orderId, { status: newStatus });
+    const nowISO = new Date().toISOString();
+    const orderPaymentStatus = String(order.paymentStatus || "").toUpperCase();
+    const shouldForceVerifiedOnDelivered =
+      newStatus === "DELIVERED" && orderPaymentStatus !== "REJECTED" && orderPaymentStatus !== "VERIFIED";
+
+    const payload: Record<string, unknown> = { status: newStatus };
+    if (shouldForceVerifiedOnDelivered) {
+      payload.paymentStatus = "VERIFIED";
+      payload.paymentReportedAt = nowISO;
+    }
+
+    let updated: unknown = null;
+    try {
+      if (shouldForceVerifiedOnDelivered) {
+        payload.paymentVerifiedAt = nowISO;
+      }
+      updated = await pb.collection("orders").update(orderId, payload);
+    } catch (err: unknown) {
+      const pbErr = err as { data?: { data?: Record<string, unknown> }; message?: string };
+      const fieldErrors = pbErr?.data?.data || {};
+      const msg = String(pbErr?.message || "");
+      const unknownField =
+        !!fieldErrors?.paymentVerifiedAt ||
+        msg.toLowerCase().includes("paymentverifiedat") ||
+        msg.toLowerCase().includes("unknown field");
+
+      if (!unknownField || !shouldForceVerifiedOnDelivered) {
+        throw err;
+      }
+
+      // Legacy schema without paymentVerifiedAt.
+      delete payload.paymentVerifiedAt;
+      updated = await pb.collection("orders").update(orderId, payload);
+    }
 
     if (newStatus !== order.status) {
       await recordOrderStatusEvent({

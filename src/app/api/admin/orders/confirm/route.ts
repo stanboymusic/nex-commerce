@@ -15,12 +15,35 @@ export async function POST(req: Request) {
   });
 
   if (!order) return NextResponse.json({ error: "Orden no encontrada" }, { status: 404 });
+  const verifiedAt = new Date().toISOString();
 
   // 1️⃣ Cambiar estado
-  await pb.collection("orders").update(orderId, {
-    status: "CONFIRMED",
-    paymentStatus: "VERIFIED",
-  });
+  try {
+    await pb.collection("orders").update(orderId, {
+      status: "CONFIRMED",
+      paymentStatus: "VERIFIED",
+      paymentReportedAt: verifiedAt,
+      paymentVerifiedAt: verifiedAt,
+    });
+  } catch (err: unknown) {
+    const pbErr = err as { data?: { data?: Record<string, unknown> }; message?: string };
+    const fieldErrors = pbErr?.data?.data || {};
+    const msg = String(pbErr?.message || "");
+    const unknownField =
+      !!fieldErrors?.paymentVerifiedAt ||
+      msg.toLowerCase().includes("paymentverifiedat") ||
+      msg.toLowerCase().includes("unknown field");
+
+    if (!unknownField) {
+      throw err;
+    }
+
+    await pb.collection("orders").update(orderId, {
+      status: "CONFIRMED",
+      paymentStatus: "VERIFIED",
+      paymentReportedAt: verifiedAt,
+    });
+  }
 
   if (order.status !== "CONFIRMED") {
     await recordOrderStatusEvent({

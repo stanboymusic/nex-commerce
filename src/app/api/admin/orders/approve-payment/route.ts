@@ -8,23 +8,27 @@ export async function POST(req: Request) {
         const pb = await getAdminPocketBase();
 
         const existing = await pb.collection("orders").getOne(orderId);
+        const verifiedAt = new Date().toISOString();
 
-        const baseUpdate: any = {
+        const baseUpdate = {
           paymentStatus: "VERIFIED",
-          status: "CONFIRMED"
+          status: "CONFIRMED",
+          paymentReportedAt: verifiedAt,
         };
 
         // Best effort: record when the payment was verified (used for monthly billing).
-        let updated: any = null;
+        let updated: unknown = null;
         try {
           updated = await pb.collection("orders").update(orderId, {
             ...baseUpdate,
-            paymentVerifiedAt: new Date().toISOString()
+            paymentVerifiedAt: verifiedAt
           });
-        } catch (err: any) {
-          const msg = String(err?.message || "");
+        } catch (err: unknown) {
+          const pbErr = err as { data?: { data?: Record<string, unknown> }; message?: string };
+          const fieldErrors = pbErr?.data?.data || {};
+          const msg = String(pbErr?.message || "");
           const unknownField =
-            !!err?.data?.data?.paymentVerifiedAt ||
+            !!fieldErrors?.paymentVerifiedAt ||
             msg.toLowerCase().includes("paymentverifiedat") ||
             msg.toLowerCase().includes("unknown field");
 

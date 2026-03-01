@@ -128,8 +128,11 @@ export async function getActiveUsdFxRate(pb: PocketBase, targetCurrency: string)
 
 export async function computeVerifiedSalesUSDForPeriod(pb: PocketBase, period: string) {
   const { startISO, endISO } = getPeriodRangeUTC(period);
-  // Billing is based on verified sales. We also exclude cancelled orders to avoid charging for refunds/cancellations.
-  const baseFilter = `paymentStatus="VERIFIED" && status != "CANCELLED"`;
+  // Effective sales for billing:
+  // - Payment verified orders, OR
+  // - Delivered orders (except rejected payments),
+  // always excluding cancelled orders.
+  const baseFilter = `status != "CANCELLED" && (paymentStatus="VERIFIED" || (status="DELIVERED" && paymentStatus!="REJECTED"))`;
 
   // Best effort: use paymentVerifiedAt if present (we set it when payment is approved).
   try {
@@ -140,13 +143,24 @@ export async function computeVerifiedSalesUSDForPeriod(pb: PocketBase, period: s
     const total = orders.reduce((sum: number, o: any) => sum + Number(o?.totalUSD || 0), 0);
     return { totalUSD: total, used: "paymentVerifiedAt" as const };
   } catch (_) {
-    // Fallback: group by created date if the field doesn't exist yet.
-    const orders = await pb.collection("orders").getFullList({
-      filter: `${baseFilter} && created >= "${startISO}" && created < "${endISO}"`,
-      fields: "id,totalUSD",
-    });
-    const total = orders.reduce((sum: number, o: any) => sum + Number(o?.totalUSD || 0), 0);
-    return { totalUSD: total, used: "created" as const };
+    // Fallback #1: many deployments already have paymentReportedAt in schema.
+    // We reuse it as "effective payment date" when orders are verified.
+    try {
+      const orders = await pb.collection("orders").getFullList({
+        filter: `${baseFilter} && paymentReportedAt >= "${startISO}" && paymentReportedAt < "${endISO}"`,
+        fields: "id,totalUSD",
+      });
+      const total = orders.reduce((sum: number, o: any) => sum + Number(o?.totalUSD || 0), 0);
+      return { totalUSD: total, used: "paymentReportedAt" as const };
+    } catch (_) {
+      // Fallback #2: legacy behavior if no timestamp field exists.
+      const orders = await pb.collection("orders").getFullList({
+        filter: `${baseFilter} && created >= "${startISO}" && created < "${endISO}"`,
+        fields: "id,totalUSD",
+      });
+      const total = orders.reduce((sum: number, o: any) => sum + Number(o?.totalUSD || 0), 0);
+      return { totalUSD: total, used: "created" as const };
+    }
   }
 }
 
